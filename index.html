@@ -821,6 +821,34 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .stat,.mcard{backdrop-filter:none;-webkit-backdrop-filter:none}
 #petals{will-change:transform}
 
+/* ---------- scenery viewing mode ---------- */
+main.wrap{transition:opacity .5s ease,transform .5s ease,visibility 0s linear 0s}
+body.sceneview main.wrap{opacity:0;transform:translateY(18px);visibility:hidden;pointer-events:none;transition:opacity .5s ease,transform .5s ease,visibility 0s linear .5s}
+.scenery{transition:height .9s cubic-bezier(.2,.8,.2,1)}
+body.sceneview .scenery{height:min(82vh,820px)}
+body.sceneview{overflow:hidden}
+.scenebtn{position:fixed;z-index:25;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  display:flex;align-items:center;gap:6px;border:1.5px solid #f6d3e0;background:#fffdfe;color:var(--md);font:inherit;font-weight:700;font-size:.88rem;
+  padding:10px 16px;border-radius:999px;cursor:pointer;box-shadow:0 12px 26px -14px rgba(200,80,120,.65);transition:transform .2s,opacity .3s}
+.scenebtn:hover{transform:translateY(-2px)}
+body.sceneview .scenebtn{opacity:0;pointer-events:none}
+.scenebar{position:fixed;z-index:26;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  display:flex;align-items:center;gap:8px;max-width:calc(100% - 32px);padding:8px;border-radius:999px;background:#fffdfe;border:1.5px solid #f6d3e0;
+  box-shadow:0 16px 34px -16px rgba(120,60,90,.55);animation:sbin .5s cubic-bezier(.3,1.4,.5,1)}
+@keyframes sbin{from{opacity:0;transform:translate(-50%,20px)}}
+.sb-nav{width:38px;height:38px;flex:none;border:0;border-radius:50%;background:var(--sakura-soft);color:var(--md);font-size:1.25rem;font-weight:700;cursor:pointer}
+.sb-place{display:grid;text-align:center;min-width:0;padding:0 4px;line-height:1.25}
+.sb-place b{font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-place span{font-size:.72rem;color:var(--muted)}
+.sb-back{flex:none;border:0;border-radius:999px;padding:10px 16px;background:linear-gradient(135deg,#ff9cbc,var(--md));color:#fff;font:inherit;font-weight:700;font-size:.88rem;cursor:pointer}
+@media (max-width:520px){
+  .scenebtn{padding:10px 13px}.scenebtn span{display:none}
+  .scenebar{left:16px;right:16px;transform:none;max-width:none;flex-wrap:wrap;justify-content:center;border-radius:22px}
+  @keyframes sbin{from{opacity:0;transform:translateY(20px)}}
+  .sb-place{flex:1 1 0}
+  .sb-back{flex-basis:100%}
+}
+
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
 .acct-btns{display:flex;flex-wrap:wrap;gap:6px}
@@ -831,6 +859,13 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
 <div class="scenery" id="scenery" aria-hidden="true"></div>
 <canvas id="petals" aria-hidden="true"></canvas>
+<button class="scenebtn" id="sceneBtn" type="button" aria-pressed="false" aria-label="Ẩn giao diện để ngắm phong cảnh">🏞️ <span>Ngắm cảnh</span></button>
+<div class="scenebar" id="sceneBar" role="group" aria-label="Ngắm phong cảnh" hidden>
+  <button class="sb-nav" id="scPrev" type="button" aria-label="Cảnh tháng trước">‹</button>
+  <div class="sb-place"><b id="scPlace"></b><span id="scMonth"></span></div>
+  <button class="sb-nav" id="scNext" type="button" aria-label="Cảnh tháng sau">›</button>
+  <button class="sb-back" id="sceneBack" type="button">↩ Quay lại</button>
+</div>
 <main class="wrap">
   <nav class="topnav" aria-label="Chuyển trang">
     <a class="brand" href="#"><span class="bmark" aria-hidden="true">日</span><span class="bname">Tài · 日本語</span></a>
@@ -1885,6 +1920,27 @@ document.addEventListener("keydown",e=>{
 });
 qStats();
 route();
+
+
+/* ---------- scenery viewing mode: hide the interface, keep the landscape ---------- */
+const SEASON=["Mùa đông","Mùa đông","Mùa xuân","Mùa xuân","Mùa xuân","Mùa hè","Mùa hè","Mùa hè","Mùa thu","Mùa thu","Mùa thu","Mùa đông"];
+function updSceneBar(){$("scPlace").textContent=SCENE[view.m].name;$("scMonth").textContent=`Tháng ${view.m+1} · ${SEASON[view.m]}`}
+function setSceneView(on){
+  document.body.classList.toggle("sceneview",on);
+  $("sceneBar").hidden=!on;$("sceneBtn").setAttribute("aria-pressed",on);
+  if(on){updSceneBar();setTimeout(()=>$("sceneBack").focus({preventScroll:true}),60)}
+  else $("sceneBtn").focus({preventScroll:true});
+}
+$("sceneBtn").onclick=()=>setSceneView(true);
+$("sceneBack").onclick=()=>setSceneView(false);
+$("scPrev").onclick=()=>{$("prev").click();updSceneBar()};
+$("scNext").onclick=()=>{$("next").click();updSceneBar()};
+document.addEventListener("keydown",e=>{
+  if(!document.body.classList.contains("sceneview"))return;
+  if(e.key==="Escape")setSceneView(false);
+  else if(e.key==="ArrowLeft")$("scPrev").click();
+  else if(e.key==="ArrowRight")$("scNext").click();
+});
 
 /* ---------- month & year picker ---------- */
 let pickY=null;
