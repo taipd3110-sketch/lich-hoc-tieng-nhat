@@ -787,7 +787,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 /* ===== layout v4: aligned rows ===== */
 .wrap{max-width:1240px}
 .cal{margin-top:0}
-.peek{display:none}
+.peek{display:block;right:76px;top:-46px;width:56px;height:56px}
+@media (max-width:480px){.peek{right:56px;top:-38px;width:46px;height:46px}}
 .grid.home{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);grid-template-areas:"cal side" "notes notes" "fines fines";gap:18px;align-items:stretch}
 .g-cal{grid-area:cal}.g-side{grid-area:side}.g-notes{grid-area:notes}.g-fines{grid-area:fines}
 .g-side{display:flex;flex-direction:column;gap:18px;min-width:0}
