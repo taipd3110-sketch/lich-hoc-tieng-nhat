@@ -625,6 +625,29 @@ body{background:linear-gradient(180deg,var(--bg) 0%,color-mix(in srgb,var(--sky)
 .day.fined{border-color:#ffb066!important;box-shadow:inset 0 -3px 0 #ffd1a3}
 @media (max-width:480px){.finemk{width:16px;height:16px;font-size:.58rem;left:2px;bottom:2px}}
 
+/* ---------- fine options ---------- */
+.fineopts{display:grid;gap:8px;margin:-4px 0 12px;padding:12px;border-radius:14px;background:#fffaf4;border:1.5px solid #ffe0c2}
+.fineopts .vlabel{margin:0}
+.ftypes{display:flex;flex-wrap:wrap;gap:6px}
+.fchip{position:relative;background:#fff}
+.fchip.on{background:#ff9f43;border-color:#ff9f43;color:#fff;font-weight:700}
+.fchip.add{border-style:dashed;color:var(--muted)}
+.fx{margin-left:6px;font-weight:700;opacity:.65;padding:0 2px}
+.fx:hover{opacity:1}
+.faddrow{display:flex;gap:6px}
+.faddrow input{flex:1}
+.fdone{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--ink);margin-top:6px;cursor:pointer}
+.fdone input{width:18px;height:18px;accent-color:#4fae6a}
+.finemk.alt{background:#9b7be0;box-shadow:0 2px 5px -1px rgba(120,90,200,.6)}
+.finemk.alt.done{background:#4fae6a;box-shadow:0 2px 5px -1px rgba(60,150,90,.6)}
+.vb.fine.alt{background:#9b7be0;border-color:#9b7be0}
+.falt{font-size:.85rem;font-weight:600;padding:8px 12px;border-radius:12px;margin-bottom:10px;background:#f1ecfb;color:#6b4fc0}
+.falt:empty{display:none}
+.falt.pend{background:#f3edff;color:#5a3fb0}
+.fdone-b{font-size:.75rem;font-weight:700;padding:4px 9px;border-radius:999px;background:#fff1e3;color:#c96414;white-space:nowrap;cursor:pointer}
+.fdone-b.on{background:#e9f7ee;color:#2d7a45}
+.fr i{color:var(--muted);font-size:.78rem}
+
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
 .acct-btns{display:flex;flex-wrap:wrap;gap:6px}
@@ -740,6 +763,7 @@ body{background:linear-gradient(180deg,var(--bg) 0%,color-mix(in srgb,var(--sky)
           <div class="fbox"><div class="k">Tháng này bị phạt</div><div class="v"><span id="fmDays">0</span> buổi</div><div class="m" id="fmMoney">0đ</div></div>
           <div class="fbox"><div class="k">Từ trước tới nay</div><div class="v"><span id="faDays">0</span> buổi</div><div class="m" id="faMoney">0đ</div></div>
         </div>
+        <div class="falt" id="fAlt"></div>
         <div class="frate">
           <div class="frow"><span>Làm BTVN tốt</span><b id="fRate">–</b></div>
           <div class="fbar" aria-hidden="true"><i id="fBar"></i></div>
@@ -837,10 +861,27 @@ body{background:linear-gradient(180deg,var(--bg) 0%,color-mix(in srgb,var(--sky)
     </label>
     <div id="dFineBox" hidden>
       <label class="toggle finet" for="dFine">
-        <div><b>Bị phạt BTVN</b><span>+50.000đ vì làm bài tập về nhà chưa tốt</span></div>
+        <div><b>Bị phạt BTVN</b><span>Phạt tiền, chép phạt hoặc hình thức khác</span></div>
         <span class="switch"><input type="checkbox" id="dFine"><i></i></span>
       </label>
-      <input id="dFineR" class="finer" placeholder="Lý do phạt, ví dụ: chép thiếu, chưa thuộc chữ (không bắt buộc)" autocomplete="off" hidden>
+      <div class="fineopts" id="dFineOpts" hidden>
+        <div class="vlabel">Hình thức phạt</div>
+        <div class="ftypes" id="dFType"></div>
+        <div class="faddrow" id="dFAddRow" hidden>
+          <input id="dFAdd" placeholder="Tên hình thức mới, ví dụ: Đọc to 10 lần" autocomplete="off">
+          <button class="chip" id="dFAddOk" type="button">Thêm</button>
+        </div>
+        <div id="dFMoney">
+          <div class="vlabel">Số tiền phạt</div>
+          <div class="ftypes" id="dFAmts"></div>
+          <input id="dFAmt" inputmode="numeric" placeholder="Hoặc nhập số tiền khác" autocomplete="off">
+        </div>
+        <div id="dFDetailWrap" hidden>
+          <input id="dFDetail" placeholder="Nội dung phạt, ví dụ: chép mỗi chữ sai 10 lần" autocomplete="off">
+          <label class="fdone" for="dFDone"><input type="checkbox" id="dFDone"> Đã hoàn thành hình phạt này</label>
+        </div>
+        <input id="dFineR" class="finer" placeholder="Lý do phạt (không bắt buộc)" autocomplete="off">
+      </div>
     </div>
     <div id="dPay"></div>
     <label for="dNote">Ghi chú buổi học</label>
@@ -878,7 +919,8 @@ const esc=s=>s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&q
 const now=new Date();
 const todayKey=key(now.getFullYear(),now.getMonth(),now.getDate());
 let view={y:now.getFullYear(),m:now.getMonth()};
-let state={days:{},payments:[],notes:{},quiz:{},fines:{}};
+const DEF_FTYPES=["Chép phạt","Học thuộc thêm","Làm thêm bài tập"];
+let state={days:{},payments:[],notes:{},quiz:{},fines:{},fineTypes:[...DEF_FTYPES]};
 let prevPaid=new Set(), justMarked=null, firstRender=true;
 const KAN=["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
 const WD=["Chủ nhật","Thứ hai","Thứ ba","Thứ tư","Thứ năm","Thứ sáu","Thứ bảy"];
@@ -888,7 +930,7 @@ const TAGS=["📖 Từ vựng","✍️ Ngữ pháp","🗣️ Hội thoại","�
 /* ---------- storage: Firebase (Google sign-in) with browser storage as backup ---------- */
 let FIREBASE_CONFIG=null;
 let ref=null, saving=Promise.resolve(), fbUser=null;
-const norm=d=>({days:{...(d.days||{})},payments:[...(d.payments||[])],notes:{...(d.notes||{})},quiz:{...(d.quiz||{})},fines:{...(d.fines||{})}});
+const norm=d=>({days:{...(d.days||{})},payments:[...(d.payments||[])],notes:{...(d.notes||{})},quiz:{...(d.quiz||{})},fines:{...(d.fines||{})},fineTypes:Array.isArray(d.fineTypes)&&d.fineTypes.length?[...d.fineTypes]:[...DEF_FTYPES]});
 function loadLocal(){try{const s=JSON.parse(localStorage.getItem("jp-lich")||"null");if(s&&s.days)state=norm(s)}catch(e){}}
 function saveLocal(){try{localStorage.setItem("jp-lich",JSON.stringify(state))}catch(e){}}
 const hasData=d=>Object.keys(d.days||{}).length||(d.payments||[]).length||Object.keys(d.notes||{}).length;
@@ -958,10 +1000,17 @@ $("fileImport").onchange=async e=>{
 };
 
 /* ---------- calculation ---------- */
-const FINE=50000;
-const isFined=k=>!!state.days[k]&&state.fines[k]!==undefined;
-const cost1=k=>PRICE+(isFined(k)?FINE:0);
-/* payments cover the oldest sessions first; a fined session costs 250k + 50k */
+const FINE=50000, FINE_AMTS=[20000,50000,100000];
+/* a fine is either money ({type:"money",amount}) or another penalty ({type:"Chép phạt",detail,done}); old saves stored just the reason text */
+const normFine=v=>v==null?null:typeof v==="string"?{type:"money",amount:FINE,reason:v,detail:"",done:false}
+  :{type:v.type||"money",amount:Number(v.amount)||0,reason:v.reason||"",detail:v.detail||"",done:!!v.done};
+const fineOf=k=>state.days[k]&&state.fines[k]!==undefined?normFine(state.fines[k]):null;
+const isFined=k=>!!fineOf(k);
+const fineMoney=k=>{const f=fineOf(k);return f&&f.type==="money"?f.amount:0};
+const cost1=k=>PRICE+fineMoney(k);
+const ficon=t=>t==="money"?"💰":/chép/i.test(t)?"✍️":/thuộc|học/i.test(t)?"📖":"📝";
+const fineLabel=f=>f.type==="money"?`Phạt tiền ${fmt(f.amount)}`:f.type+(f.detail?`: ${f.detail}`:"");
+/* payments cover the oldest sessions first; a money fine adds to that session's cost */
 function compute(){
   const studied=Object.keys(state.days).filter(k=>state.days[k]).sort();
   const totalPaid=state.payments.reduce((s,p)=>s+p.amount,0);
@@ -989,7 +1038,7 @@ function render(dir){
     const dow=(offset+d-1)%7;
     const stampNew=paid&&!firstRender&&newly.includes(k);
     const cls=["day",dow===5?"sat":"",dow===6?"sun":"",k===todayKey?"today":"",on?"studied":"",paid?"paid":"",fined?"fined":"",k===justMarked&&on?"new":""].join(" ");
-    html+=`<button class="${cls}" data-k="${k}" aria-label="Ngày ${d}${on?", đã học":""}${paid?", đã thanh toán":""}${note?", có ghi chú":""}${fined?", bị phạt bài tập về nhà":""}"><span class="n">${d}</span>${on?RING:""}${note?NOTE:""}${fined?'<span class="finemk" aria-hidden="true">罰</span>':""}${paid?`<span class="hanko${stampNew?" stamp":""}" style="animation-delay:${stampNew?newly.indexOf(k)*90:0}ms">済</span>`:""}${stampNew?'<span class="ripple"></span>':""}</button>`;
+    html+=`<button class="${cls}" data-k="${k}" aria-label="Ngày ${d}${on?", đã học":""}${paid?", đã thanh toán":""}${note?", có ghi chú":""}${fined?", bị phạt bài tập về nhà":""}"><span class="n">${d}</span>${on?RING:""}${note?NOTE:""}${fined?(()=>{const f=fineOf(k);return f.type==="money"?'<span class="finemk" aria-hidden="true">罰</span>':`<span class="finemk alt${f.done?" done":""}" aria-hidden="true">${f.done?"✓":"✍"}</span>`})():""}${paid?`<span class="hanko${stampNew?" stamp":""}" style="animation-delay:${stampNew?newly.indexOf(k)*90:0}ms">済</span>`:""}${stampNew?'<span class="ripple"></span>':""}</button>`;
   }
   const daysEl=$("days");daysEl.innerHTML=html;
   if(dir){daysEl.classList.remove("anim-l","anim-r");void daysEl.offsetWidth;daysEl.classList.add(dir>0?"anim-l":"anim-r")}
@@ -1001,7 +1050,8 @@ function render(dir){
   const mDue=mStudied.filter(k=>!paidSet.has(k)).reduce((a,k)=>a+cost1(k),0);
   countTo($("mCount"),mStudied.length,v=>v);
   countTo($("mTotal"),mStudied.reduce((a,k)=>a+cost1(k),0),fmt);
-  $("mSub").textContent=mFined.length?`gồm ${fmt(mFined.length*FINE)} phạt`:"";
+  const mFineMoney=mStudied.reduce((a,k)=>a+fineMoney(k),0);
+  $("mSub").textContent=mFineMoney?`gồm ${fmt(mFineMoney)} phạt`:"";
   countTo($("mDue"),mDue,fmt);
   const ok=mStudied.length>0&&mDue===0;
   $("dueBox").classList.toggle("ok",ok);
@@ -1009,7 +1059,7 @@ function render(dir){
   $("mPaid").textContent=`${mPaid} / ${mStudied.length}`;
   applyTheme(m,dir);
 
-  const allFined=studied.filter(isFined), fineTotal=allFined.length*FINE;
+  const allFined=studied.filter(isFined), fineTotal=studied.reduce((a,k)=>a+fineMoney(k),0);
   const cost=studied.length*PRICE, bal=totalPaid-cost-fineTotal;
   $("allCount").textContent=studied.length;
   $("allCost").textContent=fmt(cost);
@@ -1426,8 +1476,12 @@ function drawScene(m,dir){
 
 /* ---------- homework fine tracker ---------- */
 function renderFines(studied,allFined,mStudied,mFined){
-  $("fmDays").textContent=mFined.length;$("fmMoney").textContent=fmt(mFined.length*FINE);
-  $("faDays").textContent=allFined.length;$("faMoney").textContent=fmt(allFined.length*FINE);
+  const sumM=a=>a.reduce((t,k)=>t+fineMoney(k),0);
+  $("fmDays").textContent=mFined.length;$("fmMoney").textContent=fmt(sumM(mFined));
+  $("faDays").textContent=allFined.length;$("faMoney").textContent=fmt(sumM(allFined));
+  const alt=allFined.map(fineOf).filter(f=>f.type!=="money"), pend=alt.filter(f=>!f.done).length;
+  $("fAlt").innerHTML=alt.length?`<span>✍️ Hình phạt khác: <b>${pend}</b> chưa làm · <b>${alt.length-pend}</b> đã làm</span>`:"";
+  $("fAlt").className="falt"+(pend?" pend":"");
   const rate=studied.length?Math.round((studied.length-allFined.length)/studied.length*100):null;
   $("fRate").textContent=rate===null?"–":rate+"%";
   $("fBar").style.width=(rate??0)+"%";
@@ -1438,11 +1492,15 @@ function renderFines(studied,allFined,mStudied,mFined){
   else if(streak===0){st.className="fstreak bad";st.textContent="Buổi gần nhất bị phạt. Buổi sau làm BTVN kỹ hơn nhé Tài, cố lên! 頑張って!"}
   else{st.className="fstreak good";st.textContent=`🌸 ${streak} buổi liên tiếp làm BTVN tốt${streak>=5?". Quá giỏi!":", giữ vững nhé!"}`}
   $("fListH").textContent=`Ngày bị phạt trong tháng ${view.m+1}`;
-  $("fList").innerHTML=mFined.length?[...mFined].reverse().map(k=>{const dt=new Date(k+"T00:00"),r=(state.fines[k]||"").trim();
-    return `<li><button type="button" data-k="${k}"><span class="fd"><b>${dt.getDate()}/${dt.getMonth()+1}</b><span>${WD[dt.getDay()].replace("Thứ ","T.").replace("Chủ nhật","CN")}</span></span><span class="fr">${r?esc(r):"Làm BTVN chưa tốt"}</span><span class="fa">+${fmt(FINE)}</span></button></li>`}).join("")
+  $("fList").innerHTML=mFined.length?[...mFined].reverse().map(k=>{const dt=new Date(k+"T00:00"),f=fineOf(k);
+    const side=f.type==="money"?`<span class="fa">+${fmt(f.amount)}</span>`:`<span class="fdone-b${f.done?" on":""}" role="button" tabindex="0" data-done="${k}">${f.done?"✓ Đã làm":"Chưa làm"}</span>`;
+    return `<li><button type="button" data-k="${k}"><span class="fd"><b>${dt.getDate()}/${dt.getMonth()+1}</b><span>${WD[dt.getDay()].replace("Thứ ","T.").replace("Chủ nhật","CN")}</span></span><span class="fr"><b>${ficon(f.type)} ${esc(f.type==="money"?"Phạt tiền":f.type)}</b>${f.detail?`<br>${esc(f.detail)}`:""}${f.reason?`<br><i>Lý do: ${esc(f.reason)}</i>`:""}</span>${side}</button></li>`}).join("")
     :`<li class="empty">${mStudied.length?"Tháng này chưa bị phạt buổi nào, tuyệt vời! 🎉":"Tháng này chưa có buổi học nào."}</li>`;
 }
-$("fList").addEventListener("click",e=>{const b=e.target.closest("button[data-k]");if(b)openDay(b.dataset.k)});
+$("fList").addEventListener("click",e=>{
+  const d=e.target.closest("[data-done]");
+  if(d){e.stopPropagation();const k=d.dataset.done,f=fineOf(k);f.done=!f.done;state.fines[k]=f;render();persist();toast(f.done?"Đã đánh dấu hoàn thành hình phạt 👍":"Đã đánh dấu chưa làm");return}
+  const b=e.target.closest("button[data-k]");if(b)openDay(b.dataset.k)});
 
 /* ---------- Hiragana quiz ---------- */
 const parseK=str=>str.split(" ").map(x=>{const m=x.match(/^([぀-ゟ]+)([a-z]+)$/);return {k:m[1],r:m[2]}});
@@ -1619,7 +1677,8 @@ function cheer(k){
   const P=$("party"), I=$("partyIn");
   $("partyPet").innerHTML=`<span>${chibi(m,2)}</span>`;
   $("pJp").textContent=jp;
-  $("pMoney").textContent=isFined(k)?"+300.000đ vào tiền tháng (gồm 50.000đ phạt BTVN)":"+250.000đ vào tiền tháng";
+  const fm=fineMoney(k), ff=fineOf(k);
+  $("pMoney").textContent=fm?`+${fmt(PRICE+fm)} vào tiền tháng (gồm ${fmt(fm)} phạt BTVN)`:`+${fmt(PRICE)} vào tiền tháng`+(ff?` · ${ff.type}`:"");
   clearInterval(ptw);clearTimeout(partyT);
   P.classList.remove("out");P.hidden=false;I.style.animation="none";void I.offsetWidth;I.style.animation="";
   const v=$("pVn");
@@ -1642,8 +1701,12 @@ function openDay(k){
   $("dKan").textContent=`${dt.getMonth()+1}月${dt.getDate()}日 · ${WDJ[dt.getDay()]}`;
   $("dOn").checked=!!state.days[k];
   $("dNote").value=state.notes[k]||"";
-  $("dFine").checked=isFined(k);
-  $("dFineR").value=isFined(k)?(state.fines[k]||""):"";
+  const f0=fineOf(k);
+  $("dFine").checked=!!f0;
+  fDraft=f0?{...f0}:{type:"money",amount:FINE,reason:"",detail:"",done:false};
+  $("dFineR").value=fDraft.reason;$("dFDetail").value=fDraft.detail;$("dFDone").checked=fDraft.done;
+  $("dFAmt").value=fDraft.type==="money"&&!FINE_AMTS.includes(fDraft.amount)?fDraft.amount.toLocaleString("vi-VN"):"";
+  $("dFAddRow").hidden=true;renderFineEditor();
   updatePayBadge();
   $("dTags").innerHTML=TAGS.map(t=>`<button type="button" class="chip" data-t="${t}">${t}</button>`).join("");
   $("modal").hidden=false;
@@ -1654,9 +1717,10 @@ function openDay(k){
 function fillView(k){
   const m=Number(k.slice(5,7))-1, paid=compute().paidSet.has(k), note=(state.notes[k]||"").trim();
   $("vPet").innerHTML=`<span>${chibi(m,2)}</span>`;
-  const fined=isFined(k), fr=fined?(state.fines[k]||"").trim():"";
+  const f=fineOf(k), fined=!!f, fr=fined?f.reason:"";
   $("vBadges").innerHTML=`<span class="vb ok">✓ Đã học</span>`+(paid?`<span class="vb paid">済 Đã thanh toán</span>`:`<span class="vb due">Chưa thanh toán</span>`)
-    +(fined?`<span class="vb fine">罰 Phạt BTVN +50.000đ</span>`:`<span class="vb good">✓ BTVN tốt</span>`)+`<span class="vb money">${fmt(cost1(k))}</span>`
+    +(!fined?`<span class="vb good">✓ BTVN tốt</span>`:f.type==="money"?`<span class="vb fine">罰 Phạt tiền +${fmt(f.amount)}</span>`
+      :`<span class="vb fine alt">${ficon(f.type)} ${esc(f.type)}</span><span class="vb ${f.done?"good":"due"}">${f.done?"✓ Đã làm":"Chưa làm"}</span>${f.detail?`<span class="vfr">Nội dung phạt: ${esc(f.detail)}</span>`:""}`)+`<span class="vb money">${fmt(cost1(k))}</span>`
     +(fr?`<span class="vfr">Lý do phạt: ${esc(fr)}</span>`:"");
   const n=$("vNote");n.textContent=note||"Chưa có ghi chú cho buổi này. Chạm để thêm.";n.classList.toggle("empty",!note);
 }
@@ -1668,7 +1732,7 @@ function setMode(view){
 }
 function updatePayBadge(){
   const on=$("dOn").checked;
-  $("dFineBox").hidden=!on;$("dFineR").hidden=!$("dFine").checked;
+  $("dFineBox").hidden=!on;$("dFineOpts").hidden=!$("dFine").checked;
   if(!on){$("dPay").innerHTML="";return}
   const paid=compute().paidSet.has(openKey)&&state.days[openKey];
   $("dPay").innerHTML=paid?'<span class="paybadge p">済 Buổi này đã được thanh toán</span>':'<span class="paybadge u">Buổi này chưa thanh toán</span>';
@@ -1678,17 +1742,46 @@ function saveDay(){
   const k=openKey, on=$("dOn").checked, note=$("dNote").value.trim(), was=!!state.days[k];
   const fine=on&&$("dFine").checked, wasFined=isFined(k);
   if(on)state.days[k]=true;else delete state.days[k];
-  if(fine)state.fines[k]=$("dFineR").value.trim();else delete state.fines[k];
+  if(fine){
+    const typed=Number($("dFAmt").value.replace(/\D/g,""));
+    const f={type:fDraft.type,reason:$("dFineR").value.trim()};
+    if(f.type==="money"){f.amount=typed||fDraft.amount||FINE}else{f.amount=0;f.detail=$("dFDetail").value.trim();f.done=$("dFDone").checked}
+    state.fines[k]=f;
+  }else delete state.fines[k];
   if(note)state.notes[k]=note;else delete state.notes[k];
   if(on&&!was)justMarked=k;
   closeDay();render();persist();
   if(on&&!was)cheer(k);
-  else if(fine&&!wasFined)toast("Đã ghi phạt 50.000đ. Buổi sau làm BTVN kỹ hơn nhé Tài!");
+  else if(fine&&!wasFined)toast(`Đã ghi ${fineLabel(fineOf(k))}. Buổi sau làm BTVN kỹ hơn nhé Tài!`);
   else if(!fine&&wasFined&&on)toast("Đã bỏ phạt buổi này");
   else toast(!on&&was?"Đã bỏ đánh dấu buổi học":"Đã lưu");
 }
 $("dOn").addEventListener("change",updatePayBadge);
-$("dFine").addEventListener("change",()=>{updatePayBadge();if($("dFine").checked)setTimeout(()=>$("dFineR").focus({preventScroll:true}),50)});
+$("dFine").addEventListener("change",updatePayBadge);
+let fDraft={type:"money",amount:FINE,reason:"",detail:"",done:false};
+function renderFineEditor(){
+  const types=["money",...state.fineTypes];
+  $("dFType").innerHTML=types.map(t=>`<button type="button" class="chip fchip${fDraft.type===t?" on":""}" data-t="${esc(t)}">${ficon(t)} ${t==="money"?"Phạt tiền":esc(t)}${t!=="money"&&!DEF_FTYPES.includes(t)?`<span class="fx" data-rm="${esc(t)}" aria-label="Xoá hình thức ${esc(t)}">×</span>`:""}</button>`).join("")
+    +`<button type="button" class="chip fchip add" id="dFAddBtn">+ Thêm hình thức</button>`;
+  const money=fDraft.type==="money";
+  $("dFMoney").hidden=!money;$("dFDetailWrap").hidden=money;
+  const typed=Number($("dFAmt").value.replace(/\D/g,""));
+  $("dFAmts").innerHTML=FINE_AMTS.map(a=>`<button type="button" class="chip fchip${!typed&&fDraft.amount===a?" on":""}" data-a="${a}">${fmt(a)}</button>`).join("");
+}
+$("dFType").addEventListener("click",e=>{
+  const rm=e.target.closest("[data-rm]");
+  if(rm){e.stopPropagation();const t=rm.dataset.rm;state.fineTypes=state.fineTypes.filter(x=>x!==t);if(fDraft.type===t)fDraft.type="money";renderFineEditor();persist();return}
+  if(e.target.closest("#dFAddBtn")){$("dFAddRow").hidden=false;$("dFAdd").focus();return}
+  const b=e.target.closest("[data-t]");if(!b)return;fDraft.type=b.dataset.t;renderFineEditor();
+  if(fDraft.type!=="money")setTimeout(()=>$("dFDetail").focus({preventScroll:true}),30);
+});
+function addFineType(){const v=$("dFAdd").value.trim().slice(0,40);if(!v)return;
+  if(v.toLowerCase()!=="phạt tiền"&&!state.fineTypes.includes(v))state.fineTypes.push(v);
+  fDraft.type=v.toLowerCase()==="phạt tiền"?"money":v;$("dFAdd").value="";$("dFAddRow").hidden=true;renderFineEditor();persist()}
+$("dFAddOk").onclick=addFineType;
+$("dFAdd").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addFineType()}});
+$("dFAmts").addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;fDraft.amount=Number(b.dataset.a);$("dFAmt").value="";renderFineEditor()});
+$("dFAmt").addEventListener("input",()=>{const d=$("dFAmt").value.replace(/\D/g,"");$("dFAmt").value=d?Number(d).toLocaleString("vi-VN"):"";if(d)fDraft.amount=Number(d);renderFineEditor()});
 $("dSave").onclick=saveDay;
 $("vEdit").onclick=()=>setMode(false);
 $("vNote").onclick=()=>{setMode(false);setTimeout(()=>{const t=$("dNote");t.focus({preventScroll:true});t.setSelectionRange(t.value.length,t.value.length)},60)};
