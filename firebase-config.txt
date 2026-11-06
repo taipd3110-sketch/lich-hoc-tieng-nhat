@@ -1,0 +1,8 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyDIGzyKxPF7mvLQgr6OQbgLoPr7wxglqL4",
+  authDomain: "lich-hoc-tieng-nhat.firebaseapp.com",
+  projectId: "lich-hoc-tieng-nhat",
+  storageBucket: "lich-hoc-tieng-nhat.firebasestorage.app",
+  messagingSenderId: "235879731551",
+  appId: "1:235879731551:web:9caac63ff2801ff2db26ea"
+};
