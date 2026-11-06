@@ -816,6 +816,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 /* fluid type so zooming keeps proportions */
 .hero h1{font-size:clamp(1.35rem,3.2vw,2.15rem)}
 
+/* nav: solid background on its own layer, so the falling petals behind it never force a re-blur (that caused the flicker) */
+.topnav{background:#fffdfe;backdrop-filter:none;-webkit-backdrop-filter:none;transform:translateZ(0);will-change:transform;contain:layout paint}
+.stat,.mcard{backdrop-filter:none;-webkit-backdrop-filter:none}
+#petals{will-change:transform}
+
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
 .acct-btns{display:flex;flex-wrap:wrap;gap:6px}
@@ -2099,7 +2104,7 @@ render();
 (function(){
   if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
   const c=$("petals"),x=c.getContext("2d");let W,H,dpr;
-  function size(){dpr=Math.min(2,devicePixelRatio||1);W=c.width=innerWidth*dpr;H=c.height=innerHeight*dpr;c.style.width=innerWidth+"px";c.style.height=innerHeight+"px"}
+  let lastW=0,lastH=0;function size(){dpr=Math.min(2,devicePixelRatio||1);if(innerWidth===lastW&&Math.abs(innerHeight-lastH)<160)return;lastW=innerWidth;lastH=innerHeight;W=c.width=innerWidth*dpr;H=c.height=Math.max(innerHeight,screen.height||0)*dpr;c.style.width=innerWidth+"px";c.style.height=H/dpr+"px"}
   size();addEventListener("resize",size);
   const cs=getComputedStyle(document.documentElement);
   const N=innerWidth<600?12:22, P=[];
