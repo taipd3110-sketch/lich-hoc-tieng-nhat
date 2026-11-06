@@ -669,6 +669,98 @@ body.ro .vnote.empty{display:none}
 .fdt{font-size:.8rem;color:var(--muted);flex-basis:100%;order:3}
 .flist button{grid-template-columns:auto minmax(0,1fr)}
 
+/* ---------- layout v2: top nav, two pages, balanced home grid ---------- */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:19;background:#fff6f8}
+.topnav{position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:6px 6px 6px 8px;border-radius:999px;background:rgba(255,255,255,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1.5px solid #f6d3e0;box-shadow:0 12px 26px -20px rgba(200,80,120,.7)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--ink);text-decoration:none;min-width:0}
+.bmark{width:32px;height:32px;flex:none;border-radius:50%;background:linear-gradient(135deg,#ff9cbc,var(--md));color:#fff;display:grid;place-items:center;font-family:var(--f-jp);font-size:1rem}
+.bname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabs{display:flex;gap:4px;background:var(--sakura-soft);padding:4px;border-radius:999px;flex:none}
+.tab{padding:8px 15px;border-radius:999px;text-decoration:none;color:var(--muted);font-weight:700;font-size:.88rem;white-space:nowrap;transition:background .2s,color .2s,box-shadow .2s}
+.tab:hover{color:var(--md)}
+.tab.on{background:#fff;color:var(--md);box-shadow:0 3px 10px -4px rgba(200,80,120,.6)}
+.view{display:grid;gap:18px;min-width:0}
+.view-in{animation:viewin .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes viewin{from{opacity:0;transform:translateY(14px)}}
+
+/* hero: title on top, mascot + bubble beside the money summary on wide screens */
+@media (min-width:1001px){
+  #hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:22px;align-items:end}
+  #hero .hero-text{grid-column:1/-1}
+  #hero .stats{max-width:none;margin-top:14px}
+  #hero .scene{margin-top:14px}
+}
+
+/* home grid: calendar | payments + summary, then journal | fines */
+.grid.home{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-items:stretch}
+.g-cal{grid-column:span 7}
+.g-side{grid-column:span 5;display:flex;flex-direction:column;gap:18px}
+.g-side>.card:last-child{flex:1}
+.g-notes,.g-fines{grid-column:span 6}
+.g-cal .legend{margin-top:16px}
+@media (min-width:1001px){.g-cal .day{aspect-ratio:7/6}}
+@media (max-width:1000px){
+  .g-cal{grid-column:1/-1}
+  .g-side{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+}
+@media (max-width:680px){
+  .g-side{grid-template-columns:minmax(0,1fr)}
+  .g-notes,.g-fines{grid-column:1/-1}
+}
+
+/* practice page */
+.qhero-in{display:flex;align-items:center;gap:18px}
+.qhero-pet{width:120px;height:120px;flex:none}
+.qhero-pet span{display:block;width:100%;height:100%;transform-origin:50% 90%;animation:bob 2.6s ease-in-out infinite}
+.qhero-pet svg{width:100%;height:100%;display:block;overflow:visible}
+.qhero-text{min-width:0;display:grid;gap:6px}
+.qhero h1{margin:0}
+.qhero-sub{margin:0;color:var(--muted);max-width:60ch}
+.qhero .qstats{font-size:.88rem}
+.qlayout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+.qlayout .quiz{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px)}
+.qchead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.qchead h2{margin:0}
+.ctabs{display:flex;gap:3px;background:var(--sakura-soft);padding:3px;border-radius:999px}
+.ctab{border:0;background:transparent;border-radius:999px;padding:6px 11px;font:inherit;font-size:.8rem;font-weight:700;color:var(--muted);cursor:pointer}
+.ctab.on{background:#fff;color:var(--md);box-shadow:0 2px 8px -3px rgba(200,80,120,.5)}
+.qchart{margin-top:0}
+@media (max-width:900px){
+  .qlayout{grid-template-columns:minmax(0,1fr)}
+  .qlayout .quiz{position:relative;top:auto}
+}
+
+/* phones */
+@media (max-width:520px){
+  .wrap{gap:14px}
+  .view{gap:14px}
+  .bname{display:none}
+  .tab{padding:8px 12px;font-size:.84rem}
+  .topnav{top:calc(env(safe-area-inset-top,0px) + 6px)}
+  .grid.home{gap:14px}
+  .g-side{gap:14px}
+  .qhero-in{gap:12px}
+  .qhero-pet{width:84px;height:84px}
+  .qhero-sub{font-size:.88rem}
+  .card h2{font-size:1rem}
+  .legend{gap:8px 12px}
+  .hero h1{font-size:1.4rem}
+}
+@media (max-width:360px){.tab span{display:none}.tab{font-size:1.05rem;padding:7px 12px}}
+
+/* layout v2 tweaks */
+@media (min-width:681px) and (max-width:1000px){.g-cal .day{aspect-ratio:5/4}}
+.qprogbox{margin-top:16px;padding-top:14px;border-top:1.5px dashed #f2cddb;display:grid;gap:10px}
+.qmini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.qmini div{display:grid;justify-items:center;padding:10px 6px;border-radius:14px;background:var(--sakura-soft)}
+.qmini b{font-size:1.3rem;color:var(--md);font-variant-numeric:tabular-nums}
+.qmini span{font-size:.72rem;color:var(--muted);font-weight:600;text-align:center}
+.qprogbox .vlabel{margin:0}
+.qprogbox .qwrong{margin:0}
+.qnone{font-size:.85rem;color:var(--muted)}
+
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
 .acct-btns{display:flex;flex-wrap:wrap;gap:6px}
@@ -680,13 +772,21 @@ body.ro .vnote.empty{display:none}
 <div class="scenery" id="scenery" aria-hidden="true"></div>
 <canvas id="petals" aria-hidden="true"></canvas>
 <main class="wrap">
+  <nav class="topnav" aria-label="Chuyển trang">
+    <a class="brand" href="#"><span class="bmark" aria-hidden="true">日</span><span class="bname">Tài · 日本語</span></a>
+    <div class="tabs">
+      <a class="tab on" href="#" data-view="home" aria-current="page">📅 <span>Lịch học</span></a>
+      <a class="tab" href="#on-tap" data-view="quiz">✏️ <span>Ôn Hiragana</span></a>
+    </div>
+  </nav>
   <div class="loginbar" id="loginBar" hidden><span id="loginMsg"></span><button class="chip" id="loginBtn2" type="button">Tài đăng nhập để sửa</button></div>
+<div class="view" id="viewHome">
   <section class="hero" id="hero" aria-label="Tổng quan tháng">
     <div class="branch" id="branch" aria-hidden="true"></div>
     <div class="hero-text">
       <div class="jp">タイの日本語の旅</div>
       <h1>Hành trình học tiếng Nhật của Tài</h1>
-      <div class="pills"><div class="rate">Học phí <b>250.000đ</b>/buổi</div><div class="rate place" id="place"></div><button class="rate qlink" id="qJump" type="button">✏️ Ôn Hiragana</button></div>
+      <div class="pills"><div class="rate">Học phí <b>250.000đ</b>/buổi</div><div class="rate place" id="place"></div></div>
     </div>
     <div class="scene">
       <button class="mascot" id="mascot" type="button" aria-label="Chạm để nghe lời chúc khác"><span class="mbody" id="mBody"></span></button>
@@ -703,9 +803,8 @@ body.ro .vnote.empty{display:none}
     </div>
   </section>
 
-  <div class="grid">
-    <div class="col">
-      <section class="card cal" aria-label="Lịch tháng">
+  <div class="grid home">
+      <section class="card cal g-cal" aria-label="Lịch tháng">
         <span class="peek" id="peek" aria-hidden="true"></span>
         <div class="monthbar">
           <button class="nav" id="prev" aria-label="Tháng trước">‹</button>
@@ -738,13 +837,7 @@ body.ro .vnote.empty{display:none}
         <p class="hint" id="calHint">Chạm vào một ngày để đánh dấu đã học, viết ghi chú và ghi phạt nếu làm bài tập về nhà chưa tốt.</p>
       </section>
 
-      <section class="card" aria-label="Nhật ký buổi học">
-        <h2>Nhật ký buổi học <small>学習ノート</small></h2>
-        <ul class="notes" id="notes"></ul>
-      </section>
-    </div>
-
-    <div class="col">
+    <div class="col g-side">
       <section class="card" aria-label="Thanh toán">
         <h2>Thanh toán <small>支払い</small></h2>
         <form class="pay" id="payForm">
@@ -777,8 +870,14 @@ body.ro .vnote.empty{display:none}
           </div>
         </div>
       </section>
+    </div>
 
-      <section class="card finecard" aria-label="Theo dõi phạt bài tập về nhà">
+      <section class="card g-notes" aria-label="Nhật ký buổi học">
+        <h2>Nhật ký buổi học <small>学習ノート</small></h2>
+        <ul class="notes" id="notes"></ul>
+      </section>
+
+      <section class="card finecard g-fines" aria-label="Theo dõi phạt bài tập về nhà">
         <h2>Theo dõi phạt BTVN <small>宿題チェック</small></h2>
         <div class="fgrid">
           <div class="fbox"><div class="k">Tháng này bị phạt</div><div class="v"><span id="fmDays">0</span> buổi</div><div class="m" id="fmMoney">0đ</div></div>
@@ -793,17 +892,29 @@ body.ro .vnote.empty{display:none}
         <div class="vlabel" id="fListH">Ngày bị phạt trong tháng</div>
         <ul class="flist" id="fList"></ul>
       </section>
-    </div>
   </div>
+</div>
 
+<div class="view" id="viewQuiz" hidden>
+  <section class="hero qhero" aria-label="Ôn tập Hiragana">
+    <div class="qhero-in">
+      <div class="qhero-pet" id="qHeroPet" aria-hidden="true"></div>
+      <div class="qhero-text">
+        <div class="jp">ひらがなの練習</div>
+        <h1>Ôn tập bảng chữ Hiragana</h1>
+        <p class="qhero-sub">Mỗi bài 20 câu trắc nghiệm, có câu cho mặt chữ và có câu cho phiên âm. Chữ nào Tài hay sai sẽ được hỏi lại nhiều hơn.</p>
+        <div class="qstats" id="qStats"></div>
+      </div>
+    </div>
+  </section>
+  <div class="qlayout">
   <section class="card quiz" id="quiz" aria-label="Ôn tập Hiragana">
     <div class="qhead">
-      <h2>Ôn tập Hiragana <small>ひらがな</small></h2>
-      <div class="qstats" id="qStats"></div>
+      <h2>Làm bài trắc nghiệm <small>テスト</small></h2>
     </div>
 
     <div id="qStart" class="qpane">
-      <p class="qintro">Mỗi bài 20 câu. Có câu cho mặt chữ để chọn phiên âm, có câu cho phiên âm để chọn mặt chữ. Chữ nào Tài hay sai sẽ được hỏi lại nhiều hơn.</p>
+      <p class="qintro">Chọn mức độ rồi bấm bắt đầu. Trả lời bằng cách chạm vào đáp án, hoặc bấm phím 1–4.</p>
       <div class="qlevels" id="qLevels">
         <button class="qlv on" type="button" data-l="0" aria-pressed="true"><b>あ</b><span>46 chữ cơ bản</span></button>
         <button class="qlv" type="button" data-l="1" aria-pressed="false"><b>が</b><span>Thêm âm đục</span></button>
@@ -811,9 +922,16 @@ body.ro .vnote.empty{display:none}
       </div>
       <div class="qbtns">
         <button class="btn pink" id="qGo" type="button">Bắt đầu 20 câu</button>
-        <button class="btn ghost" id="qChartBtn" type="button" aria-expanded="false" aria-controls="qChart">Xem bảng chữ</button>
       </div>
-      <div class="qchart" id="qChart" hidden></div>
+      <div class="qprogbox">
+        <div class="qmini">
+          <div><b id="qmPlayed">0</b><span>bài đã làm</span></div>
+          <div><b id="qmBest">–</b><span>điểm cao nhất</span></div>
+          <div><b id="qmLast">–</b><span>lần gần nhất</span></div>
+        </div>
+        <div class="vlabel">Chữ Tài hay sai, cần ôn thêm</div>
+        <div class="qwrong" id="qWeak"></div>
+      </div>
     </div>
 
     <div id="qPlay" class="qpane" hidden>
@@ -854,6 +972,19 @@ body.ro .vnote.empty{display:none}
       </div>
     </div>
   </section>
+    <section class="card qchartcard" aria-label="Bảng chữ Hiragana">
+      <div class="qchead">
+        <h2>Bảng chữ <small>五十音</small></h2>
+        <div class="ctabs" id="qCTabs" role="tablist">
+          <button class="ctab on" type="button" role="tab" data-c="0" aria-selected="true">Cơ bản</button>
+          <button class="ctab" type="button" role="tab" data-c="1" aria-selected="false">Âm đục</button>
+          <button class="ctab" type="button" role="tab" data-c="2" aria-selected="false">Âm ghép</button>
+        </div>
+      </div>
+      <div class="qchart" id="qChart"></div>
+    </section>
+  </div>
+</div>
 </main>
 
 <div class="modal" id="modal" hidden>
@@ -1564,6 +1695,10 @@ try{const v=Number(localStorage.getItem("jp-qlevel"));if(v>=0&&v<=2)qLevel=v}cat
 function qStats(){
   const q=state.quiz||{};
   $("qStats").innerHTML=q.played?`Đã làm <b>${q.played}</b> bài · Cao nhất <b>${q.best||0}/20</b>`:"Chưa làm bài nào";
+  $("qmPlayed").textContent=q.played||0;$("qmBest").textContent=q.played?`${q.best||0}/20`:"–";$("qmLast").textContent=q.last||"–";
+  const weak=Object.entries(q.miss||{}).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  $("qWeak").innerHTML=weak.length?weak.map(([k])=>`<span class="qw"><b>${k}</b>${(KMAP[k]||{}).r||""}</span>`).join("")
+    :`<span class="qnone">Chưa có chữ nào sai. Làm một bài để biết mình còn yếu chữ nào nhé!</span>`;
 }
 function distract(it,pool){
   const cf=confOf(it.k);
@@ -1622,8 +1757,8 @@ function qFinish(){
   $("qProg").style.width="100%";
   const qz=state.quiz=state.quiz||{};qz.miss={...(qz.miss||{})};
   for(const [k,d] of Object.entries(Q.hits)){const v=Math.max(0,(qz.miss[k]||0)+d);if(v)qz.miss[k]=v;else delete qz.miss[k]}
-  qz.played=(qz.played||0)+1;if(Q.full)qz.best=Math.max(qz.best||0,sc);
-  persist();qStats();
+  qz.played=(qz.played||0)+1;if(Q.full)qz.best=Math.max(qz.best||0,sc);qz.last=`${sc}/${n}`;
+  persist();qStats();qChart();
   qPane("qEnd");
   $("qScore").innerHTML=`<b>${sc}</b>/${n} câu đúng`;
   const stars=pct>=.95?3:pct>=.75?2:pct>=.5?1:0;
@@ -1645,7 +1780,7 @@ function qChart(){
   const dak=["がぎぐげご","ざじずぜぞ","だ  でど","ばびぶべぼ","ぱぴぷぺぽ"].map(r=>[...r].map(c=>c===" "?"":c));
   const yo=[];for(let i=0;i<KY.length;i+=3)yo.push(KY.slice(i,i+3).map(x=>x.k));
   const anyWeak=Object.keys(miss).length;
-  $("qChart").innerHTML=(anyWeak?`<p class="qnote"><span class="qdot"></span> Chấm hồng là chữ Tài hay sai</p>`:"")+sec("Chữ cơ bản",basic,5)+sec("Âm đục",dak,5)+sec("Âm ghép",yo,3);
+  $("qChart").innerHTML=(anyWeak?`<p class="qnote"><span class="qdot"></span> Chấm hồng là chữ Tài hay sai</p>`:"")+[()=>sec("46 chữ cơ bản",basic,5),()=>sec("Âm đục (thêm dấu ゛ ゜)",dak,5),()=>sec("Âm ghép (ゃ ゅ ょ nhỏ)",yo,3)][chartTab]();
 }
 $("qLevels").addEventListener("click",e=>{const b=e.target.closest(".qlv");if(!b)return;qLevel=Number(b.dataset.l);
   [...$("qLevels").children].forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});
@@ -1658,14 +1793,27 @@ $("qHome").onclick=()=>{Q=null;qPane("qStart")};
 $("qQuit").onclick=()=>{Q=null;qPane("qStart")};
 $("qNext").onclick=qNextQ;
 $("qOpts").addEventListener("click",e=>{const b=e.target.closest(".qo");if(b)qAnswer(Number(b.dataset.j))});
-$("qChartBtn").onclick=()=>{const c=$("qChart"),open=c.hidden;if(open)qChart();c.hidden=!open;$("qChartBtn").setAttribute("aria-expanded",open);$("qChartBtn").textContent=open?"Ẩn bảng chữ":"Xem bảng chữ"};
-$("qJump").onclick=()=>$("quiz").scrollIntoView({behavior:RM?"auto":"smooth",block:"start"});
+let chartTab=0;
+$("qCTabs").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;chartTab=Number(b.dataset.c);
+  [...$("qCTabs").children].forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-selected",on)});qChart()});
+
+/* two pages in one file: #on-tap shows the Hiragana practice page */
+function route(){
+  const q=location.hash==="#on-tap";
+  $("viewHome").hidden=q;$("viewQuiz").hidden=!q;
+  document.querySelectorAll(".topnav .tab").forEach(t=>{const on=(t.dataset.view==="quiz")===q;t.classList.toggle("on",on);on?t.setAttribute("aria-current","page"):t.removeAttribute("aria-current")});
+  if(q){qChart();qStats();$("qHeroPet").innerHTML=`<span>${chibi(themeM??now.getMonth(),2)}</span>`}
+  const v=q?$("viewQuiz"):$("viewHome");v.classList.remove("view-in");void v.offsetWidth;v.classList.add("view-in");
+  scrollTo(0,0);
+}
+addEventListener("hashchange",route);
 document.addEventListener("keydown",e=>{
   if($("qPlay").hidden||!$("modal").hidden||/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;
   if(/^[1-4]$/.test(e.key))qAnswer(Number(e.key)-1);
   else if(e.key==="Enter"&&!$("qNext").hidden){e.preventDefault();qNextQ()}
 });
 qStats();
+route();
 
 /* ---------- month & year picker ---------- */
 let pickY=null;
