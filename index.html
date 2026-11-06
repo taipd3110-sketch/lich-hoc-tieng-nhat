@@ -653,6 +653,22 @@ body.ro #payForm,body.ro .del,body.ro #btnImport,body.ro #vEdit,body.ro .fdone-b
 body.ro .vnote{cursor:default;border-style:solid}
 body.ro .vnote.empty{display:none}
 
+/* ---------- multiple penalties ---------- */
+.fhint{font-weight:500;color:var(--muted);font-size:.72rem}
+.faltrows{display:grid;gap:8px}
+.faltrows:empty{display:none}
+.faltrow{display:grid;gap:6px;padding:10px;border-radius:12px;background:#fff;border:1.5px solid #e6dcfa}
+.faltname{font-weight:700;font-size:.88rem;color:#5a3fb0}
+.faltrow .fdone{margin-top:0}
+.finemk.second{left:22px}
+@media (max-width:480px){.finemk.second{left:19px}}
+.fr{display:grid;gap:4px}
+.fit{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px}
+.fit .fa{margin-left:auto}
+.fit .fdone-b{margin-left:auto}
+.fdt{font-size:.8rem;color:var(--muted);flex-basis:100%;order:3}
+.flist button{grid-template-columns:auto minmax(0,1fr)}
+
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
 .acct-btns{display:flex;flex-wrap:wrap;gap:6px}
@@ -870,7 +886,7 @@ body.ro .vnote.empty{display:none}
         <span class="switch"><input type="checkbox" id="dFine"><i></i></span>
       </label>
       <div class="fineopts" id="dFineOpts" hidden>
-        <div class="vlabel">Hình thức phạt</div>
+        <div class="vlabel">Hình thức phạt <span class="fhint">(chọn được nhiều)</span></div>
         <div class="ftypes" id="dFType"></div>
         <div class="faddrow" id="dFAddRow" hidden>
           <input id="dFAdd" placeholder="Tên hình thức mới, ví dụ: Đọc to 10 lần" autocomplete="off">
@@ -881,10 +897,7 @@ body.ro .vnote.empty{display:none}
           <div class="ftypes" id="dFAmts"></div>
           <input id="dFAmt" inputmode="numeric" placeholder="Hoặc nhập số tiền khác" autocomplete="off">
         </div>
-        <div id="dFDetailWrap" hidden>
-          <input id="dFDetail" placeholder="Nội dung phạt, ví dụ: chép mỗi chữ sai 10 lần" autocomplete="off">
-          <label class="fdone" for="dFDone"><input type="checkbox" id="dFDone"> Đã hoàn thành hình phạt này</label>
-        </div>
+        <div class="faltrows" id="dFAltRows"></div>
         <input id="dFineR" class="finer" placeholder="Lý do phạt (không bắt buộc)" autocomplete="off">
       </div>
     </div>
@@ -1022,15 +1035,23 @@ $("fileImport").onchange=async e=>{
 
 /* ---------- calculation ---------- */
 const FINE=50000, FINE_AMTS=[20000,50000,100000];
-/* a fine is either money ({type:"money",amount}) or another penalty ({type:"Chép phạt",detail,done}); old saves stored just the reason text */
-const normFine=v=>v==null?null:typeof v==="string"?{type:"money",amount:FINE,reason:v,detail:"",done:false}
-  :{type:v.type||"money",amount:Number(v.amount)||0,reason:v.reason||"",detail:v.detail||"",done:!!v.done};
-const fineOf=k=>state.days[k]&&state.fines[k]!==undefined?normFine(state.fines[k]):null;
+/* a session's fine is {reason, items:[...]}; each item is money ({type:"money",amount}) or another penalty ({type:"Chép phạt",detail,done}).
+   Older saves stored a single item object, or just the reason text (= 50k money fine). */
+const normItem=v=>({type:v.type||"money",amount:Number(v.amount)||0,detail:v.detail||"",done:!!v.done});
+const normFine=v=>{
+  if(v==null)return null;
+  if(typeof v==="string")return {reason:v,items:[{type:"money",amount:FINE,detail:"",done:false}]};
+  if(Array.isArray(v.items))return {reason:v.reason||"",items:v.items.map(normItem)};
+  return {reason:v.reason||"",items:[normItem(v)]};
+};
+const fineOf=k=>{if(!state.days[k]||state.fines[k]===undefined)return null;const f=normFine(state.fines[k]);return f.items.length?f:null};
 const isFined=k=>!!fineOf(k);
-const fineMoney=k=>{const f=fineOf(k);return f&&f.type==="money"?f.amount:0};
+const fineMoney=k=>{const f=fineOf(k);return f?f.items.reduce((a,i)=>a+(i.type==="money"?i.amount:0),0):0};
+const altItems=k=>{const f=fineOf(k);return f?f.items.filter(i=>i.type!=="money"):[]};
 const cost1=k=>PRICE+fineMoney(k);
 const ficon=t=>t==="money"?"💰":/chép/i.test(t)?"✍️":/thuộc|học/i.test(t)?"📖":"📝";
-const fineLabel=f=>f.type==="money"?`Phạt tiền ${fmt(f.amount)}`:f.type+(f.detail?`: ${f.detail}`:"");
+const itemLabel=i=>i.type==="money"?`phạt tiền ${fmt(i.amount)}`:i.type+(i.detail?` (${i.detail})`:"");
+const fineLabel=f=>f.items.map(itemLabel).join(" + ");
 /* payments cover the oldest sessions first; a money fine adds to that session's cost */
 function compute(){
   const studied=Object.keys(state.days).filter(k=>state.days[k]).sort();
@@ -1059,7 +1080,7 @@ function render(dir){
     const dow=(offset+d-1)%7;
     const stampNew=paid&&!firstRender&&newly.includes(k);
     const cls=["day",dow===5?"sat":"",dow===6?"sun":"",k===todayKey?"today":"",on?"studied":"",paid?"paid":"",fined?"fined":"",k===justMarked&&on?"new":""].join(" ");
-    html+=`<button class="${cls}" data-k="${k}" aria-label="Ngày ${d}${on?", đã học":""}${paid?", đã thanh toán":""}${note?", có ghi chú":""}${fined?", bị phạt bài tập về nhà":""}"><span class="n">${d}</span>${on?RING:""}${note?NOTE:""}${fined?(()=>{const f=fineOf(k);return f.type==="money"?'<span class="finemk" aria-hidden="true">罰</span>':`<span class="finemk alt${f.done?" done":""}" aria-hidden="true">${f.done?"✓":"✍"}</span>`})():""}${paid?`<span class="hanko${stampNew?" stamp":""}" style="animation-delay:${stampNew?newly.indexOf(k)*90:0}ms">済</span>`:""}${stampNew?'<span class="ripple"></span>':""}</button>`;
+    html+=`<button class="${cls}" data-k="${k}" aria-label="Ngày ${d}${on?", đã học":""}${paid?", đã thanh toán":""}${note?", có ghi chú":""}${fined?", bị phạt bài tập về nhà":""}"><span class="n">${d}</span>${on?RING:""}${note?NOTE:""}${fined?(()=>{const m=fineMoney(k)>0,al=altItems(k),dn=al.length&&al.every(i=>i.done);return (m?'<span class="finemk" aria-hidden="true">罰</span>':"")+(al.length?`<span class="finemk alt${dn?" done":""}${m?" second":""}" aria-hidden="true">${dn?"✓":"✍"}</span>`:"")})():""}${paid?`<span class="hanko${stampNew?" stamp":""}" style="animation-delay:${stampNew?newly.indexOf(k)*90:0}ms">済</span>`:""}${stampNew?'<span class="ripple"></span>':""}</button>`;
   }
   const daysEl=$("days");daysEl.innerHTML=html;
   if(dir){daysEl.classList.remove("anim-l","anim-r");void daysEl.offsetWidth;daysEl.classList.add(dir>0?"anim-l":"anim-r")}
@@ -1500,7 +1521,7 @@ function renderFines(studied,allFined,mStudied,mFined){
   const sumM=a=>a.reduce((t,k)=>t+fineMoney(k),0);
   $("fmDays").textContent=mFined.length;$("fmMoney").textContent=fmt(sumM(mFined));
   $("faDays").textContent=allFined.length;$("faMoney").textContent=fmt(sumM(allFined));
-  const alt=allFined.map(fineOf).filter(f=>f.type!=="money"), pend=alt.filter(f=>!f.done).length;
+  const alt=allFined.flatMap(altItems), pend=alt.filter(i=>!i.done).length;
   $("fAlt").innerHTML=alt.length?`<span>✍️ Hình phạt khác: <b>${pend}</b> chưa làm · <b>${alt.length-pend}</b> đã làm</span>`:"";
   $("fAlt").className="falt"+(pend?" pend":"");
   const rate=studied.length?Math.round((studied.length-allFined.length)/studied.length*100):null;
@@ -1513,15 +1534,16 @@ function renderFines(studied,allFined,mStudied,mFined){
   else if(streak===0){st.className="fstreak bad";st.textContent="Buổi gần nhất bị phạt. Buổi sau làm BTVN kỹ hơn nhé Tài, cố lên! 頑張って!"}
   else{st.className="fstreak good";st.textContent=`🌸 ${streak} buổi liên tiếp làm BTVN tốt${streak>=5?". Quá giỏi!":", giữ vững nhé!"}`}
   $("fListH").textContent=`Ngày bị phạt trong tháng ${view.m+1}`;
-  $("fList").innerHTML=mFined.length?[...mFined].reverse().map(k=>{const dt=new Date(k+"T00:00"),f=fineOf(k);
-    const side=f.type==="money"?`<span class="fa">+${fmt(f.amount)}</span>`:`<span class="fdone-b${f.done?" on":""}" role="button" tabindex="0" data-done="${k}">${f.done?"✓ Đã làm":"Chưa làm"}</span>`;
-    return `<li><button type="button" data-k="${k}"><span class="fd"><b>${dt.getDate()}/${dt.getMonth()+1}</b><span>${WD[dt.getDay()].replace("Thứ ","T.").replace("Chủ nhật","CN")}</span></span><span class="fr"><b>${ficon(f.type)} ${esc(f.type==="money"?"Phạt tiền":f.type)}</b>${f.detail?`<br>${esc(f.detail)}`:""}${f.reason?`<br><i>Lý do: ${esc(f.reason)}</i>`:""}</span>${side}</button></li>`}).join("")
+  $("fList").innerHTML=mFined.length?[...mFined].reverse().map(k=>{const dt=new Date(k+"T00:00"),f=fineOf(k),m=fineMoney(k);
+    const lines=f.items.map((i,ix)=>i.type==="money"?`<span class="fit"><b>💰 Phạt tiền</b><span class="fa">+${fmt(i.amount)}</span></span>`
+      :`<span class="fit"><b>${ficon(i.type)} ${esc(i.type)}</b>${i.detail?`<span class="fdt">${esc(i.detail)}</span>`:""}<span class="fdone-b${i.done?" on":""}" role="button" tabindex="0" data-done="${k}|${ix}">${i.done?"✓ Đã làm":"Chưa làm"}</span></span>`).join("");
+    return `<li><button type="button" data-k="${k}"><span class="fd"><b>${dt.getDate()}/${dt.getMonth()+1}</b><span>${WD[dt.getDay()].replace("Thứ ","T.").replace("Chủ nhật","CN")}</span></span><span class="fr">${lines}${f.reason?`<i>Lý do: ${esc(f.reason)}</i>`:""}</span></button></li>`}).join("")
     :`<li class="empty">${mStudied.length?"Tháng này chưa bị phạt buổi nào, tuyệt vời! 🎉":"Tháng này chưa có buổi học nào."}</li>`;
 }
 $("fList").addEventListener("click",e=>{
   const d=e.target.closest("[data-done]");
   if(d&&!canEdit){e.stopPropagation();return}
-  if(d){e.stopPropagation();const k=d.dataset.done,f=fineOf(k);f.done=!f.done;state.fines[k]=f;render();persist();toast(f.done?"Đã đánh dấu hoàn thành hình phạt 👍":"Đã đánh dấu chưa làm");return}
+  if(d){e.stopPropagation();const [k,ix]=d.dataset.done.split("|"),f=fineOf(k),it=f.items[Number(ix)];if(!it)return;it.done=!it.done;state.fines[k]=f;render();persist();toast(it.done?`Đã hoàn thành: ${it.type} 👍`:`Đánh dấu chưa làm: ${it.type}`);return}
   const b=e.target.closest("button[data-k]");if(b)openDay(b.dataset.k)});
 
 /* ---------- Hiragana quiz ---------- */
@@ -1700,7 +1722,8 @@ function cheer(k){
   $("partyPet").innerHTML=`<span>${chibi(m,2)}</span>`;
   $("pJp").textContent=jp;
   const fm=fineMoney(k), ff=fineOf(k);
-  $("pMoney").textContent=fm?`+${fmt(PRICE+fm)} vào tiền tháng (gồm ${fmt(fm)} phạt BTVN)`:`+${fmt(PRICE)} vào tiền tháng`+(ff?` · ${ff.type}`:"");
+  const alts=altItems(k).map(i=>i.type).join(", ");
+  $("pMoney").textContent=(fm?`+${fmt(PRICE+fm)} vào tiền tháng (gồm ${fmt(fm)} phạt BTVN)`:`+${fmt(PRICE)} vào tiền tháng`)+(alts?` · ${alts}`:"");
   clearInterval(ptw);clearTimeout(partyT);
   P.classList.remove("out");P.hidden=false;I.style.animation="none";void I.offsetWidth;I.style.animation="";
   const v=$("pVn");
@@ -1726,9 +1749,12 @@ function openDay(k){
   $("dNote").value=state.notes[k]||"";
   const f0=fineOf(k);
   $("dFine").checked=!!f0;
-  fDraft=f0?{...f0}:{type:"money",amount:FINE,reason:"",detail:"",done:false};
-  $("dFineR").value=fDraft.reason;$("dFDetail").value=fDraft.detail;$("dFDone").checked=fDraft.done;
-  $("dFAmt").value=fDraft.type==="money"&&!FINE_AMTS.includes(fDraft.amount)?fDraft.amount.toLocaleString("vi-VN"):"";
+  fDraft={sel:{}};
+  if(f0)f0.items.forEach(i=>{fDraft.sel[i.type]={amount:i.amount,detail:i.detail,done:i.done}});
+  else fDraft.sel.money={amount:FINE};
+  $("dFineR").value=f0?f0.reason:"";
+  const am=fDraft.sel.money&&fDraft.sel.money.amount;
+  $("dFAmt").value=am&&!FINE_AMTS.includes(am)?am.toLocaleString("vi-VN"):"";
   $("dFAddRow").hidden=true;renderFineEditor();
   updatePayBadge();
   $("dTags").innerHTML=TAGS.map(t=>`<button type="button" class="chip" data-t="${t}">${t}</button>`).join("");
@@ -1742,8 +1768,8 @@ function fillView(k){
   $("vPet").innerHTML=`<span>${chibi(m,2)}</span>`;
   const f=fineOf(k), fined=!!f, fr=fined?f.reason:"";
   $("vBadges").innerHTML=`<span class="vb ok">✓ Đã học</span>`+(paid?`<span class="vb paid">済 Đã thanh toán</span>`:`<span class="vb due">Chưa thanh toán</span>`)
-    +(!fined?`<span class="vb good">✓ BTVN tốt</span>`:f.type==="money"?`<span class="vb fine">罰 Phạt tiền +${fmt(f.amount)}</span>`
-      :`<span class="vb fine alt">${ficon(f.type)} ${esc(f.type)}</span><span class="vb ${f.done?"good":"due"}">${f.done?"✓ Đã làm":"Chưa làm"}</span>${f.detail?`<span class="vfr">Nội dung phạt: ${esc(f.detail)}</span>`:""}`)+`<span class="vb money">${fmt(cost1(k))}</span>`
+    +(!fined?`<span class="vb good">✓ BTVN tốt</span>`:f.items.map(i=>i.type==="money"?`<span class="vb fine">罰 Phạt tiền +${fmt(i.amount)}</span>`
+      :`<span class="vb fine alt">${ficon(i.type)} ${esc(i.type)}${i.detail?`: ${esc(i.detail)}`:""} · ${i.done?"✓ đã làm":"chưa làm"}</span>`).join(""))+`<span class="vb money">${fmt(cost1(k))}</span>`
     +(fr?`<span class="vfr">Lý do phạt: ${esc(fr)}</span>`:"");
   const n=$("vNote");n.textContent=note||"Chưa có ghi chú cho buổi này. Chạm để thêm.";n.classList.toggle("empty",!note);
 }
@@ -1768,44 +1794,55 @@ function saveDay(){
   if(on)state.days[k]=true;else delete state.days[k];
   if(fine){
     const typed=Number($("dFAmt").value.replace(/\D/g,""));
-    const f={type:fDraft.type,reason:$("dFineR").value.trim()};
-    if(f.type==="money"){f.amount=typed||fDraft.amount||FINE}else{f.amount=0;f.detail=$("dFDetail").value.trim();f.done=$("dFDone").checked}
-    state.fines[k]=f;
+    const items=["money",...state.fineTypes,...Object.keys(fDraft.sel)].filter((t,i,a)=>a.indexOf(t)===i&&fDraft.sel[t]).map(t=>{const d=fDraft.sel[t];
+      return t==="money"?{type:"money",amount:typed||d.amount||FINE}:{type:t,amount:0,detail:(d.detail||"").trim(),done:!!d.done}});
+    if(items.length)state.fines[k]={reason:$("dFineR").value.trim(),items};else delete state.fines[k];
   }else delete state.fines[k];
   if(note)state.notes[k]=note;else delete state.notes[k];
   if(on&&!was)justMarked=k;
   closeDay();render();persist();
   if(on&&!was)cheer(k);
-  else if(fine&&!wasFined)toast(`Đã ghi ${fineLabel(fineOf(k))}. Buổi sau làm BTVN kỹ hơn nhé Tài!`);
-  else if(!fine&&wasFined&&on)toast("Đã bỏ phạt buổi này");
+  else if(isFined(k)&&!wasFined)toast(`Đã ghi ${fineLabel(fineOf(k))}. Buổi sau làm BTVN kỹ hơn nhé Tài!`);
+  else if(!isFined(k)&&wasFined&&on)toast("Đã bỏ phạt buổi này");
   else toast(!on&&was?"Đã bỏ đánh dấu buổi học":"Đã lưu");
 }
 $("dOn").addEventListener("change",updatePayBadge);
 $("dFine").addEventListener("change",updatePayBadge);
-let fDraft={type:"money",amount:FINE,reason:"",detail:"",done:false};
+let fDraft={sel:{money:{amount:FINE}}};
 function renderFineEditor(){
   const types=["money",...state.fineTypes];
-  $("dFType").innerHTML=types.map(t=>`<button type="button" class="chip fchip${fDraft.type===t?" on":""}" data-t="${esc(t)}">${ficon(t)} ${t==="money"?"Phạt tiền":esc(t)}${t!=="money"&&!DEF_FTYPES.includes(t)?`<span class="fx" data-rm="${esc(t)}" aria-label="Xoá hình thức ${esc(t)}">×</span>`:""}</button>`).join("")
+  Object.keys(fDraft.sel).forEach(t=>{if(!types.includes(t))types.push(t)});
+  $("dFType").innerHTML=types.map(t=>`<button type="button" class="chip fchip${fDraft.sel[t]?" on":""}" data-t="${esc(t)}" aria-pressed="${!!fDraft.sel[t]}">${fDraft.sel[t]?"✓ ":""}${ficon(t)} ${t==="money"?"Phạt tiền":esc(t)}${t!=="money"&&!DEF_FTYPES.includes(t)?`<span class="fx" data-rm="${esc(t)}" aria-label="Xoá hình thức ${esc(t)}">×</span>`:""}</button>`).join("")
     +`<button type="button" class="chip fchip add" id="dFAddBtn">+ Thêm hình thức</button>`;
-  const money=fDraft.type==="money";
-  $("dFMoney").hidden=!money;$("dFDetailWrap").hidden=money;
+  const money=fDraft.sel.money;
+  $("dFMoney").hidden=!money;
   const typed=Number($("dFAmt").value.replace(/\D/g,""));
-  $("dFAmts").innerHTML=FINE_AMTS.map(a=>`<button type="button" class="chip fchip${!typed&&fDraft.amount===a?" on":""}" data-a="${a}">${fmt(a)}</button>`).join("");
+  $("dFAmts").innerHTML=FINE_AMTS.map(a=>`<button type="button" class="chip fchip${money&&!typed&&money.amount===a?" on":""}" data-a="${a}">${fmt(a)}</button>`).join("");
+  $("dFAltRows").innerHTML=types.filter(t=>t!=="money"&&fDraft.sel[t]).map(t=>{const d=fDraft.sel[t];
+    return `<div class="faltrow"><div class="faltname">${ficon(t)} ${esc(t)}</div>
+      <input data-detail="${esc(t)}" value="${esc(d.detail||"")}" placeholder="Nội dung, ví dụ: chép mỗi chữ sai 10 lần" autocomplete="off">
+      <label class="fdone"><input type="checkbox" data-donec="${esc(t)}"${d.done?" checked":""}> Đã làm xong</label></div>`}).join("");
 }
 $("dFType").addEventListener("click",e=>{
   const rm=e.target.closest("[data-rm]");
-  if(rm){e.stopPropagation();const t=rm.dataset.rm;state.fineTypes=state.fineTypes.filter(x=>x!==t);if(fDraft.type===t)fDraft.type="money";renderFineEditor();persist();return}
+  if(rm){e.stopPropagation();const t=rm.dataset.rm;state.fineTypes=state.fineTypes.filter(x=>x!==t);delete fDraft.sel[t];renderFineEditor();persist();return}
   if(e.target.closest("#dFAddBtn")){$("dFAddRow").hidden=false;$("dFAdd").focus();return}
-  const b=e.target.closest("[data-t]");if(!b)return;fDraft.type=b.dataset.t;renderFineEditor();
-  if(fDraft.type!=="money")setTimeout(()=>$("dFDetail").focus({preventScroll:true}),30);
+  const b=e.target.closest("[data-t]");if(!b)return;const t=b.dataset.t;
+  if(fDraft.sel[t])delete fDraft.sel[t];else fDraft.sel[t]=t==="money"?{amount:FINE}:{detail:"",done:false};
+  renderFineEditor();
+  if(fDraft.sel[t]&&t!=="money"){const i=$("dFAltRows").querySelector(`[data-detail="${CSS.escape(t)}"]`);i&&setTimeout(()=>i.focus({preventScroll:true}),30)}
 });
+$("dFAltRows").addEventListener("input",e=>{const i=e.target.closest("[data-detail]");if(i&&fDraft.sel[i.dataset.detail])fDraft.sel[i.dataset.detail].detail=i.value});
+$("dFAltRows").addEventListener("change",e=>{const c=e.target.closest("[data-donec]");if(c&&fDraft.sel[c.dataset.donec])fDraft.sel[c.dataset.donec].done=c.checked});
 function addFineType(){const v=$("dFAdd").value.trim().slice(0,40);if(!v)return;
-  if(v.toLowerCase()!=="phạt tiền"&&!state.fineTypes.includes(v))state.fineTypes.push(v);
-  fDraft.type=v.toLowerCase()==="phạt tiền"?"money":v;$("dFAdd").value="";$("dFAddRow").hidden=true;renderFineEditor();persist()}
+  const t=v.toLowerCase()==="phạt tiền"?"money":v;
+  if(t!=="money"&&!state.fineTypes.includes(t))state.fineTypes.push(t);
+  if(!fDraft.sel[t])fDraft.sel[t]=t==="money"?{amount:FINE}:{detail:"",done:false};
+  $("dFAdd").value="";$("dFAddRow").hidden=true;renderFineEditor();persist()}
 $("dFAddOk").onclick=addFineType;
 $("dFAdd").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addFineType()}});
-$("dFAmts").addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;fDraft.amount=Number(b.dataset.a);$("dFAmt").value="";renderFineEditor()});
-$("dFAmt").addEventListener("input",()=>{const d=$("dFAmt").value.replace(/\D/g,"");$("dFAmt").value=d?Number(d).toLocaleString("vi-VN"):"";if(d)fDraft.amount=Number(d);renderFineEditor()});
+$("dFAmts").addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b||!fDraft.sel.money)return;fDraft.sel.money.amount=Number(b.dataset.a);$("dFAmt").value="";renderFineEditor()});
+$("dFAmt").addEventListener("input",()=>{const d=$("dFAmt").value.replace(/\D/g,"");$("dFAmt").value=d?Number(d).toLocaleString("vi-VN"):"";if(d&&fDraft.sel.money)fDraft.sel.money.amount=Number(d);renderFineEditor()});
 $("dSave").onclick=saveDay;
 $("vEdit").onclick=()=>setMode(false);
 $("vNote").onclick=()=>{setMode(false);setTimeout(()=>{const t=$("dNote");t.focus({preventScroll:true});t.setSelectionRange(t.value.length,t.value.length)},60)};
