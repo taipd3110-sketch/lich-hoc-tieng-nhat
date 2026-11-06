@@ -761,6 +761,29 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .qprogbox .qwrong{margin:0}
 .qnone{font-size:.85rem;color:var(--muted)}
 
+/* ===== layout v3: natural columns, aligned hero, no re-render flashes ===== */
+.grid.home{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);align-items:start}
+.g-left,.g-right{display:flex;flex-direction:column;gap:18px;min-width:0}
+.g-left>.card,.g-right>.card{flex:none}
+@media (min-width:1001px){
+  .g-cal .day{aspect-ratio:1}
+  #hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center}
+  #hero .stats{margin-top:14px}
+  #hero .stat{padding:12px 12px}
+  #hero .stat .v{font-size:clamp(1.05rem,1.55vw,1.3rem)}
+}
+.stat .v{overflow:visible;text-overflow:clip}
+@media (max-width:1000px){
+  .grid.home{grid-template-columns:minmax(0,1fr)}
+  .g-right{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+  .g-right>.finecard{grid-column:1/-1}
+}
+@media (max-width:680px){.g-right{grid-template-columns:minmax(0,1fr)}.g-left,.g-right{gap:14px}}
+/* elements rebuilt on each render must not replay entrance effects */
+.plist li,.finemk{animation:none}
+.bubble.soft{animation:bsoft .6s ease}
+@keyframes bsoft{from{opacity:.35}}
+
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
 .acct-btns{display:flex;flex-wrap:wrap;gap:6px}
@@ -804,6 +827,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   </section>
 
   <div class="grid home">
+    <div class="col g-left">
       <section class="card cal g-cal" aria-label="Lịch tháng">
         <span class="peek" id="peek" aria-hidden="true"></span>
         <div class="monthbar">
@@ -837,7 +861,13 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
         <p class="hint" id="calHint">Chạm vào một ngày để đánh dấu đã học, viết ghi chú và ghi phạt nếu làm bài tập về nhà chưa tốt.</p>
       </section>
 
-    <div class="col g-side">
+      <section class="card g-notes" aria-label="Nhật ký buổi học">
+        <h2>Nhật ký buổi học <small>学習ノート</small></h2>
+        <ul class="notes" id="notes"></ul>
+      </section>
+    </div>
+
+    <div class="col g-right">
       <section class="card" aria-label="Thanh toán">
         <h2>Thanh toán <small>支払い</small></h2>
         <form class="pay" id="payForm">
@@ -870,12 +900,6 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
           </div>
         </div>
       </section>
-    </div>
-
-      <section class="card g-notes" aria-label="Nhật ký buổi học">
-        <h2>Nhật ký buổi học <small>学習ノート</small></h2>
-        <ul class="notes" id="notes"></ul>
-      </section>
 
       <section class="card finecard g-fines" aria-label="Theo dõi phạt bài tập về nhà">
         <h2>Theo dõi phạt BTVN <small>宿題チェック</small></h2>
@@ -892,6 +916,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
         <div class="vlabel" id="fListH">Ngày bị phạt trong tháng</div>
         <ul class="flist" id="fList"></ul>
       </section>
+    </div>
   </div>
 </div>
 
@@ -1124,18 +1149,18 @@ if(!FIREBASE_CONFIG||!window.firebase){
   $("sync").textContent="Đang tải lịch…";
   pub.onSnapshot(snap=>{
     cloudExists=snap.exists;
-    if(snap.exists){state=norm(snap.data());saveLocal();render();qStats();$("sync").textContent=canEdit?"Đã đồng bộ với đám mây ✓":"Đang xem bản mới nhất ✓"}
-    else{if(!canEdit){state=norm({});render();qStats()}$("sync").textContent="Lịch chưa có dữ liệu trên đám mây."}
+    if(snap.exists){state=norm(snap.data());saveLocal();renderQuiet();qStats();$("sync").textContent=canEdit?"Đã đồng bộ với đám mây ✓":"Đang xem bản mới nhất ✓"}
+    else{if(!canEdit){state=norm({});renderQuiet();qStats()}$("sync").textContent="Lịch chưa có dữ liệu trên đám mây."}
     maybeSeed();
   },()=>{$("sync").textContent="Không tải được lịch. Thử tải lại trang."});
   function maybeSeed(){ /* first owner sign-in: upload what this browser already has */
-    if(canEdit&&ref&&cloudExists===false&&localSnapshot){state=norm(localSnapshot);localSnapshot=null;render();qStats();persist()}
+    if(canEdit&&ref&&cloudExists===false&&localSnapshot){state=norm(localSnapshot);localSnapshot=null;renderQuiet();qStats();persist()}
   }
   auth.onAuthStateChanged(u=>{
     fbUser=u;showAcct();
     ref=canEdit&&u?pub:null;
     if(canEdit)$("sync").textContent="Đã đăng nhập, bạn có thể chỉnh sửa ✓";
-    render();maybeSeed();
+    renderQuiet();maybeSeed();
   });
   const login=()=>{const pv=new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(pv).catch(e=>{
@@ -1195,7 +1220,12 @@ function compute(){
 /* ---------- render ---------- */
 const RING=`<svg class="ring" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 8 C76 8 93 26 92 50 C91 76 72 93 48 92 C24 91 8 73 9 49 C10 27 28 10 54 11"/></svg>`;
 const NOTE=`<svg class="notedot" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="currentColor"/><path d="M5 9.8 9.6 5.2l1.2 1.2L6.2 11H5z" fill="#fff"/></svg>`;
+let lastSig="", quietRender=false;
+function renderQuiet(){quietRender=true;try{render()}finally{quietRender=false}}
 function render(dir){
+  const sig=JSON.stringify([state.days,state.notes,state.payments,state.fines,view.y,view.m,canEdit]);
+  if(!dir&&sig===lastSig)return;
+  lastSig=sig;
   const {y,m}=view;
   $("mName").textContent=`Tháng ${m+1}, ${y}`;
   $("mKan").textContent=`${y}年 ${KAN[m]}`;
@@ -1209,7 +1239,7 @@ function render(dir){
   for(let d=1;d<=dim;d++){
     const k=key(y,m,d), on=!!state.days[k], paid=paidSet.has(k), note=!!(state.notes[k]||"").trim(), fined=isFined(k);
     const dow=(offset+d-1)%7;
-    const stampNew=paid&&!firstRender&&newly.includes(k);
+    const stampNew=paid&&!firstRender&&!quietRender&&newly.includes(k);
     const cls=["day",dow===5?"sat":"",dow===6?"sun":"",k===todayKey?"today":"",on?"studied":"",paid?"paid":"",fined?"fined":"",k===justMarked&&on?"new":""].join(" ");
     html+=`<button class="${cls}" data-k="${k}" aria-label="Ngày ${d}${on?", đã học":""}${paid?", đã thanh toán":""}${note?", có ghi chú":""}${fined?", bị phạt bài tập về nhà":""}"><span class="n">${d}</span>${on?RING:""}${note?NOTE:""}${fined?(()=>{const m=fineMoney(k)>0,al=altItems(k),dn=al.length&&al.every(i=>i.done);return (m?'<span class="finemk" aria-hidden="true">罰</span>':"")+(al.length?`<span class="finemk alt${dn?" done":""}${m?" second":""}" aria-hidden="true">${dn?"✓":"✍"}</span>`:"")})():""}${paid?`<span class="hanko${stampNew?" stamp":""}" style="animation-delay:${stampNew?newly.indexOf(k)*90:0}ms">済</span>`:""}${stampNew?'<span class="ripple"></span>':""}</button>`;
   }
@@ -1267,7 +1297,7 @@ function render(dir){
 const counters=new WeakMap();
 function countTo(el,target,f){
   const from=counters.get(el)??0; counters.set(el,target);
-  if(from===target||matchMedia("(prefers-reduced-motion: reduce)").matches){el.textContent=f(target);return}
+  if(from===target||quietRender||matchMedia("(prefers-reduced-motion: reduce)").matches){el.textContent=f(target);return}
   const t0=performance.now();
   (function step(t){const p=Math.min(1,(t-t0)/550),e=1-Math.pow(1-p,3),v=from+(target-from)*e;
     el.textContent=f(f===fmt?Math.round(v/1000)*1000:Math.round(v));if(p<1)requestAnimationFrame(step);else el.textContent=f(target)})(t0);
@@ -1450,19 +1480,19 @@ const WISH=[
 ];
 let wishI=0, tw=null;
 const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
-function showWish(){
+function showWish(soft){
   const [jp,vn]=WISH[themeM][wishI], b=$("bubble"), v=$("bVn");
-  b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");
+  const cls=soft?"soft":"pop";b.classList.remove("pop","soft");void b.offsetWidth;b.classList.add(cls);
   $("bJp").textContent=jp;
   clearInterval(tw);
   if(RM){v.textContent=vn;return}
   let i=0;v.textContent="";b.classList.add("typing");
   tw=setInterval(()=>{i++;v.textContent=vn.slice(0,i);if(i>=vn.length){clearInterval(tw);b.classList.remove("typing")}},26);
 }
-function nextWish(){
+function nextWish(auto){
   wishI=(wishI+1)%WISH[themeM].length;
-  const M=$("mascot");M.classList.remove("jump");void M.offsetWidth;M.classList.add("jump");
-  showWish();
+  if(!auto){const M=$("mascot");M.classList.remove("jump");void M.offsetWidth;M.classList.add("jump")}
+  showWish(auto===true);
 }
 $("bubble").addEventListener("click",nextWish);
 
@@ -1883,7 +1913,7 @@ function cheer(k){
 }
 function hideParty(){const P=$("party");if(P.hidden)return;P.classList.add("out");setTimeout(()=>{P.hidden=true;P.classList.remove("out")},350)}
 $("party").addEventListener("click",hideParty);
-setInterval(()=>{if(!document.hidden&&$("modal").hidden&&themeM!==null)nextWish()},14000);
+setInterval(()=>{if(!document.hidden&&$("modal").hidden&&themeM!==null&&location.hash!=="#on-tap")nextWish(true)},30000);
 
 /* ---------- day sheet ---------- */
 let openKey=null, lastFocus=null;
