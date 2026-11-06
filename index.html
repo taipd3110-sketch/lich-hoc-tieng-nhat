@@ -848,6 +848,9 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
   .sb-place{flex:1 1 0}
   .sb-back{flex-basis:100%}
 }
+#viewQuiz.testing .qchartcard{display:none}
+#viewQuiz.testing .qlayout{grid-template-columns:minmax(0,720px);justify-content:center}
+#viewQuiz.testing .qlayout .quiz{position:relative;top:auto}
 
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
@@ -1003,7 +1006,7 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
       <div class="qhero-text">
         <div class="jp">日本語の練習</div>
         <h1>Ôn tập</h1>
-        <p class="qhero-sub">Các bài luyện tập tiếng Nhật của Tài. Bài đầu tiên là trắc nghiệm bảng chữ Hiragana: mỗi bài 20 câu, chữ nào hay sai sẽ được hỏi lại nhiều hơn.</p>
+        <p class="qhero-sub">Các bài luyện tập tiếng Nhật của Tài. Bài đầu tiên là trắc nghiệm bảng chữ Hiragana: mỗi bài 30 câu, chữ nào hay sai sẽ được hỏi lại nhiều hơn.</p>
         <div class="qstats" id="qStats"></div>
       </div>
     </div>
@@ -1022,7 +1025,7 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
         <button class="qlv" type="button" data-l="2" aria-pressed="false"><b>きゃ</b><span>Thêm âm ghép</span></button>
       </div>
       <div class="qbtns">
-        <button class="btn pink" id="qGo" type="button">Bắt đầu 20 câu</button>
+        <button class="btn pink" id="qGo" type="button">Bắt đầu 30 câu</button>
       </div>
       <div class="qprogbox">
         <div class="qmini">
@@ -1068,7 +1071,7 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
       </div>
       <div class="qbtns">
         <button class="btn blue" id="qRetry" type="button">Làm lại câu sai</button>
-        <button class="btn pink" id="qNew" type="button">Bài mới 20 câu</button>
+        <button class="btn pink" id="qNew" type="button">Bài mới 30 câu</button>
         <button class="btn ghost" id="qHome" type="button">Về đầu</button>
       </div>
     </div>
@@ -1800,8 +1803,8 @@ try{const v=Number(localStorage.getItem("jp-qlevel"));if(v>=0&&v<=2)qLevel=v}cat
 
 function qStats(){
   const q=state.quiz||{};
-  $("qStats").innerHTML=q.played?`Đã làm <b>${q.played}</b> bài · Cao nhất <b>${q.best||0}/20</b>`:"Chưa làm bài nào";
-  $("qmPlayed").textContent=q.played||0;$("qmBest").textContent=q.played?`${q.best||0}/20`:"–";$("qmLast").textContent=q.last||"–";
+  $("qStats").innerHTML=q.played?`Đã làm <b>${q.played}</b> bài · Cao nhất <b>${q.best||0}/${q.bestN||20}</b>`:"Chưa làm bài nào";
+  $("qmPlayed").textContent=q.played||0;$("qmBest").textContent=q.played?`${q.best||0}/${q.bestN||20}`:"–";$("qmLast").textContent=q.last||"–";
   const weak=Object.entries(q.miss||{}).sort((a,b)=>b[1]-a[1]).slice(0,12);
   $("qWeak").innerHTML=weak.length?weak.map(([k])=>`<span class="qw"><b>${k}</b>${(KMAP[k]||{}).r||""}</span>`).join("")
     :`<span class="qnone">Chưa có chữ nào sai. Làm một bài để biết mình còn yếu chữ nào nhé!</span>`;
@@ -1820,6 +1823,7 @@ function qBuild(items,pool){
 }
 function qPane(id){
   ["qStart","qPlay","qEnd"].forEach(x=>{const el=$(x);el.hidden=x!==id;if(x===id){el.classList.remove("mode-in");void el.offsetWidth;el.classList.add("mode-in")}});
+  $("viewQuiz").classList.toggle("testing",id==="qPlay");
 }
 function qBegin(items,pool,full){
   Q={list:qBuild(items,pool),pool,full,i:0,score:0,combo:0,wrong:[],hits:{}};
@@ -1863,7 +1867,7 @@ function qFinish(){
   $("qProg").style.width="100%";
   const qz=state.quiz=state.quiz||{};qz.miss={...(qz.miss||{})};
   for(const [k,d] of Object.entries(Q.hits)){const v=Math.max(0,(qz.miss[k]||0)+d);if(v)qz.miss[k]=v;else delete qz.miss[k]}
-  qz.played=(qz.played||0)+1;if(Q.full)qz.best=Math.max(qz.best||0,sc);qz.last=`${sc}/${n}`;
+  qz.played=(qz.played||0)+1;if(Q.full&&sc/n>=(qz.best||0)/(qz.bestN||20)){qz.best=sc;qz.bestN=n}qz.last=`${sc}/${n}`;
   persist();qStats();qChart();
   qPane("qEnd");
   $("qScore").innerHTML=`<b>${sc}</b>/${n} câu đúng`;
@@ -1892,8 +1896,8 @@ $("qLevels").addEventListener("click",e=>{const b=e.target.closest(".qlv");if(!b
   [...$("qLevels").children].forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});
   try{localStorage.setItem("jp-qlevel",qLevel)}catch(e){}});
 [...$("qLevels").children].forEach(x=>{const on=Number(x.dataset.l)===qLevel;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});
-$("qGo").onclick=()=>qBegin(weighted(QLV[qLevel],20),QLV[qLevel],true);
-$("qNew").onclick=()=>qBegin(weighted(QLV[qLevel],20),QLV[qLevel],true);
+$("qGo").onclick=()=>qBegin(weighted(QLV[qLevel],30),QLV[qLevel],true);
+$("qNew").onclick=()=>qBegin(weighted(QLV[qLevel],30),QLV[qLevel],true);
 $("qRetry").onclick=()=>qBegin(shuffle([...Q.retry]),Q.pool,false);
 $("qHome").onclick=()=>{Q=null;qPane("qStart")};
 $("qQuit").onclick=()=>{Q=null;qPane("qStart")};
