@@ -648,18 +648,23 @@ body{background:linear-gradient(180deg,var(--bg) 0%,color-mix(in srgb,var(--sky)
 .fdone-b.on{background:#e9f7ee;color:#2d7a45}
 .fr i{color:var(--muted);font-size:.78rem}
 
+/* ---------- read-only (visitors) ---------- */
+body.ro #payForm,body.ro .del,body.ro #btnImport,body.ro #vEdit,body.ro .fdone-b{display:none!important}
+body.ro .vnote{cursor:default;border-style:solid}
+body.ro .vnote.empty{display:none}
+
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
 .acct-btns{display:flex;flex-wrap:wrap;gap:6px}
 .loginbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:16px;background:#fff;border:2px solid #f6c1d4;box-shadow:0 10px 26px -18px rgba(200,80,120,.6);font-weight:600;font-size:.9rem}
-.loginbar .btn{padding:9px 14px}
+.loginbar .chip{font-weight:700}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}#petals{display:none}}
 </style>
 
 <div class="scenery" id="scenery" aria-hidden="true"></div>
 <canvas id="petals" aria-hidden="true"></canvas>
 <main class="wrap">
-  <div class="loginbar" id="loginBar" hidden><span>Đăng nhập Google để lưu dữ liệu lên đám mây và dùng trên mọi máy.</span><button class="btn pink" id="loginBtn2" type="button">Đăng nhập Google</button></div>
+  <div class="loginbar" id="loginBar" hidden><span id="loginMsg"></span><button class="chip" id="loginBtn2" type="button">Tài đăng nhập để sửa</button></div>
   <section class="hero" id="hero" aria-label="Tổng quan tháng">
     <div class="branch" id="branch" aria-hidden="true"></div>
     <div class="hero-text">
@@ -714,7 +719,7 @@ body{background:linear-gradient(180deg,var(--bg) 0%,color-mix(in srgb,var(--sky)
           <span><i class="sw n"></i>Có ghi chú</span>
           <span><i class="sw f">罰</i>Bị phạt BTVN</span>
         </div>
-        <p class="hint">Chạm vào một ngày để đánh dấu đã học, viết ghi chú và ghi phạt nếu làm bài tập về nhà chưa tốt.</p>
+        <p class="hint" id="calHint">Chạm vào một ngày để đánh dấu đã học, viết ghi chú và ghi phạt nếu làm bài tập về nhà chưa tốt.</p>
       </section>
 
       <section class="card" aria-label="Nhật ký buổi học">
@@ -919,6 +924,10 @@ const esc=s=>s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&q
 const now=new Date();
 const todayKey=key(now.getFullYear(),now.getMonth(),now.getDate());
 let view={y:now.getFullYear(),m:now.getMonth()};
+let canEdit=true;
+const HINT_EDIT="Chạm vào một ngày để đánh dấu đã học, viết ghi chú và ghi phạt nếu làm bài tập về nhà chưa tốt.";
+const HINT_RO="Chạm vào ngày có vòng tròn để xem ghi chú và tình hình buổi học.";
+function applyRO(){document.body.classList.toggle("ro",!canEdit);$("calHint").textContent=canEdit?HINT_EDIT:HINT_RO}
 const DEF_FTYPES=["Chép phạt","Học thuộc thêm","Làm thêm bài tập"];
 let state={days:{},payments:[],notes:{},quiz:{},fines:{},fineTypes:[...DEF_FTYPES]};
 let prevPaid=new Set(), justMarked=null, firstRender=true;
@@ -932,9 +941,11 @@ let FIREBASE_CONFIG=null;
 let ref=null, saving=Promise.resolve(), fbUser=null;
 const norm=d=>({days:{...(d.days||{})},payments:[...(d.payments||[])],notes:{...(d.notes||{})},quiz:{...(d.quiz||{})},fines:{...(d.fines||{})},fineTypes:Array.isArray(d.fineTypes)&&d.fineTypes.length?[...d.fineTypes]:[...DEF_FTYPES]});
 function loadLocal(){try{const s=JSON.parse(localStorage.getItem("jp-lich")||"null");if(s&&s.days)state=norm(s)}catch(e){}}
-function saveLocal(){try{localStorage.setItem("jp-lich",JSON.stringify(state))}catch(e){}}
+function saveLocal(){if(!canEdit)return;try{localStorage.setItem("jp-lich",JSON.stringify(state))}catch(e){}}
+const OWNER_EMAIL="taipd3110@gmail.com", PUBLIC_DOC="lich/tai";
 const hasData=d=>Object.keys(d.days||{}).length||(d.payments||[]).length||Object.keys(d.notes||{}).length;
 function persist(){
+  if(!canEdit)return;
   saveLocal();
   if(!ref)return;
   const snap=JSON.parse(JSON.stringify(state));
@@ -944,10 +955,13 @@ function persist(){
 loadLocal();
 let unsub=null;
 function showAcct(){
-  const on=!!fbUser;
+  const on=!!fbUser, owner=on&&fbUser.email===OWNER_EMAIL;
+  canEdit=owner||!FIREBASE_CONFIG;applyRO();
   $("btnLogin").hidden=on||!FIREBASE_CONFIG;$("btnLogout").hidden=!on;
-  $("loginBar").hidden=on||!FIREBASE_CONFIG;
-  $("acctWho").textContent=on?`Đang đăng nhập: ${fbUser.email||fbUser.displayName||"tài khoản Google"}`:"";
+  $("loginBar").hidden=owner||!FIREBASE_CONFIG;
+  $("loginMsg").textContent=on?"Tài khoản này chỉ được xem lịch. Chỉ Tài mới chỉnh sửa được.":"👀 Bạn đang xem lịch học tiếng Nhật của Tài. Chỉ Tài mới chỉnh sửa được.";
+  $("loginBtn2").hidden=on;
+  $("acctWho").textContent=on?`Đang đăng nhập: ${fbUser.email||fbUser.displayName||"tài khoản Google"}${owner?" (chủ lịch, được chỉnh sửa)":" (chỉ xem)"}`:"";
 }
 /* the Firebase web config lives in firebase-config.txt next to this page (pasted from the Firebase console) */
 async function loadCfg(){try{const t=await (await fetch("firebase-config.txt",{cache:"no-store"})).text();const o={};t.replace(/(\w+)\s*:\s*["']([^"']+)["']/g,(_,k,v)=>{o[k]=v});return o.apiKey&&o.projectId?o:null}catch(e){return null}}
@@ -959,18 +973,25 @@ if(!FIREBASE_CONFIG||!window.firebase){
 }else{
   firebase.initializeApp(FIREBASE_CONFIG);
   const auth=firebase.auth(), fs=firebase.firestore();
+  /* everyone reads the public calendar; only the owner gets a write reference */
+  const pub=fs.doc(PUBLIC_DOC);
+  let cloudExists=null, localSnapshot=hasData(state)?JSON.parse(JSON.stringify(state)):null;
+  canEdit=false;applyRO();showAcct();
+  $("sync").textContent="Đang tải lịch…";
+  pub.onSnapshot(snap=>{
+    cloudExists=snap.exists;
+    if(snap.exists){state=norm(snap.data());saveLocal();render();qStats();$("sync").textContent=canEdit?"Đã đồng bộ với đám mây ✓":"Đang xem bản mới nhất ✓"}
+    else{if(!canEdit){state=norm({});render();qStats()}$("sync").textContent="Lịch chưa có dữ liệu trên đám mây."}
+    maybeSeed();
+  },()=>{$("sync").textContent="Không tải được lịch. Thử tải lại trang."});
+  function maybeSeed(){ /* first owner sign-in: upload what this browser already has */
+    if(canEdit&&ref&&cloudExists===false&&localSnapshot){state=norm(localSnapshot);localSnapshot=null;render();qStats();persist()}
+  }
   auth.onAuthStateChanged(u=>{
     fbUser=u;showAcct();
-    if(unsub){unsub();unsub=null}
-    if(!u){ref=null;$("sync").textContent="Chưa đăng nhập, dữ liệu chỉ lưu trên trình duyệt này.";return}
-    $("sync").textContent="Đang tải dữ liệu…";
-    ref=fs.doc(`users/${u.uid}/lich/hoc`);
-    let first=true;
-    unsub=ref.onSnapshot(snap=>{
-      if(snap.exists){state=norm(snap.data());saveLocal();render();qStats()}
-      else if(first&&hasData(state))persist();
-      first=false;$("sync").textContent="Đã đồng bộ với đám mây ✓";
-    },()=>{$("sync").textContent="Không đọc được dữ liệu trên đám mây. Kiểm tra lại quy tắc Firestore."});
+    ref=canEdit&&u?pub:null;
+    if(canEdit)$("sync").textContent="Đã đăng nhập, bạn có thể chỉnh sửa ✓";
+    render();maybeSeed();
   });
   const login=()=>{const pv=new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(pv).catch(e=>{
@@ -1499,6 +1520,7 @@ function renderFines(studied,allFined,mStudied,mFined){
 }
 $("fList").addEventListener("click",e=>{
   const d=e.target.closest("[data-done]");
+  if(d&&!canEdit){e.stopPropagation();return}
   if(d){e.stopPropagation();const k=d.dataset.done,f=fineOf(k);f.done=!f.done;state.fines[k]=f;render();persist();toast(f.done?"Đã đánh dấu hoàn thành hình phạt 👍":"Đã đánh dấu chưa làm");return}
   const b=e.target.closest("button[data-k]");if(b)openDay(b.dataset.k)});
 
@@ -1695,6 +1717,7 @@ setInterval(()=>{if(!document.hidden&&$("modal").hidden&&themeM!==null)nextWish(
 /* ---------- day sheet ---------- */
 let openKey=null, lastFocus=null;
 function openDay(k){
+  if(!canEdit&&!state.days[k]){toast("Ngày này chưa có buổi học");return}
   openKey=k; lastFocus=document.activeElement;
   const dt=new Date(k+"T00:00");
   $("dTitle").textContent=`${WD[dt.getDay()]}, ${dt.getDate()}/${dt.getMonth()+1}/${dt.getFullYear()}`;
@@ -1726,7 +1749,8 @@ function fillView(k){
 }
 function setMode(view){
   const v=$("dView"),e=$("dEdit"),show=view?v:e;
-  v.hidden=!view;e.hidden=view;
+  if(!canEdit)view=true;
+  v.hidden=!view;e.hidden=view;$("vEdit").hidden=!canEdit;$("vNote").disabled=!canEdit;
   show.classList.remove("mode-in");void show.offsetWidth;show.classList.add("mode-in");
   setTimeout(()=>(view?$("vEdit"):$("dOn")).focus({preventScroll:true}),50);
 }
