@@ -848,7 +848,13 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
   .sb-place{flex:1 1 0}
   .sb-back{flex-basis:100%}
 }
-#viewQuiz.testing .qchartcard{display:none}
+#viewQuiz.testing .qchartcard,#viewQuiz.testing .kswitch{display:none}
+.kswitch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-width:520px;margin:0 auto 16px;padding:5px;background:#fff;border:2px solid #f2cddb;border-radius:22px;box-shadow:0 6px 18px rgba(214,90,140,.12)}
+.ks{border:0;background:transparent;border-radius:17px;padding:9px 10px;cursor:pointer;display:grid;justify-items:center;gap:1px;color:var(--muted);transition:background .2s,color .2s,transform .15s}
+.ks b{font-family:var(--f-kana);font-size:1.25rem;line-height:1.25;color:var(--md)}
+.ks span{font-size:.74rem;font-weight:600}
+.ks:hover{transform:translateY(-1px)}
+.ks.on{background:var(--sakura-soft);color:var(--ink);box-shadow:inset 0 0 0 2px var(--md)}
 #viewQuiz.testing .qlayout{grid-template-columns:minmax(0,720px);justify-content:center}
 #viewQuiz.testing .qlayout .quiz{position:relative;top:auto}
 
@@ -1006,23 +1012,27 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
       <div class="qhero-text">
         <div class="jp">日本語の練習</div>
         <h1>Ôn tập</h1>
-        <p class="qhero-sub">Các bài luyện tập tiếng Nhật của Tài. Bài đầu tiên là trắc nghiệm bảng chữ Hiragana: mỗi bài 30 câu, chữ nào hay sai sẽ được hỏi lại nhiều hơn.</p>
+        <p class="qhero-sub">Các bài luyện tập tiếng Nhật của Tài. Trắc nghiệm bảng chữ Hiragana và Katakana: mỗi bài 30 câu, chữ nào hay sai sẽ được hỏi lại nhiều hơn.</p>
         <div class="qstats" id="qStats"></div>
       </div>
     </div>
   </section>
+  <div class="kswitch" id="qScript" role="tablist" aria-label="Chọn bảng chữ">
+    <button class="ks on" type="button" role="tab" data-s="h" aria-selected="true"><b>ひらがな</b><span>Hiragana · chữ mềm</span></button>
+    <button class="ks" type="button" role="tab" data-s="k" aria-selected="false"><b>カタカナ</b><span>Katakana · chữ cứng</span></button>
+  </div>
   <div class="qlayout">
-  <section class="card quiz" id="quiz" aria-label="Trắc nghiệm Hiragana">
+  <section class="card quiz" id="quiz" aria-label="Trắc nghiệm bảng chữ">
     <div class="qhead">
-      <h2>Trắc nghiệm Hiragana <small>ひらがな</small></h2>
+      <h2 id="qTitle">Trắc nghiệm Hiragana <small>ひらがな</small></h2>
     </div>
 
     <div id="qStart" class="qpane">
       <p class="qintro">Chọn mức độ rồi bấm bắt đầu. Trả lời bằng cách chạm vào đáp án, hoặc bấm phím 1–4.</p>
       <div class="qlevels" id="qLevels">
-        <button class="qlv on" type="button" data-l="0" aria-pressed="true"><b>あ</b><span>46 chữ cơ bản</span></button>
-        <button class="qlv" type="button" data-l="1" aria-pressed="false"><b>が</b><span>Thêm âm đục</span></button>
-        <button class="qlv" type="button" data-l="2" aria-pressed="false"><b>きゃ</b><span>Thêm âm ghép</span></button>
+        <button class="qlv on" type="button" data-l="0" aria-pressed="true"><b data-g="あ">あ</b><span>46 chữ cơ bản</span></button>
+        <button class="qlv" type="button" data-l="1" aria-pressed="false"><b data-g="が">が</b><span>Thêm âm đục</span></button>
+        <button class="qlv" type="button" data-l="2" aria-pressed="false"><b data-g="きゃ">きゃ</b><span>Thêm âm ghép</span></button>
       </div>
       <div class="qbtns">
         <button class="btn pink" id="qGo" type="button">Bắt đầu 30 câu</button>
@@ -1076,9 +1086,9 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
       </div>
     </div>
   </section>
-    <section class="card qchartcard" aria-label="Bảng chữ Hiragana">
+    <section class="card qchartcard" aria-label="Bảng chữ">
       <div class="qchead">
-        <h2>Bảng chữ <small>五十音</small></h2>
+        <h2 id="qCTitle">Bảng chữ <small>ひらがな</small></h2>
         <div class="ctabs" id="qCTabs" role="tablist">
           <button class="ctab on" type="button" role="tab" data-c="0" aria-selected="true">Cơ bản</button>
           <button class="ctab" type="button" role="tab" data-c="1" aria-selected="false">Âm đục</button>
@@ -1793,19 +1803,28 @@ const KD=parseK("がga ぎgi ぐgu げge ごgo ざza じji ずzu ぜze ぞzo だ
 const KY=parseK("きゃkya きゅkyu きょkyo しゃsha しゅshu しょsho ちゃcha ちゅchu ちょcho にゃnya にゅnyu にょnyo ひゃhya ひゅhyu ひょhyo みゃmya みゅmyu みょmyo りゃrya りゅryu りょryo ぎゃgya ぎゅgyu ぎょgyo じゃja じゅju じょjo びゃbya びゅbyu びょbyo ぴゃpya ぴゅpyu ぴょpyo");
 const CONS={shi:"s",chi:"t",tsu:"t",fu:"h",ji:"z",n:"n_"};
 [...KB,...KD,...KY].forEach(it=>{it.c=CONS[it.r]??it.r.replace(/[aiueo]$/,"");it.v=it.r.slice(-1)});
-const KMAP=Object.fromEntries([...KB,...KD,...KY].map(it=>[it.k,it]));
-const CONF=[["さ","ち","き"],["ぬ","め","の"],["ね","れ","わ"],["る","ろ"],["は","ほ","け"],["い","り"],["あ","お","め"],["こ","に","た"],["し","つ","ん","そ"],["う","ら","ち"],["く","へ"],["ま","も","よ"],["ゆ","ふ"],["す","む"],["ば","ぱ"],["び","ぴ"],["ぶ","ぷ"],["べ","ぺ"],["ぼ","ぽ"]];
+const toK=t=>t.replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+0x60));
+const kk=a=>a.map(it=>({...it,k:toK(it.k)}));
+const KB2=kk(KB),KD2=kk(KD),KY2=kk(KY);
+const isKata=k=>/[ァ-ヶ]/.test(k);
+const KMAP=Object.fromEntries([...KB,...KD,...KY,...KB2,...KD2,...KY2].map(it=>[it.k,it]));
+const CONF=[["さ","ち","き"],["ぬ","め","の"],["ね","れ","わ"],["る","ろ"],["は","ほ","け"],["い","り"],["あ","お","め"],["こ","に","た"],["し","つ","ん","そ"],["う","ら","ち"],["く","へ"],["ま","も","よ"],["ゆ","ふ"],["す","む"],["ば","ぱ"],["び","ぴ"],["ぶ","ぷ"],["べ","ぺ"],["ぼ","ぽ"],
+  ["シ","ツ","ン","ソ"],["ウ","ワ","フ","ク"],["ク","ケ","タ"],["ヌ","ス","フ"],["コ","ユ","ロ","ヨ"],["チ","テ","ラ"],["ナ","メ","ノ"],["ル","レ"],["マ","ム","ア"],["セ","ヤ","サ"],["ヒ","ヘ"],["ネ","ホ","オ"],["ワ","ヲ"],["エ","コ","ユ"],["キ","モ","チ"],["バ","パ"],["ビ","ピ"],["ブ","プ"],["ベ","ペ"],["ボ","ポ"]];
 const confOf=k=>{const base=k[0];return CONF.filter(g=>g.includes(base)).flat()};
-const QLV=[KB,KB.concat(KD),KB.concat(KD,KY)];
+const QLVS={h:[KB,KB.concat(KD),KB.concat(KD,KY)],k:[KB2,KB2.concat(KD2),KB2.concat(KD2,KY2)]};
+const curLv=()=>QLVS[qScript][qLevel];
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-let qLevel=0, Q=null;
+let qLevel=0, Q=null, qScript="h";
+try{if(localStorage.getItem("jp-qscript")==="k")qScript="k"}catch(e){}
+const SN={h:{n:"Hiragana",j:"ひらがな"},k:{n:"Katakana",j:"カタカナ"}};
+const qSt=q=>qScript==="k"?(q.kata||{}):q;
 try{const v=Number(localStorage.getItem("jp-qlevel"));if(v>=0&&v<=2)qLevel=v}catch(e){}
 
 function qStats(){
-  const q=state.quiz||{};
+  const q0=state.quiz||{}, q=qSt(q0);
   $("qStats").innerHTML=q.played?`Đã làm <b>${q.played}</b> bài · Cao nhất <b>${q.best||0}/${q.bestN||20}</b>`:"Chưa làm bài nào";
   $("qmPlayed").textContent=q.played||0;$("qmBest").textContent=q.played?`${q.best||0}/${q.bestN||20}`:"–";$("qmLast").textContent=q.last||"–";
-  const weak=Object.entries(q.miss||{}).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const weak=Object.entries(q0.miss||{}).filter(([k])=>isKata(k)===(qScript==="k")).sort((a,b)=>b[1]-a[1]).slice(0,12);
   $("qWeak").innerHTML=weak.length?weak.map(([k])=>`<span class="qw"><b>${k}</b>${(KMAP[k]||{}).r||""}</span>`).join("")
     :`<span class="qnone">Chưa có chữ nào sai. Làm một bài để biết mình còn yếu chữ nào nhé!</span>`;
 }
@@ -1826,7 +1845,7 @@ function qPane(id){
   $("viewQuiz").classList.toggle("testing",id==="qPlay");
 }
 function qBegin(items,pool,full){
-  Q={list:qBuild(items,pool),pool,full,i:0,score:0,combo:0,wrong:[],hits:{}};
+  Q={list:qBuild(items,pool),pool,full,script:qScript,i:0,score:0,combo:0,wrong:[],hits:{}};
   qPane("qPlay");qShow();
   $("quiz").scrollIntoView({behavior:RM?"auto":"smooth",block:"start"});
 }
@@ -1834,7 +1853,7 @@ function qShow(){
   const q=Q.list[Q.i], k2r=q.dir==="k2r";
   $("qNum").textContent=`Câu ${Q.i+1}/${Q.list.length}`;
   $("qProg").style.width=(Q.i/Q.list.length*100)+"%";
-  $("qAsk").textContent=k2r?"Chữ này đọc là gì?":"Chọn mặt chữ Hiragana đúng";
+  $("qAsk").textContent=k2r?"Chữ này đọc là gì?":`Chọn mặt chữ ${SN[qScript].n} đúng`;
   const qq=$("qQ");qq.textContent=k2r?q.it.k:q.it.r;qq.className="qq "+(k2r?"kana":"roma");
   $("qOpts").innerHTML=q.opts.map((o,j)=>`<button type="button" class="qo ${k2r?"roma":"kana"}" data-j="${j}"><span class="qk">${j+1}</span><span class="qt">${k2r?o.r:o.k}</span></button>`).join("");
   const c=$("qCard");c.classList.remove("qin");void c.offsetWidth;c.classList.add("qin");
@@ -1867,7 +1886,8 @@ function qFinish(){
   $("qProg").style.width="100%";
   const qz=state.quiz=state.quiz||{};qz.miss={...(qz.miss||{})};
   for(const [k,d] of Object.entries(Q.hits)){const v=Math.max(0,(qz.miss[k]||0)+d);if(v)qz.miss[k]=v;else delete qz.miss[k]}
-  qz.played=(qz.played||0)+1;if(Q.full&&sc/n>=(qz.best||0)/(qz.bestN||20)){qz.best=sc;qz.bestN=n}qz.last=`${sc}/${n}`;
+  const st=Q.script==="k"?(qz.kata={...(qz.kata||{})}):qz;
+  st.played=(st.played||0)+1;if(Q.full&&sc/n>=(st.best||0)/(st.bestN||20)){st.best=sc;st.bestN=n}st.last=`${sc}/${n}`;
   persist();qStats();qChart();
   qPane("qEnd");
   $("qScore").innerHTML=`<b>${sc}</b>/${n} câu đúng`;
@@ -1886,9 +1906,10 @@ function qChart(){
   const miss=(state.quiz&&state.quiz.miss)||{};
   const cell=k=>{if(!k)return `<span class="qc blank"></span>`;const it=KMAP[k];return `<span class="qc${miss[k]?" weak":""}"><b>${k}</b><i>${it.r}</i></span>`};
   const sec=(t,rows,cols)=>`<div class="qsec"><div class="vlabel">${t}</div><div class="qgrid" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${rows.flat().map(cell).join("")}</div></div>`;
-  const basic=["あいうえお","かきくけこ","さしすせそ","たちつてと","なにぬねの","はひふへほ","まみむめも","や ゆ よ","らりるれろ","わ   を","ん    "].map(r=>[...r].map(c=>c===" "?"":c));
-  const dak=["がぎぐげご","ざじずぜぞ","だ  でど","ばびぶべぼ","ぱぴぷぺぽ"].map(r=>[...r].map(c=>c===" "?"":c));
-  const yo=[];for(let i=0;i<KY.length;i+=3)yo.push(KY.slice(i,i+3).map(x=>x.k));
+  const cv=qScript==="k"?toK:(x=>x);
+  const basic=["あいうえお","かきくけこ","さしすせそ","たちつてと","なにぬねの","はひふへほ","まみむめも","や ゆ よ","らりるれろ","わ   を","ん    "].map(r=>[...r].map(c=>c===" "?"":cv(c)));
+  const dak=["がぎぐげご","ざじずぜぞ","だ  でど","ばびぶべぼ","ぱぴぷぺぽ"].map(r=>[...r].map(c=>c===" "?"":cv(c)));
+  const KYc=qScript==="k"?KY2:KY,yo=[];for(let i=0;i<KYc.length;i+=3)yo.push(KYc.slice(i,i+3).map(x=>x.k));
   const anyWeak=Object.keys(miss).length;
   $("qChart").innerHTML=(anyWeak?`<p class="qnote"><span class="qdot"></span> Chấm hồng là chữ Tài hay sai</p>`:"")+[()=>sec("46 chữ cơ bản",basic,5),()=>sec("Âm đục (thêm dấu ゛ ゜)",dak,5),()=>sec("Âm ghép (ゃ ゅ ょ nhỏ)",yo,3)][chartTab]();
 }
@@ -1896,8 +1917,18 @@ $("qLevels").addEventListener("click",e=>{const b=e.target.closest(".qlv");if(!b
   [...$("qLevels").children].forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});
   try{localStorage.setItem("jp-qlevel",qLevel)}catch(e){}});
 [...$("qLevels").children].forEach(x=>{const on=Number(x.dataset.l)===qLevel;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});
-$("qGo").onclick=()=>qBegin(weighted(QLV[qLevel],30),QLV[qLevel],true);
-$("qNew").onclick=()=>qBegin(weighted(QLV[qLevel],30),QLV[qLevel],true);
+$("qGo").onclick=()=>qBegin(weighted(curLv(),30),curLv(),true);
+$("qNew").onclick=()=>qBegin(weighted(curLv(),30),curLv(),true);
+function setScript(sc,first){
+  qScript=sc;try{localStorage.setItem("jp-qscript",sc)}catch(e){}
+  [...$("qScript").children].forEach(x=>{const on=x.dataset.s===sc;x.classList.toggle("on",on);x.setAttribute("aria-selected",on)});
+  $("qTitle").innerHTML=`Trắc nghiệm ${SN[sc].n} <small>${SN[sc].j}</small>`;
+  $("qCTitle").innerHTML=`Bảng chữ <small>${SN[sc].j}</small>`;
+  document.querySelectorAll("#qLevels b[data-g]").forEach(b=>b.textContent=sc==="k"?toK(b.dataset.g):b.dataset.g);
+  if(!first){Q=null;qPane("qStart");qStats();qChart()}
+}
+$("qScript").addEventListener("click",e=>{const b=e.target.closest(".ks");if(b&&b.dataset.s!==qScript)setScript(b.dataset.s)});
+setScript(qScript,true);
 $("qRetry").onclick=()=>qBegin(shuffle([...Q.retry]),Q.pool,false);
 $("qHome").onclick=()=>{Q=null;qPane("qStart")};
 $("qQuit").onclick=()=>{Q=null;qPane("qStart")};
