@@ -1656,7 +1656,7 @@ function countTo(el,target,f){
   (function step(t){const p=Math.min(1,(t-t0)/550),e=1-Math.pow(1-p,3),v=from+(target-from)*e;
     el.textContent=f(f===fmt?Math.round(v/1000)*1000:Math.round(v));if(p<1)requestAnimationFrame(step);else el.textContent=f(target)})(t0);
 }
-function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("show"),2300)}
+function toast(msg,ms){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("show"),ms||2300)}
 
 /* ---------- 12 con giáp chibi ---------- */
 const INK="#3a2d45";
@@ -2242,16 +2242,27 @@ const plainOf=t=>t.replace(/\{[^}]+\}/g,"");
 let jaVoice=null;
 function pickVoice(){try{const v=speechSynthesis.getVoices().filter(x=>/^ja/i.test(x.lang));jaVoice=v.find(x=>/google|kyoko|o-ren|nanami|haruka/i.test(x.name))||v[0]||null}catch(e){}}
 try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice}catch(e){}
-let sayBtn=null;
+let sayBtn=null, curU=null;
+function sayMsg(m){toast(m,5500)}
 function say(text,btn){
-  if(!("speechSynthesis" in window)){toast("Trình duyệt này chưa hỗ trợ giọng đọc");return}
+  const ss=window.speechSynthesis;
+  if(!ss||!window.SpeechSynthesisUtterance){sayMsg("Trình duyệt này không hỗ trợ giọng đọc. Thử mở bằng Safari hoặc Chrome nhé");return}
   const t=text.replace(/[～~]/g,"").trim();if(!t)return;
-  speechSynthesis.cancel();if(sayBtn)sayBtn.classList.remove("on");
-  const u=new SpeechSynthesisUtterance(t);u.lang="ja-JP";u.rate=.85;if(jaVoice)u.voice=jaVoice;
+  if(sayBtn)sayBtn.classList.remove("on");
+  if(!jaVoice)pickVoice();
+  const u=new SpeechSynthesisUtterance(t);curU=u;
+  u.lang="ja-JP";u.rate=.85;u.volume=1;u.pitch=1;if(jaVoice)u.voice=jaVoice;
   sayBtn=btn||null;if(btn)btn.classList.add("on");
-  const end=()=>{if(btn)btn.classList.remove("on")};u.onend=end;u.onerror=end;
-  speechSynthesis.speak(u);
-  if(!jaVoice&&speechSynthesis.getVoices().length&&!say.warned){say.warned=1;toast("Máy chưa có giọng tiếng Nhật, có thể đọc chưa chuẩn")}
+  let started=false;
+  const end=()=>{if(btn)btn.classList.remove("on")};
+  u.onstart=()=>{started=true};u.onend=end;
+  u.onerror=ev=>{end();if(curU===u&&!/interrupted|canceled/.test(ev.error||""))sayMsg(ev.error==="not-allowed"?"Trình duyệt chặn âm thanh, chạm lại nút 🔊 lần nữa nhé":"Không phát được giọng đọc ("+(ev.error||"lỗi")+"). Máy có thể chưa có giọng tiếng Nhật")};
+  const go=()=>{try{ss.resume();ss.speak(u)}catch(e){end();sayMsg("Không phát được giọng đọc trên trình duyệt này")}};
+  /* Chrome đôi khi bỏ mất câu nói ngay sau cancel(), nên đợi một nhịp nếu đang đọc dở */
+  if(ss.speaking||ss.pending){ss.cancel();setTimeout(go,80)}else go();
+  setTimeout(()=>{if(!started&&curU===u){end();
+    const hasVoices=(()=>{try{return speechSynthesis.getVoices().length}catch(e){return 0}})();
+    sayMsg(!jaVoice&&hasVoices?"Máy chưa có giọng tiếng Nhật. Vào Cài đặt › Trợ năng › Nội dung được đọc › Giọng nói để tải giọng Japanese":"Chưa nghe thấy? Tăng âm lượng và tắt chế độ im lặng (nút gạt bên hông iPhone) rồi bấm lại nhé")}},3000);
 }
 const sayBtnHtml=(text,label)=>`<button type="button" class="say" data-say="${esc(text)}" aria-label="${label||"Nghe phát âm"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="w1" d="M16 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M18.5 6a8.5 8.5 0 0 1 0 12"/></svg></button>`;
 document.addEventListener("click",e=>{const b=e.target.closest(".say");if(!b)return;e.stopPropagation();e.preventDefault();say(b.dataset.say,b)},true);
