@@ -1206,6 +1206,76 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
 .lk-num .rmi{text-transform:none;letter-spacing:0;font-size:.95em}
 .rmo{display:block;font-style:italic;font-weight:500;font-size:.72rem!important;color:#9a88a8!important;font-family:var(--f-body)!important;margin-top:1px}
 .exr{white-space:pre-line;margin-top:-2px}
+/* ---------- Japanese decoration pass ---------- */
+:root{--asanoha:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='32' viewBox='0 0 56 32'%3E%3Cg fill='none' stroke='%23e85d8c' stroke-opacity='.11' stroke-width='1'%3E%3Cpath d='M0 0l28 16L56 0M0 32l28-16 28 16M28 0v32M0 0v32M56 0v32M0 16h56M14 8l14 8-14 8M42 8l-14 8 14 8'/%3E%3C/g%3E%3C/svg%3E");
+  --washi:radial-gradient(circle at 20% 30%,rgba(232,93,140,.035) 0 2px,transparent 3px) 0 0/23px 19px,radial-gradient(circle at 70% 60%,rgba(180,140,90,.04) 0 1.5px,transparent 2.5px) 0 0/17px 29px}
+.lk-head{overflow:hidden;isolation:isolate}
+.lk-sealwrap{position:relative;flex:none;display:grid;place-items:center;padding:8px}
+.lk-enso{position:absolute;inset:-14px;width:calc(100% + 28px);height:calc(100% + 28px);overflow:visible;pointer-events:none}
+.lk-enso path{fill:none;stroke:var(--shu);stroke-opacity:.22;stroke-width:6;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:0}
+.lk-head.hin .lk-enso path{animation:ensoDraw 1.4s cubic-bezier(.6,.05,.3,1) both}
+@keyframes ensoDraw{from{stroke-dashoffset:100}}
+.lk-head.hin .lk-no{animation:sealIn .7s cubic-bezier(.3,1.5,.5,1) .15s both}
+@keyframes sealIn{from{opacity:0;transform:scale(1.6) rotate(-12deg)}}
+.lk-branch{position:absolute;right:-6px;top:-4px;width:min(42%,230px);z-index:-1;transform-origin:100% 0;animation:sway 6s ease-in-out infinite}
+.lk-branch .br{fill:none;stroke:#8a5a44;stroke-width:3.2;stroke-linecap:round;opacity:.55}
+.lk-branch .fl circle{fill:#f7a9c3}
+.lk-branch .bl{animation:bloomIn .8s cubic-bezier(.3,1.5,.5,1) both}
+.lk-branch .b2{animation-delay:.15s}.lk-branch .b3{animation-delay:.3s}.lk-branch .b4{animation-delay:.45s}
+@keyframes bloomIn{from{opacity:0;transform:var(--t,translate(0,0)) scale(0)}}
+.lk-branch .bl{transform-box:fill-box;transform-origin:center}
+.lk-petal{position:absolute;top:-12px;width:10px;height:8px;border-radius:80% 0 80% 0;background:linear-gradient(135deg,#ffd0de,#f48fb1);opacity:0;pointer-events:none;z-index:-1;animation:petalFall 7s linear infinite}
+.lk-petal.p1{right:18%;animation-delay:.5s}.lk-petal.p2{right:32%;animation-delay:2.8s;transform:scale(.8)}.lk-petal.p3{right:8%;animation-delay:5s}
+@keyframes petalFall{0%{opacity:0;transform:translate(0,0) rotate(0)}10%{opacity:.9}100%{opacity:0;transform:translate(-90px,170px) rotate(320deg)}}
+.lk-head h1{position:relative}
+.lk-head.hin h1{animation:inkIn .8s ease .2s both}
+@keyframes inkIn{from{opacity:0;filter:blur(6px);letter-spacing:.06em}}
+/* sliding tab pill */
+.lk-tabs{position:relative}
+.lk-tabs .ctab{position:relative;z-index:1;background:transparent!important;box-shadow:none!important;transition:color .3s}
+.lk-ind{position:absolute;left:0;top:0;border-radius:15px;background:#fff var(--asanoha);box-shadow:0 4px 14px -6px rgba(200,80,120,.55);opacity:0;transition:transform .45s cubic-bezier(.3,1.3,.5,1),width .45s cubic-bezier(.3,1.3,.5,1),opacity .2s;z-index:0;pointer-events:none}
+/* washi cards + brush headings */
+.gcard,.exp,.vlist li:not(.vgh):not(.vrow),.vchip,.lq-step{background-image:var(--washi)}
+.gcard{position:relative;overflow:hidden;transition:transform .3s cubic-bezier(.3,1.3,.5,1),box-shadow .3s}
+.gcard:hover{transform:translateY(-3px);box-shadow:0 14px 28px -18px rgba(214,90,140,.55)}
+.gcard::after{content:"";position:absolute;right:-1px;top:-1px;width:22px;height:22px;background:linear-gradient(225deg,var(--bg) 50%,#f6dbe6 50%);border-bottom-left-radius:6px}
+.gidx{transform:rotate(-6deg);box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--shu)}
+.vlist li.vgh::after,.vgh-ref::after,.lsec-h h2::after{transform-origin:0 50%;animation:brushLine 1s cubic-bezier(.5,0,.2,1) both}
+@keyframes brushLine{from{transform:scaleX(0)}}
+.vlist li.vgh{animation:ltin .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0ms)}
+.vlist li.vgh span{position:relative}
+.vlist li.vgh::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--shu);transform:rotate(45deg);flex:none;box-shadow:0 0 0 3px #ffe3e8}
+/* brush maru / batsu marks on answers */
+.qo .mark{position:absolute;right:8px;top:50%;width:40px;height:40px;transform:translateY(-50%);pointer-events:none;overflow:visible}
+.qo .mark path{fill:none;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;animation:markDraw .5s cubic-bezier(.6,.05,.3,1) forwards}
+.qo .maru path{stroke:#e5484d;stroke-width:9;opacity:.75}
+.qo .batsu path{stroke:#3a5bd9;stroke-width:10;opacity:.65}
+@keyframes markDraw{to{stroke-dashoffset:0}}
+.qo{overflow:hidden}
+.qo:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 10px 20px -14px rgba(214,90,140,.7)}
+.qo{transition:transform .2s cubic-bezier(.3,1.4,.5,1),box-shadow .2s,background .2s,border-color .2s}
+/* stepping-stone path for the study steps */
+.lq-steps{position:relative}
+.lq-steps::before{content:"";position:absolute;left:33px;top:30px;bottom:30px;border-left:3px dotted #f3c2d4;z-index:0}
+.lq-step{position:relative;z-index:1}
+.lq-sn{box-shadow:0 0 0 4px #fff}
+.lq-step.final{background:linear-gradient(135deg,#fff,#fff0f5),var(--asanoha)}
+/* flashcard back: seigaiha waves */
+.fc-face.back{background:radial-gradient(circle at 50% 100%,transparent 9px,rgba(255,255,255,.18) 10px 11px,transparent 12px 16px,rgba(255,255,255,.18) 17px 18px,transparent 19px) 0 0/40px 20px,linear-gradient(135deg,#ff9fbf,var(--md))}
+.fc-face.front{background:#fff var(--asanoha)}
+.fc.flip .fc-in{transform:rotateY(180deg) translateZ(0)}
+.fc:active .fc-in{transition-duration:.5s}
+/* lesson list tiles */
+.lt{background-image:var(--washi)}
+.lt:hover{background-image:var(--asanoha),var(--washi)}
+.lt-no{position:relative}
+.lt:hover .lt-no{box-shadow:0 0 0 3px #fff,0 0 0 5px rgba(229,72,77,.25)}
+.lsec{background-image:var(--washi)}
+/* gentle page-enter */
+.view-in .lkcard,.view-in .lsec{animation:cardRise .6s cubic-bezier(.2,.8,.2,1) both}
+.view-in .lsec+.lsec{animation-delay:.08s}
+@keyframes cardRise{from{opacity:0;transform:translateY(22px) scale(.985)}}
+@media (max-width:520px){.lk-branch{width:46%;opacity:.8}.lk-enso{inset:-10px;width:calc(100% + 20px);height:calc(100% + 20px)}.lq-steps::before{left:29px}}
 
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
@@ -1486,11 +1556,24 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
   </div>
   <section class="card lkcard" id="lkCard">
     <header class="lk-head">
-      <div class="lk-no" id="lkNo" aria-hidden="true"></div>
+      <div class="lk-sealwrap" aria-hidden="true">
+        <svg class="lk-enso" viewBox="0 0 120 120"><path d="M60 10c28 0 50 21 50 49 0 29-23 51-51 51C31 110 10 88 10 61 10 35 28 15 52 11" pathLength="100"/></svg>
+        <div class="lk-no" id="lkNo"></div>
+      </div>
+      <svg class="lk-branch" viewBox="0 0 220 120" aria-hidden="true">
+        <path class="br" d="M220 8C180 14 150 30 128 52c-14 14-30 22-52 26M150 30c-6-14-4-22 4-28M118 60c4 12 2 22-6 30"/>
+        <g class="fl" style="--d:0s"><circle cx="128" cy="52" r="3.2"/></g>
+        <g class="bl" transform="translate(150 30)"><use href="#sakuraF"/></g>
+        <g class="bl b2" transform="translate(104 70) scale(.8)"><use href="#sakuraF"/></g>
+        <g class="bl b3" transform="translate(176 18) scale(.7)"><use href="#sakuraF"/></g>
+        <g class="bl b4" transform="translate(112 90) scale(.6)"><use href="#sakuraF"/></g>
+        <defs><g id="sakuraF"><g fill="#ffc2d6" stroke="#f08db0" stroke-width=".8"><path d="M0-11c4 0 6 4 4 8L0 0-4-3c-2-4 0-8 4-8z"/><path d="M0-11c4 0 6 4 4 8L0 0-4-3c-2-4 0-8 4-8z" transform="rotate(72)"/><path d="M0-11c4 0 6 4 4 8L0 0-4-3c-2-4 0-8 4-8z" transform="rotate(144)"/><path d="M0-11c4 0 6 4 4 8L0 0-4-3c-2-4 0-8 4-8z" transform="rotate(216)"/><path d="M0-11c4 0 6 4 4 8L0 0-4-3c-2-4 0-8 4-8z" transform="rotate(288)"/></g><circle r="2.2" fill="#e85d8c"/></g></defs>
+      </svg>
+      <span class="lk-petal p1" aria-hidden="true"></span><span class="lk-petal p2" aria-hidden="true"></span><span class="lk-petal p3" aria-hidden="true"></span>
       <div class="lk-ht"><span class="lk-num" id="lkNum"></span><h1 id="lkTitle"></h1></div>
       <span class="lk-seal" id="lkSeal" hidden>合格</span>
     </header>
-    <div class="ctabs lk-tabs" id="lkTabs" role="tablist">
+    <div class="ctabs lk-tabs" id="lkTabs" role="tablist"><span class="lk-ind" aria-hidden="true"></span>
       <button class="ctab on" type="button" role="tab" data-t="v" aria-selected="true"><span class="tj">語彙</span><span class="tl">Từ vựng <em id="lkVc"></em></span></button>
       <button class="ctab" type="button" role="tab" data-t="g" aria-selected="false"><span class="tj">文法</span><span class="tl">Ngữ pháp <em id="lkGc"></em></span></button>
       <button class="ctab" type="button" role="tab" data-t="d" aria-selected="false" id="lkDTab"><span class="tj">会話</span><span class="tl">Hội thoại</span></button>
@@ -2791,7 +2874,8 @@ function lsRenderLesson(n){
   lpStop();lpUI();
   lsN=n;LQ=null;fcI=0;fcFlip=false;fcOrder=null;
   const [,t,g]=LS_LIST[n-1], D=LS_DATA[n], d=lsDone(n), has=!!D||lsMine(n).length>0||canEdit;
-  $("lkNo").textContent="第"+KNUM(n)+"課";$("lkNum").innerHTML="Bài "+n+(D&&D.jp?" · "+esc(D.jp)+(D.jpf?` <small class="rmi">${esc(roma(kanaOf(D.jpf)))}</small>`:""):"");$("lkTitle").textContent=t;
+  $("lkNo").textContent="第"+KNUM(n)+"課";
+  const hd=document.querySelector(".lk-head");hd.classList.remove("hin");void hd.offsetWidth;hd.classList.add("hin");$("lkNum").innerHTML="Bài "+n+(D&&D.jp?" · "+esc(D.jp)+(D.jpf?` <small class="rmi">${esc(roma(kanaOf(D.jpf)))}</small>`:""):"");$("lkTitle").textContent=t;
   $("lkSeal").hidden=!d;
   $("lkPrev").hidden=n<=1;$("lkNext").hidden=n>=50;
   $("lkNext").classList.toggle("locked",!lsOpen(n+1));
@@ -2838,9 +2922,13 @@ function lsRenderVocab(force){
   $("lkVMode").parentElement.hidden=!v.length;
   if(!$("fcWrap").hidden){if(v.length){fcOrder=null;fcRender()}else{$("fcWrap").hidden=true;$("lkVocab").hidden=false}}
 }
+function lkInd(){const t=$("lkTabs"),on=t.querySelector(".ctab.on"),ind=t.querySelector(".lk-ind");if(!on||!ind||t.hidden)return;
+  ind.style.width=on.offsetWidth+"px";ind.style.height=on.offsetHeight+"px";ind.style.transform=`translate(${on.offsetLeft}px,${on.offsetTop}px)`;ind.style.opacity=1}
+addEventListener("resize",()=>{try{lkInd()}catch(e){}});
 function lsTabTo(x,quiet){
   lpStop();lsTab=x;
-  [...$("lkTabs").children].forEach(b=>{const on=b.dataset.t===x;b.classList.toggle("on",on);b.setAttribute("aria-selected",on)});
+  [...$("lkTabs").querySelectorAll(".ctab")].forEach(b=>{const on=b.dataset.t===x;b.classList.toggle("on",on);b.setAttribute("aria-selected",on)});
+  requestAnimationFrame(lkInd);
   ["v","g","d","q"].forEach(k=>{const el=$("lk_"+k);el.hidden=k!==x;if(k===x&&!quiet){el.classList.remove("tabin");void el.offsetWidth;el.classList.add("tabin")}});
   $("viewLesson").classList.toggle("testing",x==="q"&&!!LQ&&!LQ.over);
 }
@@ -2914,16 +3002,17 @@ function lqShow(){
   $("lqNum").textContent=`Câu ${LQ.i+1}/${LQ.list.length}`;$("lqProg").style.width=(LQ.i/LQ.list.length*100)+"%";
   $("lqAsk").textContent=q.ask;
   $("lqQ").className="lq-q "+q.kind;
-  $("lqQ").innerHTML=q.kind==="gr"?rb(q.q).replace("＿",'<span class="blank">？</span>')+`<span class="rmj">${esc(roma(kanaOf(q.q)).replace("＿","___"))}</span>`:q.kind==="jv"?`<span class="w">${esc(q.q)}</span>${q.sub?`<span class="r">${esc(q.sub)}</span>`:""}<span class="rmj">${esc(q.ro)}</span><span class="lq-sayrow">${sayBtnHtml(q.sub||q.q)}</span>`:`<span class="vn">${esc(q.q)}</span>`;
+  $("lqQ").innerHTML=q.kind==="gr"?rb(q.q).replace("＿",'<span class="blank">？</span>'):q.kind==="jv"?`<span class="w">${esc(q.q)}</span>${q.sub?`<span class="r">${esc(q.sub)}</span>`:""}<span class="lq-sayrow">${sayBtnHtml(q.sub||q.q)}</span>`:`<span class="vn">${esc(q.q)}</span>`;
   $("lqOpts").classList.toggle("long",q.kind==="sv");
-  $("lqOpts").innerHTML=q.opts.map((o,j)=>`<button type="button" class="qo ${q.kind==="jv"?"vn":"jp"}" data-j="${j}"><span class="qk">${j+1}</span><span class="qt">${o.rb?rb(o.t):esc(o.t)}${o.sub?`<small>${esc(o.sub)}</small>`:""}${q.kind==="jv"?"":`<small class="rmo">${esc(o.rb?roma(kanaOf(o.t)):q.kind==="gr"?romaOne(o.t):romaWord(o.sub||o.t))}</small>`}</span></button>`).join("");
+  $("lqOpts").innerHTML=q.opts.map((o,j)=>`<button type="button" class="qo ${q.kind==="jv"?"vn":"jp"}" data-j="${j}"><span class="qk">${j+1}</span><span class="qt">${o.rb?rb(o.t):esc(o.t)}${o.sub?`<small>${esc(o.sub)}</small>`:""}</span></button>`).join("");
   const c=$("lqCard");c.classList.remove("qin");void c.offsetWidth;c.classList.add("qin");
   $("lqFb").textContent="";$("lqFb").className="qfb";$("lqNext").hidden=true;LQ.answered=false;
 }
 function lqAnswer(j){
   if(!LQ||LQ.answered||$("lqPlay").hidden)return;LQ.answered=true;
   const q=LQ.list[LQ.i], btns=[...$("lqOpts").children], ok=q.opts[j].ok;
-  btns.forEach((b,x)=>{b.disabled=true;if(q.opts[x].ok)b.classList.add("right")});
+  btns.forEach((b,x)=>{b.disabled=true;if(q.opts[x].ok){b.classList.add("right");b.insertAdjacentHTML("beforeend",'<svg class="mark maru" viewBox="0 0 100 100" aria-hidden="true"><path d="M52 12c22 1 38 17 38 38 0 22-18 39-40 39S10 72 10 50c0-19 13-34 32-37" pathLength="100"/></svg>')}});
+  if(!ok)btns[j].insertAdjacentHTML("beforeend",'<svg class="mark batsu" viewBox="0 0 100 100" aria-hidden="true"><path d="M22 22L78 78" pathLength="100"/><path d="M78 22L22 78" pathLength="100" style="animation-delay:.18s"/></svg>');
   if(ok){LQ.score++;$("lqFb").className="qfb ok";$("lqFb").textContent=RIGHT[Math.floor(Math.random()*RIGHT.length)];setTimeout(lqNext,RM?500:850)}
   else{btns[j].classList.add("wrong");LQ.wrong.push(q);$("lqFb").className="qfb no";$("lqFb").textContent="Chưa đúng. "+q.why;$("lqNext").hidden=false;$("lqNext").focus({preventScroll:true})}
 }
@@ -2967,7 +3056,7 @@ function lqExOpen(){
   const EX=((LS_DATA[lsN]||{}).ex||[]);
   LQ=null;$("lqStart").hidden=true;$("lqEnd").hidden=true;$("lqPlay").hidden=true;$("lqEx").hidden=false;
   const ansHtml=a=>a.split(/\s*\.\.\.\s*/).length>1?a.split(/\s*\.\.\.\s*/).join("\n…"):a;
-  $("lqExBody").innerHTML=EX.map(([t,items],pi)=>`<section class="exp" style="--d:${pi*70}ms"><div class="exp-h"><span class="gidx">${pi+1}</span><b>${esc(t)}</b><button class="chip exp-all" type="button" data-p="${pi}">Hiện tất cả đáp án</button></div><ol class="exl">${items.map(([q,a],i)=>`<li><div class="exq">${rb(q).replace(/_{3,}/g,'<span class="exblank"></span>')}</div>${/[\u3040-\u30ff\u4e00-\u9fff]/.test(q)?`<div class="rmj exr">${esc(q.split("\n").map(x=>roma(kanaOf(x.replace(/_{3,}/g,"___")))).join("\n"))}</div>`:""}${a?`<button class="chip exb" type="button">Xem đáp án</button><div class="exa" hidden><div class="gj">${rb(ansHtml(a))}</div><div class="rmj">${esc(ansHtml(a).split("\n").map(x=>roma(kanaOf(x))).join("\n"))}</div>${/[\u3040-\u30ff\u4e00-\u9fff]{2}/.test(a)?sayBtnHtml(plainOf(a),"Nghe đáp án"):""}</div>`:""}</li>`).join("")}</ol></section>`).join("");
+  $("lqExBody").innerHTML=EX.map(([t,items],pi)=>`<section class="exp" style="--d:${pi*70}ms"><div class="exp-h"><span class="gidx">${pi+1}</span><b>${esc(t)}</b><button class="chip exp-all" type="button" data-p="${pi}">Hiện tất cả đáp án</button></div><ol class="exl">${items.map(([q,a],i)=>`<li><div class="exq">${rb(q).replace(/_{3,}/g,'<span class="exblank"></span>')}</div>${a?`<button class="chip exb" type="button">Xem đáp án</button><div class="exa" hidden><div class="gj">${rb(ansHtml(a))}</div><div class="rmj">${esc(ansHtml(a).split("\n").map(x=>roma(kanaOf(x))).join("\n"))}</div>${/[\u3040-\u30ff\u4e00-\u9fff]{2}/.test(a)?sayBtnHtml(plainOf(a),"Nghe đáp án"):""}</div>`:""}</li>`).join("")}</ol></section>`).join("");
   $("lqEx").classList.remove("tabin");void $("lqEx").offsetWidth;$("lqEx").classList.add("tabin");
   if(canEdit&&!lsSt(lsN).exSeen)lsSet(lsN,{exSeen:true});
 }
