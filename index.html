@@ -2688,6 +2688,9 @@ const LS_HB={"1":{"groups":[["👤 Người & xưng hô",["私","貴方","あの
 for(const n in LS_HB){const h=LS_HB[n];
   LS_DATA[n]={hb:true,jp:h.jp,v:h.v.map(([w,r,m,hv])=>[w,r,m,0,0,"",hv]),g:h.g.map(([t,html,eg])=>[t,{html},eg]),t:h.t,p:h.p,e:h.e,c:h.c,d:{t:h.dt,ctx:h.d.ctx,l:h.d.l}};
   LS_GROUPS[n]=h.groups;
+  /* chỉnh vài mục cho đầy đủ */
+  LS_DATA[n].v.forEach(x=>{if(x[0]==="どうぞよろしく"){x[0]="どうぞ よろしく お願いします";x[1]="どうぞ よろしく おねがいします";x[2]="rất mong được giúp đỡ (nói gọn: どうぞ よろしく)"}});
+  LS_GROUPS[n].forEach(g=>{g[1]=g[1].map(w=>w==="どうぞよろしく"?"どうぞ よろしく お願いします":w)});
   LS_LIST[n-1][1]=h.title;LS_LIST[n-1][2]=h.g.map(x=>x[0]);
 }
 const LS_PASS=.8;
@@ -2763,7 +2766,7 @@ function lsRenderVocab(force){
   $("mineF").hidden=!canEdit;$("mfOnly").checked=lsOnlyMine;
   $("mfGroups").innerHTML=(LS_GROUPS[lsN]||[]).map(([nm])=>`<option value="${esc(gKey(nm))}">`).join("");
   const word=(it,compact)=>{const [w,r,m,mine,k]=it;
-    return `<${compact?"span":"li"} class="${compact?"vchip":""}${mine?" mine":""}" data-jp="${esc(r||w)}" data-vi="${esc(m)}"><span class="vtx"><span class="vw">${esc(w)}${mine&&!compact?` <i class="mtag">của tôi</i>`:""}</span><span class="vr">${esc(r)}</span><span class="rmj">${esc(romaWord(r||w))}</span><span class="vm">${esc(m)}</span>${it[6]?`<span class="vhv">Hán Việt: ${esc(it[6])}</span>`:""}</span><span class="vact">${sayBtnHtml(r||w,"Nghe: "+w)}${mine&&canEdit?`<button type="button" class="mdel" data-del="${k}" aria-label="Xóa từ ${esc(w)}">✕</button>`:""}</span></${compact?"span":"li"}>`};
+    return `<${compact?"span":"li"} class="${compact?"vchip":""}${mine?" mine":""}" data-jp="${esc(r||w)}" data-vi="${esc(m)}"><span class="vtx"><span class="vw">${esc(w)}${mine&&!compact?` <i class="mtag">của tôi</i>`:""}</span><span class="vr">${esc(r)}</span><span class="rmj">${esc(romaWord(r||w))}</span><span class="vm">${esc(m)}</span></span><span class="vact">${sayBtnHtml(r||w,"Nghe: "+w)}${mine&&canEdit?`<button type="button" class="mdel" data-del="${k}" aria-label="Xóa từ ${esc(w)}">✕</button>`:""}</span></${compact?"span":"li"}>`};
   let d=0;
   $("lkVocab").innerHTML=v.length?G.map(o=>`<li class="vgh" style="--d:${(d++)*40}ms"><span>${esc(o.name)}</span><em>${o.items.length}</em></li>`+(o.compact?`<li class="vrow" style="--d:${(d++)*40}ms">${o.items.map(it=>word(it,true)).join("")}</li>`:o.items.map(it=>word(it,false).replace("<li ",`<li style="--d:${Math.min(d++,24)*30}ms" `)).join(""))).join("")
     :`<li class="vempty">${lsOnlyMine?"Bạn chưa nhập từ nào cho bài này.":"Bài này chưa có từ nào."}${canEdit?" Thêm từ ở ô bên dưới nhé!":""}</li>`;
