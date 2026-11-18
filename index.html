@@ -2810,9 +2810,13 @@ function lqIntro(){
 }
 function lqBuild(){
   const D=LS_DATA[lsN]||{t:[]}, v=lsVocab(lsN), out=[];
-  if(v.length>=4)shuffle([...v]).slice(0,12).forEach((it,i)=>{
+  /* bài kiểm tra 25 câu: câu ngữ pháp của bài + từ vựng hai chiều cho đủ 25 (bài ít từ thì mỗi từ hỏi cả hai chiều) */
+  const LQ_N=25, nv=Math.max(0,LQ_N-((D.t||[]).length));
+  const sh=shuffle([...v]), picks=[];
+  for(let k=0;picks.length<nv&&k<sh.length*2;k++){const it=sh[k%sh.length];const j=k%sh.length;picks.push([it,k<sh.length?j%2:1-(j%2)])}
+  if(v.length>=4)picks.forEach(([it,dir])=>{
     const others=shuffle(v.filter(o=>o!==it)).slice(0,3);
-    if(i%2===0)out.push({kind:"jv",q:it[0],sub:it[1],ro:romaWord(it[1]||it[0]),ask:"Từ này nghĩa là gì?",opts:shuffle([it,...others]).map(o=>({t:o[2],ok:o===it})),why:`${it[0]}${it[1]?" ("+it[1]+")":""} = ${it[2]}`});
+    if(dir===0)out.push({kind:"jv",q:it[0],sub:it[1],ro:romaWord(it[1]||it[0]),ask:"Từ này nghĩa là gì?",opts:shuffle([it,...others]).map(o=>({t:o[2],ok:o===it})),why:`${it[0]}${it[1]?" ("+it[1]+")":""} = ${it[2]}`});
     else out.push({kind:"vj",q:it[2],ask:"Chọn từ tiếng Nhật đúng",opts:shuffle([it,...others]).map(o=>({t:o[0],sub:o[1],ok:o===it})),why:`${it[2]} = ${it[0]}${it[1]?" ("+it[1]+")":""}`});
   });
   D.t.forEach(([s,a,bad,vn])=>out.push({kind:"gr",q:s,ask:"Điền vào chỗ trống",vn,opts:shuffle([a,...bad]).map(o=>({t:o,ok:o===a})),why:`Đáp án: ${a} — ${vn}`}));
