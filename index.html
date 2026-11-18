@@ -1073,6 +1073,35 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
 #vpPitch{width:100%;accent-color:var(--md)}
 .vp-note{margin:0;font-size:.78rem;color:#9a5a2a;background:#fff6e8;border-radius:12px;padding:8px 10px}
 .vp-tip{margin:4px 0 0;font-size:.76rem;color:var(--muted)}
+.lk-tabs.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.vact{display:grid;gap:6px;justify-items:center}
+.mtag{font-style:normal;font-size:.62rem;font-weight:800;color:#fff;background:var(--sora);border-radius:999px;padding:1px 7px;vertical-align:middle;font-family:var(--f-body)}
+.vlist li.mine{border-left-color:var(--sora)}
+.mdel{border:0;background:#fff0f0;color:#c93a3f;border-radius:999px;min-width:30px;height:26px;padding:0 8px;font:inherit;font-size:.72rem;font-weight:800;cursor:pointer}
+.mdel.sure{background:#c93a3f;color:#fff}
+.vempty{grid-column:1/-1;border-left-color:#f3c2d4!important;color:var(--muted);text-align:center;padding:18px!important}
+.mine-f{margin-top:14px;padding:12px;border-radius:16px;border:1.5px dashed var(--sora);background:#f3f9ff;display:grid;gap:8px}
+.mine-h{display:grid;gap:2px}.mine-h b{color:#2a6fb0}.mine-h span{font-size:.78rem;color:var(--muted)}
+.mine-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:8px}
+.mine-row input{min-width:0;font:inherit;font-size:.88rem;padding:9px 11px;border-radius:12px;border:1.5px solid #cfe3f5;background:#fff;color:var(--ink)}
+.mine-row input:focus{outline:2px solid var(--sora);outline-offset:1px}
+.mine-row .btn{padding:9px 16px}
+@media (max-width:640px){.mine-row{grid-template-columns:1fr 1fr}.mine-row input:last-of-type{grid-column:1/-1}.mine-row .btn{grid-column:1/-1}}
+#lk_d .lsplay{margin-bottom:12px}
+.dlg-t{font-family:var(--f-jp);font-weight:700;font-size:1.05rem;margin:0 0 10px;display:flex;align-items:center;gap:6px}
+.dlg{display:grid;gap:12px}
+.dl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:start;max-width:92%;animation:ltin .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0ms)}
+.dl-who{grid-row:1/span 2;width:54px;height:54px;border-radius:50%;background:#fff;border:2px solid #f3c2d4;display:grid;place-items:center;text-align:center;font-family:var(--f-kana);font-size:.72rem;font-weight:700;line-height:1.15;color:var(--ink);padding:2px}
+.dl-who rt{font-size:.5em;color:var(--md)}
+.dl-b{background:#fff;border:1.5px solid #f6dbe6;border-radius:6px 18px 18px 18px;padding:9px 13px;display:grid;gap:2px;transition:background .3s,transform .3s,box-shadow .3s}
+.dl .say{margin-top:8px}
+.dl.me{justify-self:end;grid-template-columns:auto minmax(0,1fr) auto}
+.dl.me .dl-who{grid-column:3;grid-row:1;background:linear-gradient(135deg,#ff9fbf,var(--md));color:#fff;border-color:transparent;font-family:var(--f-body);font-size:.85rem}
+.dl.me .dl-b{grid-column:2;grid-row:1;background:#fff0f5;border-color:#f3c2d4;border-radius:18px 6px 18px 18px}
+.dl.me .say{grid-column:1;grid-row:1}
+.dl.playing .dl-b{background:var(--sakura-soft);border-color:var(--md);transform:scale(1.02);box-shadow:0 8px 20px -12px rgba(214,90,140,.7)}
+.dl.playing .say{background:var(--md);color:#fff;border-color:var(--md)}
+@media (max-width:520px){.dl{max-width:100%}.dl-who{width:44px;height:44px;font-size:.62rem}.lk-tabs.four .ctab{font-size:.66rem}.lk-tabs.four .tj{font-size:.92rem}}
 
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
@@ -1354,12 +1383,17 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
     <div class="ctabs lk-tabs" id="lkTabs" role="tablist">
       <button class="ctab on" type="button" role="tab" data-t="v" aria-selected="true"><span class="tj">語彙</span><span class="tl">Từ vựng <em id="lkVc"></em></span></button>
       <button class="ctab" type="button" role="tab" data-t="g" aria-selected="false"><span class="tj">文法</span><span class="tl">Ngữ pháp <em id="lkGc"></em></span></button>
+      <button class="ctab" type="button" role="tab" data-t="d" aria-selected="false" id="lkDTab"><span class="tj">会話</span><span class="tl">Hội thoại</span></button>
       <button class="ctab" type="button" role="tab" data-t="q" aria-selected="false"><span class="tj">練習</span><span class="tl">Kiểm tra</span></button>
     </div>
     <div class="lk-soon" id="lkSoon" hidden></div>
     <div id="lk_v" class="lkpane">
       <div class="lk-vrow"><div class="lk-vmode" id="lkVMode"><button class="on" type="button" data-m="list" aria-pressed="true">☰ Danh sách</button><button type="button" data-m="fc" aria-pressed="false">🎴 Thẻ lật</button></div><div class="lsplay" data-scope="v"><button class="lp-go" type="button"></button><label class="lp-opt"><input type="checkbox" class="lp-vi"> Đọc cả nghĩa</label><label class="lp-opt"><input type="checkbox" class="lp-loop"> Lặp lại</label><select class="lp-rate" aria-label="Tốc độ đọc"><option value="0.65">🐢 Chậm</option><option value="0.85">Vừa</option><option value="1">🐇 Nhanh</option></select><button class="lp-voice" type="button">🎙️ Giọng</button><span class="lp-st" aria-live="polite"></span></div></div>
       <ol class="vlist" id="lkVocab"></ol>
+      <form class="mine-f" id="mineF" hidden autocomplete="off">
+        <div class="mine-h"><b>＋ Thêm từ của bạn</b><span>Từ nào trong sách còn thiếu thì nhập vào đây. Phiên âm, giọng đọc và bài kiểm tra sẽ tự có.</span></div>
+        <div class="mine-row"><input id="mfW" placeholder="Từ (vd: 学生 hoặc がくせい)" required maxlength="40"><input id="mfR" placeholder="Cách đọc kana (nếu có kanji)" maxlength="40"><input id="mfM" placeholder="Nghĩa tiếng Việt" required maxlength="80"><button class="btn pink" type="submit">Thêm</button></div>
+      </form>
       <div class="fcwrap" id="fcWrap" hidden>
         <div class="fcbar" aria-hidden="true"><i id="fcBar"></i></div>
         <div class="fcbox"><button class="fc" id="fcCard" type="button" aria-label="Chạm để lật thẻ"><span class="fc-in"><span class="fc-face front" id="fcFront"></span><span class="fc-face back" id="fcBack"></span></span></button><span class="fc-say" id="fcSay"></span></div>
@@ -1368,6 +1402,7 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
       </div>
     </div>
     <div id="lk_g" class="lkpane" hidden><div class="lsplay" data-scope="g"><button class="lp-go" type="button"></button><label class="lp-opt"><input type="checkbox" class="lp-vi"> Đọc cả nghĩa</label><label class="lp-opt"><input type="checkbox" class="lp-loop"> Lặp lại</label><select class="lp-rate" aria-label="Tốc độ đọc"><option value="0.65">🐢 Chậm</option><option value="0.85">Vừa</option><option value="1">🐇 Nhanh</option></select><button class="lp-voice" type="button">🎙️ Giọng</button><span class="lp-st" aria-live="polite"></span></div><div class="glist" id="lkGram"></div></div>
+    <div id="lk_d" class="lkpane" hidden><div class="lsplay" data-scope="d"><button class="lp-go" type="button"></button><label class="lp-opt"><input type="checkbox" class="lp-vi"> Đọc cả nghĩa</label><label class="lp-opt"><input type="checkbox" class="lp-loop"> Lặp lại</label><select class="lp-rate" aria-label="Tốc độ đọc"><option value="0.65">🐢 Chậm</option><option value="0.85">Vừa</option><option value="1">🐇 Nhanh</option></select><button class="lp-voice" type="button">🎙️ Giọng</button><span class="lp-st" aria-live="polite"></span></div><div class="dlg-t" id="dlgT"></div><div class="dlg" id="lkDlg"></div></div>
     <div id="lk_q" class="lkpane" hidden>
       <div id="lqStart" class="lq-start">
         <div class="lq-torii" aria-hidden="true">⛩️</div>
@@ -2340,7 +2375,8 @@ function speakP(text,lang,rate){return new Promise(res=>{
 })}
 function lpItems(scope){
   if(scope==="g")return [...$("lkGram").querySelectorAll(".geg")].map(el=>({jp:el.dataset.jp,vi:el.dataset.vi,el}));
-  const v=LS_DATA[lsN].v;
+  if(scope==="d")return [...$("lkDlg").querySelectorAll(".dl")].map(el=>({jp:el.dataset.jp,vi:el.dataset.vi,el}));
+  const v=lsVocab(lsN);
   if(!$("fcWrap").hidden){if(!fcOrder)fcOrder=v.map((_,i)=>i);return fcOrder.map(k=>({jp:v[k][1]||v[k][0],vi:v[k][2],fc:true}))}
   const lis=$("lkVocab").children;return v.map(([w,r,m],i)=>({jp:r||w,vi:m,el:lis[i]}));
 }
@@ -2352,7 +2388,7 @@ function lpUI(){
   document.querySelectorAll(".lsplay").forEach(bar=>{
     const on=!!LP&&LP.scope===bar.dataset.scope;
     bar.classList.toggle("on",on);
-    bar.querySelector(".lp-go").innerHTML=on?"⏹ Dừng đọc":(bar.dataset.scope==="g"?"▶ Đọc tất cả câu ví dụ":"▶ Đọc tất cả");
+    bar.querySelector(".lp-go").innerHTML=on?"⏹ Dừng đọc":({g:"▶ Đọc tất cả câu ví dụ",d:"▶ Đọc cả đoạn hội thoại"}[bar.dataset.scope]||"▶ Đọc tất cả");
     bar.querySelector(".lp-vi").checked=LPS.vi;bar.querySelector(".lp-loop").checked=LPS.loop;bar.querySelector(".lp-rate").value=String(LPS.rate);
     if(!on)bar.querySelector(".lp-st").textContent="";
   });
@@ -2527,6 +2563,27 @@ g:[["N へ いきます・きます・かえります","へ (đọc là “e”)
 ["～よ","Cuối câu, báo cho người nghe điều họ chưa biết, nhấn mạnh.",[["この 電車{でんしゃ}は 駅{えき}へ 行{い}きませんよ。","Tàu này không đi đến ga đâu nhé."]]]],
 t:[["あした 学校{がっこう}＿ 行{い}きます。","へ",["を","の","が"],"Ngày mai tôi đến trường."],["バス＿ 駅{えき}へ 行{い}きます。","で",["に","へ","と"],"Tôi đi ra ga bằng xe buýt."],["家族{かぞく}＿ 日本{にほん}へ 来{き}ました。","と",["で","を","は"],"Tôi đã đến Nhật cùng gia đình."],["＿ ベトナムへ 帰{かえ}りますか。","いつ",["どこ","だれ","なん"],"Khi nào bạn về Việt Nam?"],["昨日{きのう}は どこ＿ 行{い}きませんでした。","も",["は","で","の"],"Hôm qua không đi đâu cả."]]}
 };
+/* từ vựng bổ sung (các từ người học gặp trong mỗi bài) và hội thoại tự soạn */
+const LS_MORE={
+1:[["わたしたち","","chúng tôi, chúng ta"],["みなさん","","mọi người, các bạn"],["～ちゃん","","bé ~ (gọi trẻ em, thân mật)"],["～くん","","cậu ~ (gọi bạn nam)"],["どなた","","vị nào (lịch sự của だれ)"],["おいくつ","","bao nhiêu tuổi (lịch sự)"],["教師","きょうし","giáo viên (nói về nghề mình)"],["社員","しゃいん","nhân viên của công ty ~"],["銀行員","ぎんこういん","nhân viên ngân hàng"],["研究者","けんきゅうしゃ","nhà nghiên cứu"],["名前","なまえ","tên"],["失礼ですが","しつれいですが","xin lỗi, cho tôi hỏi…"],["お名前は？","おなまえは？","tên bạn là gì?"],["～から来ました","～からきました","đến từ ~"],["こちらは ～さんです","","đây là anh/chị ~"],["アメリカ","","nước Mỹ"],["中国","ちゅうごく","Trung Quốc"],["韓国","かんこく","Hàn Quốc"]],
+2:[["どれ","","cái nào"],["その～","","~ đó"],["あの～","","~ kia"],["どの～","","~ nào"],["手帳","てちょう","sổ tay"],["名刺","めいし","danh thiếp"],["カード","","thẻ"],["ボールペン","","bút bi"],["シャープペンシル","","bút chì kim"],["テレビ","","ti vi"],["カメラ","","máy ảnh"],["コンピューター","","máy vi tính"],["日本語","にほんご","tiếng Nhật"],["～語","～ご","tiếng ~"],["隣","となり","bên cạnh, hàng xóm"],["あのう","","à… ừm (khi ngập ngừng)"],["どうぞ","","xin mời"],["ほんの気持ちです","ほんのきもちです","chút lòng thành thôi ạ"],["ありがとう ございます","","cảm ơn"],["これから お世話に なります","これから おせわに なります","từ nay mong được giúp đỡ"],["こちらこそ よろしく","","chính tôi mới mong được giúp đỡ"]],
+3:[["あちら","","phía kia (lịch sự)"],["そちら","","phía đó (lịch sự)"],["事務所","じむしょ","văn phòng"],["会議室","かいぎしつ","phòng họp"],["ロビー","","sảnh"],["階段","かいだん","cầu thang"],["自動販売機","じどうはんばいき","máy bán hàng tự động"],["電話","でんわ","điện thoại"],["靴","くつ","giày"],["ネクタイ","","cà vạt"],["ワイン","","rượu vang"],["店員","てんいん","nhân viên cửa hàng"],["何階","なんがい","tầng mấy"],["千","せん","một nghìn"],["万","まん","mười nghìn"],["すみません","","xin lỗi, làm ơn"],["～でございます","","là ~ (cách nói rất lịch sự)"],["見せて ください","みせて ください","cho tôi xem"],["じゃ","","vậy thì"],["これを ください","","cho tôi cái này"]],
+4:[["銀行","ぎんこう","ngân hàng"],["郵便局","ゆうびんきょく","bưu điện"],["図書館","としょかん","thư viện"],["美術館","びじゅつかん","bảo tàng mỹ thuật"],["昼","ひる","buổi trưa"],["晩","ばん","buổi tối"],["今朝","けさ","sáng nay"],["今晩","こんばん","tối nay"],["毎朝","まいあさ","mỗi sáng"],["毎晩","まいばん","mỗi tối"],["月曜日","げつようび","thứ hai"],["火曜日","かようび","thứ ba"],["水曜日","すいようび","thứ tư"],["木曜日","もくようび","thứ năm"],["金曜日","きんようび","thứ sáu"],["土曜日","どようび","thứ bảy"],["日曜日","にちようび","chủ nhật"],["何曜日","なんようび","thứ mấy"],["番号","ばんごう","số (điện thoại, phòng…)"],["試験","しけん","kỳ thi"],["会議","かいぎ","cuộc họp"],["もしもし","","a lô"],["大変ですね","たいへんですね","vất vả nhỉ"],["どういたしまして","","không có gì"]],
+5:[["地下鉄","ちかてつ","tàu điện ngầm"],["新幹線","しんかんせん","tàu cao tốc Shinkansen"],["船","ふね","tàu thủy"],["彼","かれ","anh ấy, bạn trai"],["彼女","かのじょ","cô ấy, bạn gái"],["去年","きょねん","năm ngoái"],["今年","ことし","năm nay"],["来年","らいねん","năm sau"],["先月","せんげつ","tháng trước"],["今月","こんげつ","tháng này"],["来月","らいげつ","tháng sau"],["～月","～がつ","tháng ~"],["何月","なんがつ","tháng mấy"],["～日","～にち","ngày ~"],["何日","なんにち","ngày mấy"],["駅員","えきいん","nhân viên nhà ga"],["次の","つぎの","tiếp theo"],["普通","ふつう","tàu thường (dừng mọi ga)"],["急行","きゅうこう","tàu nhanh"],["～番線","～ばんせん","sân ga số ~"]]
+};
+/* hội thoại: [vai, câu (漢字{よみ}), nghĩa]; vai "タイ" là Tài */
+const LS_DLG={
+1:{t:"Buổi học đầu tiên",l:[["先生{せんせい}","はじめまして。私{わたし}は 山田{やまだ}です。日本語{にほんご}の 教師{きょうし}です。","Rất vui được gặp. Tôi là Yamada, giáo viên tiếng Nhật."],["タイ","はじめまして。タイです。ベトナムから 来{き}ました。","Rất vui được gặp cô. Em là Tài, em đến từ Việt Nam."],["先生{せんせい}","タイさんは 学生{がくせい}ですか。","Tài là sinh viên à?"],["タイ","いいえ、学生{がくせい}じゃ ありません。会社員{かいしゃいん}です。","Không ạ, em không phải sinh viên. Em là nhân viên công ty."],["先生{せんせい}","そうですか。こちらは マイさんです。マイさんも ベトナム人{じん}です。","Vậy à. Đây là Mai. Mai cũng là người Việt Nam."],["マイ","はじめまして。マイです。どうぞ よろしく おねがいします。","Rất vui được gặp anh. Em là Mai. Rất mong được anh giúp đỡ."],["タイ","タイです。こちらこそ よろしく おねがいします。","Anh là Tài. Anh cũng mong được em giúp đỡ."]]},
+2:{t:"Chào hàng xóm mới",l:[["タイ","こんにちは。隣{となり}の タイです。","Xin chào. Tôi là Tài, mới chuyển đến nhà bên cạnh."],["田中{たなか}","あ、こんにちは。田中{たなか}です。","À, xin chào. Tôi là Tanaka."],["タイ","これから お世話{せわ}に なります。あのう、これ、ほんの 気持{きも}ちです。","Từ nay mong được anh giúp đỡ. À… đây là chút lòng thành ạ."],["田中{たなか}","どうも ありがとう ございます。これは 何{なん}ですか。","Cảm ơn anh nhiều. Đây là gì vậy?"],["タイ","コーヒーです。ベトナムの コーヒーです。どうぞ。","Là cà phê. Cà phê Việt Nam đấy. Mời anh."],["田中{たなか}","ありがとう ございます。こちらこそ よろしく おねがいします。","Cảm ơn anh. Tôi cũng mong được anh giúp đỡ."]]},
+3:{t:"Mua đồng hồ ở cửa hàng",l:[["タイ","すみません。時計{とけい}売{う}り場{ば}は どこですか。","Xin lỗi, quầy đồng hồ ở đâu ạ?"],["店員{てんいん}","５階{かい}でございます。","Dạ, ở tầng 5 ạ."],["タイ","すみません。その 時計{とけい}を 見{み}せて ください。","Xin lỗi, cho tôi xem chiếc đồng hồ đó."],["店員{てんいん}","はい、どうぞ。","Vâng, mời anh."],["タイ","これは どこの 時計{とけい}ですか。","Đây là đồng hồ của nước nào vậy?"],["店員{てんいん}","日本{にほん}の 時計{とけい}です。","Là đồng hồ của Nhật ạ."],["タイ","いくらですか。","Bao nhiêu tiền vậy?"],["店員{てんいん}","１８,０００円{えん}です。","18.000 yên ạ."],["タイ","じゃ、これを ください。","Vậy cho tôi cái này."]]},
+4:{t:"Gọi điện hỏi giờ thư viện",l:[["タイ","もしもし、さくら図書館{としょかん}ですか。","A lô, thư viện Sakura phải không ạ?"],["係{かかり}の人{ひと}","はい、そうです。","Vâng, đúng rồi ạ."],["タイ","すみません。そちらは 何時{なんじ}から 何時{なんじ}までですか。","Xin lỗi, thư viện mở từ mấy giờ đến mấy giờ ạ?"],["係{かかり}の人{ひと}","９時{じ}から ６時{じ}までです。","Từ 9 giờ đến 6 giờ ạ."],["タイ","休{やす}みは 何曜日{なんようび}ですか。","Ngày nghỉ là thứ mấy ạ?"],["係{かかり}の人{ひと}","月曜日{げつようび}です。","Là thứ hai ạ."],["タイ","どうも ありがとう ございました。","Cảm ơn nhiều ạ."],["係{かかり}の人{ひと}","どういたしまして。","Không có gì ạ."]]},
+5:{t:"Hỏi tàu ở nhà ga",l:[["タイ","すみません。この 電車{でんしゃ}は 京都{きょうと}へ 行{い}きますか。","Xin lỗi, tàu này có đi Kyoto không ạ?"],["駅員{えきいん}","いいえ、行{い}きません。次{つぎ}の 普通{ふつう}ですよ。","Không, không đi đâu. Chuyến tàu thường tiếp theo cơ."],["タイ","そうですか。何番線{なんばんせん}ですか。","Vậy à. Ở sân ga số mấy ạ?"],["駅員{えきいん}","３番線{ばんせん}です。","Sân ga số 3."],["タイ","ありがとう ございました。","Cảm ơn ạ."],["マイ","タイさん、京都{きょうと}へ だれと 行{い}きますか。","Anh Tài, anh đi Kyoto với ai thế?"],["タイ","一人{ひとり}で 行{い}きます。来週{らいしゅう} 帰{かえ}ります。","Anh đi một mình. Tuần sau anh về."]]}
+};
+for(const n in LS_MORE)LS_DATA[n].v.push(...LS_MORE[n]);
+for(const n in LS_DLG)LS_DATA[n].d=LS_DLG[n];
+/* từ của riêng Tài (lưu trên đám mây dạng {w,r,m}) */
+const lsMine=n=>((lsSt(n).mine)||[]).filter(x=>x&&x.w).map(x=>[x.w,x.r||"",x.m||"",1]);
+const lsVocab=n=>[...((LS_DATA[n]||{}).v||[]),...lsMine(n)];
 const LS_PASS=.8;
 const lsSt=n=>((state.lessons||{})[n])||{};
 const lsDone=n=>!!lsSt(n).done;
@@ -2539,12 +2596,12 @@ function lsRenderList(force){
   const done=LS_LIST.filter(([n])=>lsDone(n)).length, cur=lsCur();
   const sig=JSON.stringify(state.lessons||{});
   if(!force&&sig===lsSig&&$("lsGrid").children.length)return;lsSig=sig;
-  const words=LS_LIST.filter(([n])=>lsDone(n)&&LS_DATA[n]).reduce((a,[n])=>a+LS_DATA[n].v.length,0);
+  const words=LS_LIST.filter(([n])=>lsDone(n)).reduce((a,[n])=>a+lsVocab(n).length,0);
   $("lsDone").textContent=done;$("lsWords").textContent=words;
   const pct=done/50;$("lsRing").style.setProperty("--p",pct);$("lsPct").textContent=Math.round(pct*100)+"%";
   $("lsHeroPet").innerHTML=`<span>${chibi(themeM??now.getMonth(),2)}</span>`;
   const tile=([n,t,g],i)=>{
-    const open=lsOpen(n), d=lsDone(n), has=!!LS_DATA[n], st=lsSt(n), isCur=n===cur&&open&&!d;
+    const open=lsOpen(n), d=lsDone(n), has=!!LS_DATA[n]||lsMine(n).length>0, st=lsSt(n), isCur=n===cur&&open&&!d;
     const cls=["lt",d?"done":"",!open?"lock":"",isCur?"cur":"",!has?"soon":""].join(" ");
     const badge=d?`<span class="lt-seal" aria-label="Đã hoàn thành">合格</span>`:!open?`<span class="lt-lock" aria-hidden="true">🔒</span>`:"";
     const meta=d?`Đã xong${st.best!=null?` · ${st.best}/${st.bestN}`:""}`:!open?"Hoàn thành bài trước để mở":has?(isCur?"Học tiếp nào ›":"Sẵn sàng"):"Đang soạn nội dung";
@@ -2561,32 +2618,48 @@ function lsOpenLesson(n){
 function lsRenderLesson(n){
   lpStop();lpUI();
   lsN=n;LQ=null;fcI=0;fcFlip=false;fcOrder=null;
-  const [,t,g]=LS_LIST[n-1], D=LS_DATA[n], d=lsDone(n);
+  const [,t,g]=LS_LIST[n-1], D=LS_DATA[n], d=lsDone(n), has=!!D||lsMine(n).length>0||canEdit;
   $("lkNo").textContent="第"+KNUM(n)+"課";$("lkNum").textContent="Bài "+n;$("lkTitle").textContent=t;
   $("lkSeal").hidden=!d;
   $("lkPrev").hidden=n<=1;$("lkNext").hidden=n>=50;
   $("lkNext").classList.toggle("locked",!lsOpen(n+1));
-  $("lkTabs").hidden=!D;$("lkSoon").hidden=!!D;
-  $("lkMark").hidden=!D||!canEdit;$("lkMark").textContent=d?"↺ Bỏ đánh dấu hoàn thành":"✓ Đánh dấu đã học xong";
-  if(!D){
-    $("lkSoon").innerHTML=`<div class="lk-soonpet">${chibi(themeM??now.getMonth(),1)}</div><h3>Nội dung bài ${n} đang được soạn</h3><p>Trong bài này bạn sẽ gặp các điểm ngữ pháp:</p><div class="lk-gtags">${g.map(x=>`<span>${esc(x)}</span>`).join("")}</div>`;
-    ["v","g","q"].forEach(x=>$("lk_"+x).hidden=true);return;
-  }
+  $("lkTabs").hidden=!has;$("lkSoon").hidden=!!D||has;
+  $("lkMark").hidden=!has||!canEdit;$("lkMark").textContent=d?"↺ Bỏ đánh dấu hoàn thành":"✓ Đánh dấu đã học xong";
+  if(!D)$("lkSoon").innerHTML=`<div class="lk-soonpet">${chibi(themeM??now.getMonth(),1)}</div><h3>Nội dung bài ${n} đang được soạn</h3><p>${canEdit?"Bạn có thể tự thêm từ vựng của bài này ở tab Từ vựng bên dưới.":"Trong bài này bạn sẽ gặp các điểm ngữ pháp:"}</p>${canEdit?"":`<div class="lk-gtags">${g.map(x=>`<span>${esc(x)}</span>`).join("")}</div>`}`;
+  if(!has){["v","g","d","q"].forEach(x=>$("lk_"+x).hidden=true);return}
+  const hasD=!!(D&&D.d);$("lkDTab").hidden=!hasD;$("lkTabs").classList.toggle("four",hasD);
   lsTabTo("v",true);
-  $("lkVc").textContent=D.v.length;$("lkGc").textContent=D.g.length;
-  $("lkVocab").innerHTML=D.v.map(([w,r,m],i)=>`<li style="--d:${i*30}ms"><span class="vtx"><span class="vw">${esc(w)}</span><span class="vr">${esc(r)}</span><span class="rmj">${esc(romaWord(r||w))}</span><span class="vm">${esc(m)}</span></span>${sayBtnHtml(r||w,"Nghe: "+w)}</li>`).join("");
-  $("lkGram").innerHTML=D.g.map(([p,ex,eg],i)=>`<article class="gcard" style="--d:${i*60}ms"><div class="gpat"><span class="gidx">${i+1}</span>${esc(p)}</div><p class="gex">${esc(ex)}</p>${eg.map(([j,v])=>`<div class="geg" data-jp="${esc(plainOf(j))}" data-vi="${esc(v)}"><div class="gj">${rb(j)}</div><div class="rmj">${esc(roma(kanaOf(j)))}</div><div class="gv">${esc(v)}</div>${sayBtnHtml(plainOf(j),"Nghe câu ví dụ")}</div>`).join("")}</article>`).join("");
-  fcRender();lqIntro();
+  lsRenderVocab(true);
+  const G=D?D.g:g.map(x=>[x,"Phần giải thích đang được soạn.",[]]);
+  $("lkGc").textContent=G.length;
+  $("lkGram").innerHTML=G.map(([p,ex,eg],i)=>`<article class="gcard" style="--d:${i*60}ms"><div class="gpat"><span class="gidx">${i+1}</span>${esc(p)}</div><p class="gex">${esc(ex)}</p>${eg.map(([j,v])=>`<div class="geg" data-jp="${esc(plainOf(j))}" data-vi="${esc(v)}"><div class="gj">${rb(j)}</div><div class="rmj">${esc(roma(kanaOf(j)))}</div><div class="gv">${esc(v)}</div>${sayBtnHtml(plainOf(j),"Nghe câu ví dụ")}</div>`).join("")}</article>`).join("");
+  if(hasD){
+    $("dlgT").innerHTML=`<span class="dlg-ic">🎎</span> ${esc(D.d.t)}`;
+    $("lkDlg").innerHTML=D.d.l.map(([who,j,v],i)=>`<div class="dl${who==="タイ"?" me":""}" style="--d:${i*90}ms" data-jp="${esc(plainOf(j))}" data-vi="${esc(v)}"><div class="dl-who">${who==="タイ"?"Tài":rb(who)}</div><div class="dl-b"><div class="gj">${rb(j)}</div><div class="rmj">${esc(roma(kanaOf(j)))}</div><div class="gv">${esc(v)}</div></div>${sayBtnHtml(plainOf(j),"Nghe câu này")}</div>`).join("");
+  }
+  lqIntro();
+}
+let vocabSig="";
+function lsRenderVocab(force){
+  const v=lsVocab(lsN), sig=lsN+"|"+canEdit+"|"+JSON.stringify(lsSt(lsN).mine||[]);
+  if(!force&&sig===vocabSig)return;vocabSig=sig;
+  $("lkVc").textContent=v.length;
+  $("mineF").hidden=!canEdit;
+  const base=((LS_DATA[lsN]||{}).v||[]).length;
+  $("lkVocab").innerHTML=v.length?v.map(([w,r,m,mine],i)=>`<li class="${mine?"mine":""}" style="--d:${Math.min(i,20)*30}ms"><span class="vtx"><span class="vw">${esc(w)}${mine?` <i class="mtag">của tôi</i>`:""}</span><span class="vr">${esc(r)}</span><span class="rmj">${esc(romaWord(r||w))}</span><span class="vm">${esc(m)}</span></span><span class="vact">${sayBtnHtml(r||w,"Nghe: "+w)}${mine&&canEdit?`<button type="button" class="mdel" data-del="${i-base}" aria-label="Xóa từ ${esc(w)}">✕</button>`:""}</span></li>`).join("")
+    :`<li class="vempty">Bài này chưa có từ nào${canEdit?". Thêm từ đầu tiên ở ô bên dưới nhé!":"."}</li>`;
+  $("lkVMode").parentElement.hidden=!v.length;
+  if(!$("fcWrap").hidden){if(v.length){fcOrder=null;fcRender()}else{$("fcWrap").hidden=true;$("lkVocab").hidden=false}}
 }
 function lsTabTo(x,quiet){
   lpStop();lsTab=x;
   [...$("lkTabs").children].forEach(b=>{const on=b.dataset.t===x;b.classList.toggle("on",on);b.setAttribute("aria-selected",on)});
-  ["v","g","q"].forEach(k=>{const el=$("lk_"+k);el.hidden=k!==x;if(k===x&&!quiet){el.classList.remove("tabin");void el.offsetWidth;el.classList.add("tabin")}});
+  ["v","g","d","q"].forEach(k=>{const el=$("lk_"+k);el.hidden=k!==x;if(k===x&&!quiet){el.classList.remove("tabin");void el.offsetWidth;el.classList.add("tabin")}});
   $("viewLesson").classList.toggle("testing",x==="q"&&!!LQ&&!LQ.over);
 }
 /* flashcards */
 function fcRender(){
-  const v=LS_DATA[lsN].v;if(!fcOrder)fcOrder=v.map((_,i)=>i);
+  const v=lsVocab(lsN);if(!v.length)return;if(!fcOrder||fcOrder.length!==v.length)fcOrder=v.map((_,i)=>i);if(fcI>=v.length)fcI=0;
   const [w,r,m]=v[fcOrder[fcI]];
   $("fcFront").innerHTML=`<div class="fc-w">${esc(w)}</div>${r?`<div class="fc-r">${esc(r)}</div>`:""}<div class="rmj">${esc(romaWord(r||w))}</div>`;
   $("fcSay").innerHTML=sayBtnHtml(r||w,"Nghe: "+w);
@@ -2596,7 +2669,7 @@ function fcRender(){
   $("fcBar").style.width=((fcI+1)/v.length*100)+"%";
 }
 function fcGo(d){
-  const v=LS_DATA[lsN].v;fcI=(fcI+d+v.length)%v.length;fcFlip=false;
+  const v=lsVocab(lsN);if(!v.length)return;fcI=(fcI+d+v.length)%v.length;fcFlip=false;
   const c=$("fcCard");c.classList.remove("fcin-l","fcin-r");void c.offsetWidth;c.classList.add(d>0?"fcin-r":"fcin-l");fcRender();
 }
 /* lesson quiz: vocab both directions + grammar fill-in */
@@ -2604,11 +2677,12 @@ function lqIntro(){
   const st=lsSt(lsN);
   $("lqStart").hidden=false;$("lqPlay").hidden=true;$("lqEnd").hidden=true;
   $("lqBest").textContent=st.best!=null?`Điểm cao nhất: ${st.best}/${st.bestN}`:"Chưa làm bài kiểm tra";
-  $("lqCount").textContent=lqBuild().length;
+  const nq=lqBuild().length;$("lqCount").textContent=nq;
+  $("lqGo").disabled=nq<4;$("lqGo").textContent=nq<4?"Cần ít nhất 4 từ để làm bài":"Bắt đầu kiểm tra";
 }
 function lqBuild(){
-  const D=LS_DATA[lsN], v=D.v, out=[];
-  shuffle([...v]).slice(0,10).forEach((it,i)=>{
+  const D=LS_DATA[lsN]||{t:[]}, v=lsVocab(lsN), out=[];
+  if(v.length>=4)shuffle([...v]).slice(0,12).forEach((it,i)=>{
     const others=shuffle(v.filter(o=>o!==it)).slice(0,3);
     if(i%2===0)out.push({kind:"jv",q:it[0],sub:it[1],ro:romaWord(it[1]||it[0]),ask:"Từ này nghĩa là gì?",opts:shuffle([it,...others]).map(o=>({t:o[2],ok:o===it})),why:`${it[0]}${it[1]?" ("+it[1]+")":""} = ${it[2]}`});
     else out.push({kind:"vj",q:it[2],ask:"Chọn từ tiếng Nhật đúng",opts:shuffle([it,...others]).map(o=>({t:o[0],sub:o[1],ok:o===it})),why:`${it[2]} = ${it[0]}${it[1]?" ("+it[1]+")":""}`});
@@ -2660,15 +2734,25 @@ $("lkNext").onclick=()=>lsOpenLesson(lsN+1);
 $("lkMark").onclick=()=>{if(!canEdit)return;const d=!lsDone(lsN);lsSet(lsN,{done:d});lsRenderLesson(lsN);toast(d?`Đã đánh dấu xong bài ${lsN} ✓`:`Đã bỏ đánh dấu bài ${lsN}`)};
 $("fcCard").onclick=()=>{fcFlip=!fcFlip;$("fcCard").classList.toggle("flip",fcFlip)};
 $("fcPrev").onclick=()=>fcGo(-1);$("fcNext").onclick=()=>fcGo(1);
-$("fcShuf").onclick=()=>{fcOrder=shuffle(LS_DATA[lsN].v.map((_,i)=>i));fcI=0;fcFlip=false;fcGo(0);toast("Đã xáo trộn thẻ 🔀")};
+$("fcShuf").onclick=()=>{fcOrder=shuffle(lsVocab(lsN).map((_,i)=>i));fcI=0;fcFlip=false;fcGo(0);toast("Đã xáo trộn thẻ 🔀")};
 $("lkVMode").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;lpStop();[...$("lkVMode").children].forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});
   const fc=b.dataset.m==="fc";$("lkVocab").hidden=fc;$("fcWrap").hidden=!fc;const el=fc?$("fcWrap"):$("lkVocab");el.classList.remove("tabin");void el.offsetWidth;el.classList.add("tabin")});
-$("lqGo").onclick=lqBegin;$("lqAgain").onclick=lqBegin;
+$("lqGo").onclick=lqBegin;
+$("mineF").addEventListener("submit",e=>{e.preventDefault();if(!canEdit)return;
+  const w=$("mfW").value.trim(),r=$("mfR").value.trim(),m=$("mfM").value.trim();if(!w||!m)return;
+  const mine=[...(lsSt(lsN).mine||[]),{w,r,m}];lsSet(lsN,{mine});
+  $("mfW").value=$("mfR").value=$("mfM").value="";$("mfW").focus();
+  lsRenderVocab(true);lqIntro();toast(`Đã thêm 「${w}」 vào bài ${lsN} ✓`);
+  const li=$("lkVocab").lastElementChild;if(li)li.scrollIntoView({block:"nearest",behavior:RM?"auto":"smooth"})});
+$("lkVocab").addEventListener("click",e=>{const b=e.target.closest(".mdel");if(!b||!canEdit)return;
+  const mine=[...(lsSt(lsN).mine||[])], k=Number(b.dataset.del), it=mine[k];if(!it)return;
+  if(b.dataset.sure!=="1"){b.dataset.sure="1";b.textContent="Xóa?";b.classList.add("sure");setTimeout(()=>{if(b.isConnected){b.dataset.sure="";b.textContent="✕";b.classList.remove("sure")}},2500);return}
+  mine.splice(k,1);lsSet(lsN,{mine});lsRenderVocab(true);lqIntro();toast(`Đã xóa 「${it.w}」`)});$("lqAgain").onclick=lqBegin;
 $("lqToVocab").onclick=()=>{LQ=null;lqIntro();lsTabTo("v")};
 $("lqQuit").onclick=()=>{LQ=null;$("viewLesson").classList.remove("testing");lqIntro()};
 $("lqNext").onclick=lqNext;
 $("lqOpts").addEventListener("click",e=>{const b=e.target.closest(".qo");if(b)lqAnswer(Number(b.dataset.j))});
-function lsSync(){if(!$("viewLessons").hidden)lsRenderList();else if(!$("viewLesson").hidden&&lsN&&!(LQ&&!LQ.over)){$("lkSeal").hidden=!lsDone(lsN);$("lkNext").classList.toggle("locked",!lsOpen(lsN+1));$("lkMark").hidden=!LS_DATA[lsN]||!canEdit;$("lkMark").textContent=lsDone(lsN)?"↺ Bỏ đánh dấu hoàn thành":"✓ Đánh dấu đã học xong"}}
+function lsSync(){if(!$("viewLessons").hidden)lsRenderList();else if(!$("viewLesson").hidden&&lsN&&!(LQ&&!LQ.over)){$("lkSeal").hidden=!lsDone(lsN);$("lkNext").classList.toggle("locked",!lsOpen(lsN+1));$("lkMark").hidden=!canEdit||!(LS_DATA[lsN]||lsMine(lsN).length);if(!$("lk_v").hidden&&!LP)lsRenderVocab();$("lkMark").textContent=lsDone(lsN)?"↺ Bỏ đánh dấu hoàn thành":"✓ Đánh dấu đã học xong"}}
 
 function route(){
   try{lpStop()}catch(e){}
