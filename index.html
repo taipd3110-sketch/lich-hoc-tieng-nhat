@@ -2691,6 +2691,12 @@ for(const n in LS_HB){const h=LS_HB[n];
   /* chỉnh vài mục cho đầy đủ */
   LS_DATA[n].v.forEach(x=>{if(x[0]==="どうぞよろしく"){x[0]="どうぞ よろしく お願いします";x[1]="どうぞ よろしく おねがいします";x[2]="rất mong được giúp đỡ (nói gọn: どうぞ よろしく)"}});
   LS_GROUPS[n].forEach(g=>{g[1]=g[1].map(w=>w==="どうぞよろしく"?"どうぞ よろしく お願いします":w)});
+  if(+n===1){ /* thêm danh sách các nước */
+    const C=[["日本","にほん","Nhật Bản"],["ベトナム","","Việt Nam"],["アメリカ","","Mỹ"],["イギリス","","Anh"],["中国","ちゅうごく","Trung Quốc"],["韓国","かんこく","Hàn Quốc"],["タイ","","Thái Lan"],["インド","","Ấn Độ"],["インドネシア","","Indonesia"],["フランス","","Pháp"],["ドイツ","","Đức"],["ブラジル","","Brazil"]];
+    LS_DATA[1].v.push(...C.map(([w,r,m])=>[w,r,m,0,0,""]));
+    const gi=LS_GROUPS[1].findIndex(g=>/Người/.test(g[0]));
+    LS_GROUPS[1].splice(gi+1,0,["🌏 Đất nước",C.map(x=>x[0]),1]);
+  }
   LS_LIST[n-1][1]=h.title;LS_LIST[n-1][2]=h.g.map(x=>x[0]);
 }
 const LS_PASS=.8;
