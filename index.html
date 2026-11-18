@@ -1494,6 +1494,12 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
     <div class="lk-soon" id="lkSoon" hidden></div>
     <div id="lk_v" class="lkpane">
       <div class="lk-vrow"><div class="lk-vmode" id="lkVMode"><button class="on" type="button" data-m="list" aria-pressed="true">☰ Danh sách</button><button type="button" data-m="fc" aria-pressed="false">🎴 Thẻ lật</button></div><div class="lsplay" data-scope="v"><button class="lp-go" type="button"></button><label class="lp-opt"><input type="checkbox" class="lp-vi"> Đọc cả nghĩa</label><label class="lp-opt"><input type="checkbox" class="lp-loop"> Lặp lại</label><select class="lp-rate" aria-label="Tốc độ đọc"><option value="0.65">🐢 Chậm</option><option value="0.85">Vừa</option><option value="1">🐇 Nhanh</option></select><button class="lp-voice" type="button">🎙️ Giọng</button><span class="lp-st" aria-live="polite"></span></div></div>
+      <div class="fcwrap" id="fcWrap" hidden>
+        <div class="fcbar" aria-hidden="true"><i id="fcBar"></i></div>
+        <div class="fcbox"><button class="fc" id="fcCard" type="button" aria-label="Chạm để lật thẻ"><span class="fc-in"><span class="fc-face front" id="fcFront"></span><span class="fc-face back" id="fcBack"></span></span></button><span class="fc-say" id="fcSay"></span></div>
+        <div class="fc-ctl"><button class="chip" id="fcPrev" type="button" aria-label="Thẻ trước">‹ Trước</button><span id="fcPos"></span><button class="chip" id="fcNext" type="button" aria-label="Thẻ sau">Sau ›</button></div>
+        <div class="fc-ctl"><button class="chip" id="fcShuf" type="button">🔀 Xáo thẻ</button><span class="fc-hint">Chạm vào thẻ để lật · phím ← → và Space</span></div>
+      </div>
       <ol class="vlist" id="lkVocab"></ol>
       <div class="lk-ref" id="lkRef"></div>
       <form class="mine-f" id="mineF" hidden autocomplete="off">
@@ -1507,12 +1513,6 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
         </details>
         <label class="mine-only"><input type="checkbox" id="mfOnly"> Chỉ dùng từ của tôi (ẩn từ có sẵn của trang, kể cả trong thẻ lật và bài kiểm tra)</label>
       </form>
-      <div class="fcwrap" id="fcWrap" hidden>
-        <div class="fcbar" aria-hidden="true"><i id="fcBar"></i></div>
-        <div class="fcbox"><button class="fc" id="fcCard" type="button" aria-label="Chạm để lật thẻ"><span class="fc-in"><span class="fc-face front" id="fcFront"></span><span class="fc-face back" id="fcBack"></span></span></button><span class="fc-say" id="fcSay"></span></div>
-        <div class="fc-ctl"><button class="chip" id="fcPrev" type="button" aria-label="Thẻ trước">‹ Trước</button><span id="fcPos"></span><button class="chip" id="fcNext" type="button" aria-label="Thẻ sau">Sau ›</button></div>
-        <div class="fc-ctl"><button class="chip" id="fcShuf" type="button">🔀 Xáo thẻ</button><span class="fc-hint">Chạm vào thẻ để lật · phím ← → và Space</span></div>
-      </div>
     </div>
     <div id="lk_g" class="lkpane" hidden><div class="lsplay" data-scope="g"><button class="lp-go" type="button"></button><label class="lp-opt"><input type="checkbox" class="lp-vi"> Đọc cả nghĩa</label><label class="lp-opt"><input type="checkbox" class="lp-loop"> Lặp lại</label><select class="lp-rate" aria-label="Tốc độ đọc"><option value="0.65">🐢 Chậm</option><option value="0.85">Vừa</option><option value="1">🐇 Nhanh</option></select><button class="lp-voice" type="button">🎙️ Giọng</button><span class="lp-st" aria-live="polite"></span></div><div class="glist" id="lkGram"></div></div>
     <div id="lk_d" class="lkpane" hidden><div class="lsplay" data-scope="d"><button class="lp-go" type="button"></button><label class="lp-opt"><input type="checkbox" class="lp-vi"> Đọc cả nghĩa</label><label class="lp-opt"><input type="checkbox" class="lp-loop"> Lặp lại</label><select class="lp-rate" aria-label="Tốc độ đọc"><option value="0.65">🐢 Chậm</option><option value="0.85">Vừa</option><option value="1">🐇 Nhanh</option></select><button class="lp-voice" type="button">🎙️ Giọng</button><span class="lp-st" aria-live="polite"></span></div><div class="dlg-t" id="dlgT"></div><div class="dlg" id="lkDlg"></div></div>
@@ -2953,7 +2953,8 @@ $("fcCard").onclick=()=>{fcFlip=!fcFlip;$("fcCard").classList.toggle("flip",fcFl
 $("fcPrev").onclick=()=>fcGo(-1);$("fcNext").onclick=()=>fcGo(1);
 $("fcShuf").onclick=()=>{fcOrder=shuffle(lsVocab(lsN).map((_,i)=>i));fcI=0;fcFlip=false;fcGo(0);toast("Đã xáo trộn thẻ 🔀")};
 $("lkVMode").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;lpStop();[...$("lkVMode").children].forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});
-  const fc=b.dataset.m==="fc";$("lkVocab").hidden=fc;$("fcWrap").hidden=!fc;const el=fc?$("fcWrap"):$("lkVocab");el.classList.remove("tabin");void el.offsetWidth;el.classList.add("tabin")});
+  const fc=b.dataset.m==="fc";$("lkVocab").hidden=fc;$("fcWrap").hidden=!fc;
+  if(fc){fcFlip=false;fcOrder=null;if(fcI>=lsVocab(lsN).length)fcI=0;fcRender();$("fcWrap").scrollIntoView({block:"nearest",behavior:RM?"auto":"smooth"})}const el=fc?$("fcWrap"):$("lkVocab");el.classList.remove("tabin");void el.offsetWidth;el.classList.add("tabin")});
 function lqExOpen(){
   const EX=((LS_DATA[lsN]||{}).ex||[]);
   LQ=null;$("lqStart").hidden=true;$("lqEnd").hidden=true;$("lqPlay").hidden=true;$("lqEx").hidden=false;
