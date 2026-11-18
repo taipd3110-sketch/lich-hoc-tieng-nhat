@@ -2752,8 +2752,8 @@ function lsRenderLesson(n){
   let ci=0;const card=(idx,title,ex,eg,cls)=>`<article class="gcard ${cls||""}" style="--d:${(ci++)*60}ms"><div class="gpat"><span class="gidx">${idx}</span>${esc(title)}</div>${exHtml(ex)}${egHtml(eg||[])}</article>`;
   let html="";
   if(D&&D.p&&D.p.length)html+=card("文","Mẫu câu cơ bản (文型)",null,D.p,"gsum");
-  if(D&&D.e&&D.e.length)html+=card("例","Ví dụ thực hành (例文)",null,D.e,"gsum");
   html+=G.map(([p,ex,eg],i)=>card(i+1,p,ex,eg)).join("");
+  if(D&&D.e&&D.e.length)html+=card("例","Ví dụ thực hành (例文)",null,D.e,"gsum");
   if(D&&D.c)html+=card("🎎","Góc văn hóa: "+D.c[0],{html:D.c[1]},[],"gcult");
   if(D&&D.hb)html+=`<p class="lk-src">Nội dung bài này theo tài liệu mở “Cẩm nang toàn diện tự học tiếng Nhật sơ cấp N5”.</p>`;
   $("lkGram").innerHTML=html;
