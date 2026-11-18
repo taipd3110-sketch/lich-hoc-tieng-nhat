@@ -1015,6 +1015,33 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
   .fc{height:200px}
 }
 @media (max-width:400px){.topnav .tab{padding-inline:9px}.topnav .tab span{font-size:.8rem}}
+.say{flex:none;width:34px;height:34px;border-radius:50%;border:1.5px solid #f3c2d4;background:#fff;color:var(--md);display:inline-grid;place-items:center;cursor:pointer;padding:0;vertical-align:middle;transition:transform .2s cubic-bezier(.3,1.4,.5,1),background .2s}
+.say svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.say svg path:first-child{fill:currentColor;stroke:none}
+.say:hover{transform:scale(1.1);background:var(--sakura-soft)}
+.say:active{transform:scale(.92)}
+.say.on{background:var(--md);color:#fff;border-color:var(--md);animation:sayp 1s ease-in-out infinite}
+.say.on .w1{animation:sayw .8s ease-in-out infinite}.say.on .w2{animation:sayw .8s ease-in-out .2s infinite}
+@keyframes sayp{50%{box-shadow:0 0 0 7px rgba(232,93,140,.18)}}
+@keyframes sayw{50%{opacity:.25}}
+.vr:empty{display:none}
+.rmj{font-size:.8rem;color:#9a88a8;font-style:italic;letter-spacing:.02em}
+.vlist li{grid-template-columns:minmax(0,1fr) auto;align-items:start}
+.vlist li .vtx{display:grid;gap:1px;min-width:0}
+.vlist li .say{margin-top:4px}
+.fc-say{position:absolute;top:12px;right:12px;z-index:2}
+.fcbox{position:relative;width:100%}
+.fc-face .rmj{font-size:.95rem}
+.fc-face.back .rmj{color:#fff;opacity:.85}
+.geg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.geg .gv,.geg .rmj{grid-column:1}
+.geg .say{grid-column:2;grid-row:1/span 3}
+.lq-q .rmj{font-size:.95rem}
+.lq-q.gr .rmj{display:block;line-height:1.5;font-family:var(--f-body)}
+.lq-sayrow{display:flex;justify-content:center;margin-top:4px}
+#qChart .qc:not(.blank){cursor:pointer;transition:transform .2s cubic-bezier(.3,1.4,.5,1)}
+#qChart .qc:not(.blank):hover{transform:translateY(-2px)}
+#qChart .qc.saying{animation:qpop .45s cubic-bezier(.3,1.6,.5,1);background:var(--sakura-soft)}
 
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
@@ -1304,7 +1331,7 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
       <ol class="vlist" id="lkVocab"></ol>
       <div class="fcwrap" id="fcWrap" hidden>
         <div class="fcbar" aria-hidden="true"><i id="fcBar"></i></div>
-        <button class="fc" id="fcCard" type="button" aria-label="Chạm để lật thẻ"><span class="fc-in"><span class="fc-face front" id="fcFront"></span><span class="fc-face back" id="fcBack"></span></span></button>
+        <div class="fcbox"><button class="fc" id="fcCard" type="button" aria-label="Chạm để lật thẻ"><span class="fc-in"><span class="fc-face front" id="fcFront"></span><span class="fc-face back" id="fcBack"></span></span></button><span class="fc-say" id="fcSay"></span></div>
         <div class="fc-ctl"><button class="chip" id="fcPrev" type="button" aria-label="Thẻ trước">‹ Trước</button><span id="fcPos"></span><button class="chip" id="fcNext" type="button" aria-label="Thẻ sau">Sau ›</button></div>
         <div class="fc-ctl"><button class="chip" id="fcShuf" type="button">🔀 Xáo thẻ</button><span class="fc-hint">Chạm vào thẻ để lật · phím ← → và Space</span></div>
       </div>
@@ -2150,7 +2177,7 @@ function qChart(){
   const dak=["がぎぐげご","ざじずぜぞ","だ  でど","ばびぶべぼ","ぱぴぷぺぽ"].map(r=>[...r].map(c=>c===" "?"":cv(c)));
   const KYc=qScript==="k"?KY2:KY,yo=[];for(let i=0;i<KYc.length;i+=3)yo.push(KYc.slice(i,i+3).map(x=>x.k));
   const anyWeak=Object.keys(miss).length;
-  $("qChart").innerHTML=(anyWeak?`<p class="qnote"><span class="qdot"></span> Chấm hồng là chữ Tài hay sai</p>`:"")+[()=>sec("46 chữ cơ bản",basic,5),()=>sec("Âm đục (thêm dấu ゛ ゜)",dak,5),()=>sec("Âm ghép (ゃ ゅ ょ nhỏ)",yo,3)][chartTab]();
+  $("qChart").innerHTML=`<p class="qnote">🔊 Chạm vào chữ để nghe cách đọc</p>`+(anyWeak?`<p class="qnote"><span class="qdot"></span> Chấm hồng là chữ Tài hay sai</p>`:"")+[()=>sec("46 chữ cơ bản",basic,5),()=>sec("Âm đục (thêm dấu ゛ ゜)",dak,5),()=>sec("Âm ghép (ゃ ゅ ょ nhỏ)",yo,3)][chartTab]();
 }
 $("qLevels").addEventListener("click",e=>{const b=e.target.closest(".qlv");if(!b)return;qLevel=Number(b.dataset.l);
   [...$("qLevels").children].forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});
@@ -2174,10 +2201,61 @@ $("qQuit").onclick=()=>{Q=null;qPane("qStart")};
 $("qNext").onclick=qNextQ;
 $("qOpts").addEventListener("click",e=>{const b=e.target.closest(".qo");if(b)qAnswer(Number(b.dataset.j))});
 let chartTab=0;
+$("qChart").addEventListener("click",e=>{const c=e.target.closest(".qc:not(.blank)");if(!c)return;const k=c.querySelector("b").textContent;c.classList.remove("saying");void c.offsetWidth;c.classList.add("saying");say(k)});
 $("qCTabs").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;chartTab=Number(b.dataset.c);
   [...$("qCTabs").children].forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-selected",on)});qChart()});
 
 /* pages in one file: #on-tap = Ôn tập, #bai-hoc = danh sách bài, #bai-N = một bài */
+/* ---------- phiên âm Latin (Hepburn) và giọng đọc ---------- */
+const RO=(()=>{const m={},rows="あa いi うu えe おo かka きki くku けke こko さsa しshi すsu せse そso たta ちchi つtsu てte とto なna にni ぬnu ねne のno はha ひhi ふfu へhe ほho まma みmi むmu めme もmo やya ゆyu よyo らra りri るru れre ろro わwa をo んn がga ぎgi ぐgu げge ごgo ざza じji ずzu ぜze ぞzo だda ぢji づzu でde どdo ばba びbi ぶbu べbe ぼbo ぱpa ぴpi ぷpu ぺpe ぽpo ぁa ぃi ぅu ぇe ぉo ゔvu";
+  rows.split(" ").forEach(x=>{m[x[0]]=x.slice(1)});return m})();
+const RPUN={"。":".","、":",","？":"?","！":"!","・":" · ","～":"~","「":"“","」":"”","（":"(","）":")","　":" "};
+const hira=t=>t.replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60));
+function romaWord(w){
+  const k=hira(w);let out="",i=0;
+  while(i<k.length){
+    const c=k[i],n=k[i+1];
+    if(c==="っ"){const nx=RO[n]||"";out+=nx.startsWith("ch")?"t":(nx[0]||"");i++;continue}
+    if(c==="ー"){const v=out.match(/[aiueo](?=[^aiueo]*$)/);out+=v?v[0]:"-";i++;continue}
+    if(c==="ん"){out+=/^[aiueoy]/.test(RO[n]||"")?"n'":"n";i++;continue}
+    let r=RO[c];
+    if(r==null){out+=RPUN[c]??c;i++;continue}
+    if(n&&"ゃゅょ".includes(n)){const y={ゃ:"a",ゅ:"u",ょ:"o"}[n];r=/^(sh|ch|j)/.test(r)?r.slice(0,-1)+y:r.slice(0,-1)+"y"+y;i+=2;out+=r;continue}
+    if(n&&"ぁぃぅぇぉ".includes(n)&&r.length>1){r=r.slice(0,-1).replace(/^(sh|ch|j|f|ts)$/,"$1")+RO[n];i+=2;out+=r;continue}
+    out+=r;i++;
+  }
+  return out;
+}
+/* đổi cả câu sang romaji: tách trợ từ và です ở cuối cụm cho dễ đọc; は/へ làm trợ từ đọc wa/e */
+const RTAIL=["さん","から","まで","です","でした","じゃ","は","へ","を","の","も","と","で","に","が","か","ね","よ"];
+function romaChunk(core){
+  const parts=[];let c=core,guard=0;
+  while(guard++<4&&!c.endsWith("\u0002")){const t=RTAIL.find(x=>c.endsWith(x)&&c.replace(/[\u0001\u0002]/g,"").length-x.length>=2);if(!t)break;parts.unshift(t);c=c.slice(0,-t.length)}
+  return [romaWord(c.replace(/[\u0001\u0002]/g,"")),...parts.map(x=>x==="は"?"wa":x==="へ"?"e":x==="さん"?"-san":romaWord(x))].join(" ").replace(/ -san/g,"-san");
+}
+function roma(t){
+  t=t.replace(/[０-９]/g,d=>String.fromCharCode(d.charCodeAt(0)-0xFEE0));
+  return t.split(/(\s+|[、。？！「」（）・])/).filter(x=>x!=="").map(ch=>/^\s+$/.test(ch)?" ":/^[、。？！「」（）・]$/.test(ch)?(RPUN[ch]||ch)+(/[、]/.test(ch)?" ":""):romaChunk(ch)).join("").replace(/ +/g," ").replace(/ ([.,?!”)])/g,"$1").replace(/“ /g,"“").replace(/([a-z0-9])“/g,"$1 “").replace(/”([a-z])/g,"” $1").replace(/([.?!])([a-z])/g,"$1 $2").trim();
+}
+const kanaOf=t=>t.replace(/([一-龯々〆ヵヶ]+)\{([^}]+)\}/g,"\u0001$2\u0002");
+const plainOf=t=>t.replace(/\{[^}]+\}/g,"");
+let jaVoice=null;
+function pickVoice(){try{const v=speechSynthesis.getVoices().filter(x=>/^ja/i.test(x.lang));jaVoice=v.find(x=>/google|kyoko|o-ren|nanami|haruka/i.test(x.name))||v[0]||null}catch(e){}}
+try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice}catch(e){}
+let sayBtn=null;
+function say(text,btn){
+  if(!("speechSynthesis" in window)){toast("Trình duyệt này chưa hỗ trợ giọng đọc");return}
+  const t=text.replace(/[～~]/g,"").trim();if(!t)return;
+  speechSynthesis.cancel();if(sayBtn)sayBtn.classList.remove("on");
+  const u=new SpeechSynthesisUtterance(t);u.lang="ja-JP";u.rate=.85;if(jaVoice)u.voice=jaVoice;
+  sayBtn=btn||null;if(btn)btn.classList.add("on");
+  const end=()=>{if(btn)btn.classList.remove("on")};u.onend=end;u.onerror=end;
+  speechSynthesis.speak(u);
+  if(!jaVoice&&speechSynthesis.getVoices().length&&!say.warned){say.warned=1;toast("Máy chưa có giọng tiếng Nhật, có thể đọc chưa chuẩn")}
+}
+const sayBtnHtml=(text,label)=>`<button type="button" class="say" data-say="${esc(text)}" aria-label="${label||"Nghe phát âm"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="w1" d="M16 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M18.5 6a8.5 8.5 0 0 1 0 12"/></svg></button>`;
+document.addEventListener("click",e=>{const b=e.target.closest(".say");if(!b)return;e.stopPropagation();e.preventDefault();say(b.dataset.say,b)},true);
+
 /* ---------- Bài học: 50 bài theo số bài Minna, nội dung tự soạn ---------- */
 /* ruby: 漢字{かんじ} -> <ruby> */
 const rb=t=>esc(t).replace(/([一-龯々〆ヵヶ]+)\{([^}]+)\}/g,"<ruby>$1<rt>$2</rt></ruby>");
@@ -2328,8 +2406,8 @@ function lsRenderLesson(n){
   }
   lsTabTo("v",true);
   $("lkVc").textContent=D.v.length;$("lkGc").textContent=D.g.length;
-  $("lkVocab").innerHTML=D.v.map(([w,r,m],i)=>`<li style="--d:${i*30}ms"><span class="vw">${esc(w)}</span><span class="vr">${esc(r)}</span><span class="vm">${esc(m)}</span></li>`).join("");
-  $("lkGram").innerHTML=D.g.map(([p,ex,eg],i)=>`<article class="gcard" style="--d:${i*60}ms"><div class="gpat"><span class="gidx">${i+1}</span>${esc(p)}</div><p class="gex">${esc(ex)}</p>${eg.map(([j,v])=>`<div class="geg"><div class="gj">${rb(j)}</div><div class="gv">${esc(v)}</div></div>`).join("")}</article>`).join("");
+  $("lkVocab").innerHTML=D.v.map(([w,r,m],i)=>`<li style="--d:${i*30}ms"><span class="vtx"><span class="vw">${esc(w)}</span><span class="vr">${esc(r)}</span><span class="rmj">${esc(romaWord(r||w))}</span><span class="vm">${esc(m)}</span></span>${sayBtnHtml(r||w,"Nghe: "+w)}</li>`).join("");
+  $("lkGram").innerHTML=D.g.map(([p,ex,eg],i)=>`<article class="gcard" style="--d:${i*60}ms"><div class="gpat"><span class="gidx">${i+1}</span>${esc(p)}</div><p class="gex">${esc(ex)}</p>${eg.map(([j,v])=>`<div class="geg"><div class="gj">${rb(j)}</div><div class="rmj">${esc(roma(kanaOf(j)))}</div><div class="gv">${esc(v)}</div>${sayBtnHtml(plainOf(j),"Nghe câu ví dụ")}</div>`).join("")}</article>`).join("");
   fcRender();lqIntro();
 }
 function lsTabTo(x,quiet){
@@ -2342,8 +2420,9 @@ function lsTabTo(x,quiet){
 function fcRender(){
   const v=LS_DATA[lsN].v;if(!fcOrder)fcOrder=v.map((_,i)=>i);
   const [w,r,m]=v[fcOrder[fcI]];
-  $("fcFront").innerHTML=`<div class="fc-w">${esc(w)}</div>${r?`<div class="fc-r">${esc(r)}</div>`:""}`;
-  $("fcBack").innerHTML=`<div class="fc-m">${esc(m)}</div><div class="fc-r">${esc(w)}${r?" · "+esc(r):""}</div>`;
+  $("fcFront").innerHTML=`<div class="fc-w">${esc(w)}</div>${r?`<div class="fc-r">${esc(r)}</div>`:""}<div class="rmj">${esc(romaWord(r||w))}</div>`;
+  $("fcSay").innerHTML=sayBtnHtml(r||w,"Nghe: "+w);
+  $("fcBack").innerHTML=`<div class="fc-m">${esc(m)}</div><div class="fc-r">${esc(w)}${r?" · "+esc(r):""}</div><div class="rmj">${esc(romaWord(r||w))}</div>`;
   $("fcCard").classList.toggle("flip",fcFlip);
   $("fcPos").textContent=`${fcI+1} / ${v.length}`;
   $("fcBar").style.width=((fcI+1)/v.length*100)+"%";
@@ -2363,7 +2442,7 @@ function lqBuild(){
   const D=LS_DATA[lsN], v=D.v, out=[];
   shuffle([...v]).slice(0,10).forEach((it,i)=>{
     const others=shuffle(v.filter(o=>o!==it)).slice(0,3);
-    if(i%2===0)out.push({kind:"jv",q:it[0],sub:it[1],ask:"Từ này nghĩa là gì?",opts:shuffle([it,...others]).map(o=>({t:o[2],ok:o===it})),why:`${it[0]}${it[1]?" ("+it[1]+")":""} = ${it[2]}`});
+    if(i%2===0)out.push({kind:"jv",q:it[0],sub:it[1],ro:romaWord(it[1]||it[0]),ask:"Từ này nghĩa là gì?",opts:shuffle([it,...others]).map(o=>({t:o[2],ok:o===it})),why:`${it[0]}${it[1]?" ("+it[1]+")":""} = ${it[2]}`});
     else out.push({kind:"vj",q:it[2],ask:"Chọn từ tiếng Nhật đúng",opts:shuffle([it,...others]).map(o=>({t:o[0],sub:o[1],ok:o===it})),why:`${it[2]} = ${it[0]}${it[1]?" ("+it[1]+")":""}`});
   });
   D.t.forEach(([s,a,bad,vn])=>out.push({kind:"gr",q:s,ask:"Điền vào chỗ trống",vn,opts:shuffle([a,...bad]).map(o=>({t:o,ok:o===a})),why:`Đáp án: ${a} — ${vn}`}));
@@ -2379,7 +2458,7 @@ function lqShow(){
   $("lqNum").textContent=`Câu ${LQ.i+1}/${LQ.list.length}`;$("lqProg").style.width=(LQ.i/LQ.list.length*100)+"%";
   $("lqAsk").textContent=q.ask;
   $("lqQ").className="lq-q "+q.kind;
-  $("lqQ").innerHTML=q.kind==="gr"?rb(q.q).replace("＿",'<span class="blank">？</span>'):q.kind==="jv"?`<span class="w">${esc(q.q)}</span>${q.sub?`<span class="r">${esc(q.sub)}</span>`:""}`:`<span class="vn">${esc(q.q)}</span>`;
+  $("lqQ").innerHTML=q.kind==="gr"?rb(q.q).replace("＿",'<span class="blank">？</span>')+`<span class="rmj">${esc(roma(kanaOf(q.q)).replace("＿","___"))}</span>`:q.kind==="jv"?`<span class="w">${esc(q.q)}</span>${q.sub?`<span class="r">${esc(q.sub)}</span>`:""}<span class="rmj">${esc(q.ro)}</span><span class="lq-sayrow">${sayBtnHtml(q.sub||q.q)}</span>`:`<span class="vn">${esc(q.q)}</span>`;
   $("lqOpts").innerHTML=q.opts.map((o,j)=>`<button type="button" class="qo ${q.kind==="jv"?"vn":"jp"}" data-j="${j}"><span class="qk">${j+1}</span><span class="qt">${esc(o.t)}${o.sub?`<small>${esc(o.sub)}</small>`:""}</span></button>`).join("");
   const c=$("lqCard");c.classList.remove("qin");void c.offsetWidth;c.classList.add("qin");
   $("lqFb").textContent="";$("lqFb").className="qfb";$("lqNext").hidden=true;LQ.answered=false;
