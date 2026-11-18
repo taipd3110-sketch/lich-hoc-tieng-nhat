@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chọn giọng đọc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&family=Kaisei+Decol:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff6f9;--card:#fff;--ink:#2b2540;--muted:#7a7290;--md:#e85d8c;--line:#f6dbe6;color-scheme:light}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Be Vietnam Pro",system-ui,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
+h1{font-family:"Kaisei Decol",serif;margin:0 0 4px}h2{font-family:"Kaisei Decol",serif;margin:26px 0 10px}
+p{color:var(--muted);margin:0 0 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px}
+.v{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px 14px;display:grid;gap:6px}
+.v b{font-size:1.05rem}.v small{color:var(--muted)}
+.v .id{display:inline-block;background:#ffe7f0;color:var(--md);border-radius:999px;padding:1px 9px;font-weight:800;font-size:.8rem}
+audio{width:100%;height:36px}
+a{color:var(--md)}
+</style></head><body><div class="wrap">
+<h1>🎙️ Chọn giọng đọc</h1>
+<p>Nghe thử rồi nhắn cho Claude <b>số mã</b> của giọng tiếng Nhật và tên giọng tiếng Việt bạn thích nhất.</p>
+<p><a href="./#bai-hoc">‹ Quay lại trang Bài học</a></p>
+<h2>Giọng tiếng Nhật (VOICEVOX)</h2><div class="grid" id="ja"><p>Đang tải…</p></div>
+<h2>Giọng tiếng Việt (Piper)</h2><div class="grid" id="vi"></div>
+<p style="margin-top:24px;font-size:.8rem">Giọng Nhật tạo bằng VOICEVOX, giọng Việt tạo bằng Piper.</p>
+</div>
+<script>
+fetch("audio/samples/index.json",{cache:"no-store"}).then(r=>r.json()).then(list=>{
+  const card=x=>`<div class="v"><div><b>${x.name}</b> ${x.lang==="ja"?`<span class="id">mã ${x.id}</span> <small>${x.style}</small>`:""}</div><audio controls preload="none" src="audio/samples/${x.file}"></audio></div>`;
+  document.getElementById("ja").innerHTML=list.filter(x=>x.lang==="ja").map(card).join("")||"<p>Chưa có mẫu.</p>";
+  document.getElementById("vi").innerHTML=list.filter(x=>x.lang==="vi").map(card).join("")||"<p>Chưa có mẫu.</p>";
+}).catch(()=>{document.getElementById("ja").innerHTML="<p>Chưa có file nghe thử, đợi vài phút rồi tải lại trang nhé.</p>"});
+</script></body></html>

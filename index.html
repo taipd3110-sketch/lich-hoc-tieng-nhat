@@ -1470,7 +1470,7 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
     <div class="vp-row"><select id="vpJa"></select><button class="say" id="vpTryJa" type="button" aria-label="Nghe thử giọng Nhật"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="w1" d="M16 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M18.5 6a8.5 8.5 0 0 1 0 12"/></svg></button></div>
     <p class="vp-note" id="vpJaNote" hidden>Máy chưa có giọng tiếng Nhật. iPhone: Cài đặt › Trợ năng › Nội dung được đọc › Giọng nói › Tiếng Nhật. Android: Cài đặt › Chuyển văn bản thành giọng nói › tải dữ liệu tiếng Nhật.</p>
     <label class="vp-l" for="vpPitch">Độ cao giọng Nhật <b id="vpPitchV"></b></label>
-    <input type="range" id="vpPitch" min="0.9" max="1.8" step="0.05">
+    <input type="range" id="vpPitch" min="0.95" max="1.2" step="0.05">
     <label class="vp-l">Giọng tiếng Việt <span>dùng khi bật “Đọc cả nghĩa”</span></label>
     <div class="vp-row"><select id="vpVi"></select><button class="chip" id="vpTryVi" type="button">Nghe thử</button></div>
     <p class="vp-note" id="vpViNote" hidden>Máy chưa có giọng tiếng Việt nên trang sẽ chỉ đọc tiếng Nhật. iPhone: Cài đặt › Trợ năng › Nội dung được đọc › Giọng nói › Tiếng Việt › tải giọng <b>Linh (Nâng cao)</b>. Android: cài “Dịch vụ lời nói của Google” và tải tiếng Việt. Máy tính: dùng trình duyệt Edge (có giọng HoaiMy) hoặc Chrome.</p>
@@ -2285,8 +2285,9 @@ function roma(t){
 const kanaOf=t=>t.replace(/([一-龯々〆ヵヶ]+)\{([^}]+)\}/g,"\u0001$2\u0002");
 const plainOf=t=>t.replace(/\{[^}]+\}/g,"");
 /* chọn giọng: ưu tiên giọng nữ, giọng chất lượng cao; người dùng có thể tự chọn */
-const VS={ja:"",vi:"",pitch:1.3};
+const VS={ja:"",vi:"",pitch:1.1};
 try{Object.assign(VS,JSON.parse(localStorage.getItem("jp-voice")||"{}"))}catch(e){}
+VS.pitch=Math.min(1.2,Math.max(.95,Number(VS.pitch)||1.1));
 const saveVS=()=>{try{localStorage.setItem("jp-voice",JSON.stringify(VS))}catch(e){}};
 const JA_F=/nanami|aoi|mayu|shiori|kyoko|o-?ren|haruka|ayumi|mizuki|sayaka|hikari|google|female|女/i, JA_M=/otoya|hattori|ichiro|keita|daichi|naoki|male|男/i;
 const VI_F=/linh|hoaimy|hoai my|google|female|nữ/i, VI_M=/\ban\b|namminh|nam minh|male|nam\b/i;
@@ -2405,7 +2406,7 @@ function vpFill0(){
   pj.innerHTML=ja.length?opt(ja,jaVoice,JA_F,JA_M):`<option>Máy chưa có giọng tiếng Nhật</option>`;pj.disabled=!ja.length;
   const pv=$("vpVi");pv.innerHTML=vi.length?opt(vi,viVoice,VI_F,VI_M):`<option>Máy chưa có giọng tiếng Việt</option>`;pv.disabled=!vi.length;
   $("vpViNote").hidden=!!vi.length;$("vpJaNote").hidden=!!ja.length;
-  $("vpPitch").value=VS.pitch;$("vpPitchV").textContent=VS.pitch<1.05?"Bình thường":VS.pitch<1.35?"Dễ thương":VS.pitch<1.6?"Rất dễ thương":"Siêu cute";
+  $("vpPitch").value=VS.pitch;$("vpPitchV").textContent=VS.pitch<1.05?"Bình thường":VS.pitch<1.15?"Dễ thương":"Cao (có thể hơi rè)";
 }
 function vpOpen(){pickVoice();pickVi();vpFill();$("vPanel").hidden=false;$("vPanel").classList.remove("vin");void $("vPanel").offsetWidth;$("vPanel").classList.add("vin")}
 function vpClose(){$("vPanel").hidden=true}

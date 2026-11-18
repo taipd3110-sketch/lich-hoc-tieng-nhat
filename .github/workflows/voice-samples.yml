@@ -1,0 +1,37 @@
+name: Tạo giọng nghe thử
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [scripts/voice_samples.py, .github/workflows/voice-samples.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: voice
+  cancel-in-progress: false
+
+jobs:
+  samples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Khởi động VOICEVOX
+        run: docker run -d --name vv -p 50021:50021 voicevox/voicevox_engine:cpu-latest || docker run -d --name vv -p 50021:50021 voicevox/voicevox_engine:cpu-ubuntu20.04-latest
+      - name: Cài Piper
+        run: pip install piper-tts==1.2.0
+      - name: Tạo file nghe thử
+        run: python scripts/voice_samples.py
+      - name: Lưu vào kho
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+          git add audio/samples
+          git commit -m "Giọng nghe thử" || exit 0
+          git pull --rebase -q origin main
+          git push
