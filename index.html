@@ -1316,12 +1316,17 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
 }
 /* installed app (standalone): no browser chrome, give the top a little air */
 @media (display-mode:standalone){.topnav{top:calc(env(safe-area-inset-top,0px) + 6px)}}
+.instgrp{display:flex;gap:6px;flex:none;margin-left:auto}
+.installbtn .apl{margin-right:4px}
+.installbtn.ios{background:linear-gradient(135deg,#6b6b7a,#2b2540);animation:none}
+.installbtn .apl{display:inline-block;width:11px;height:13px;background:#fff;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 20'%3E%3Cpath d='M14.1 10.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9s-2-.9-3.4-.9C3.6 4.8 1.9 5.8 1 7.4c-1.9 3.2-.5 8 1.3 10.6.9 1.3 1.9 2.7 3.3 2.6 1.3-.1 1.8-.8 3.4-.8s2 .8 3.4.8c1.4 0 2.3-1.3 3.2-2.6 1-1.5 1.4-2.9 1.4-3-.1 0-2.9-1.1-2.9-4.4zM11.5 3c.7-.9 1.2-2 1.1-3.1-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.1.1 2.3-.6 3-1.6z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 20'%3E%3Cpath d='M14.1 10.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9s-2-.9-3.4-.9C3.6 4.8 1.9 5.8 1 7.4c-1.9 3.2-.5 8 1.3 10.6.9 1.3 1.9 2.7 3.3 2.6 1.3-.1 1.8-.8 3.4-.8s2 .8 3.4.8c1.4 0 2.3-1.3 3.2-2.6 1-1.5 1.4-2.9 1.4-3-.1 0-2.9-1.1-2.9-4.4zM11.5 3c.7-.9 1.2-2 1.1-3.1-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.1.1 2.3-.6 3-1.6z'/%3E%3C/svg%3E") center/contain no-repeat;vertical-align:-1px}
 .installbtn{border:0;border-radius:999px;padding:7px 13px;font:inherit;font-weight:800;font-size:.8rem;color:#fff;background:linear-gradient(135deg,#ff9cbc,var(--md));cursor:pointer;box-shadow:0 6px 14px -8px rgba(214,90,140,.8);flex:none;animation:instGlow 2.8s ease-in-out infinite}
 @keyframes instGlow{50%{box-shadow:0 0 0 5px rgba(232,93,140,.15),0 6px 14px -8px rgba(214,90,140,.8)}}
 .inst-steps{margin:4px 0 0;padding-left:20px;display:grid;gap:8px;font-size:.9rem;line-height:1.5}
 .inst-steps .ik{display:inline-block;padding:0 4px;border-radius:6px;background:var(--sakura-soft)}
 @media (max-width:700px){.topnav{justify-content:space-between}.installbtn{padding:6px 11px}}
-@media (display-mode:standalone){.installbtn{display:none}}
+@media (display-mode:standalone){.instgrp{display:none!important}}
+@media (max-width:420px){.installbtn{padding:6px 9px;font-size:.74rem}.topnav .bname{font-size:.85rem}}
 
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
@@ -1343,7 +1348,10 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
 <main class="wrap">
   <nav class="topnav" aria-label="Chuyển trang">
     <a class="brand" href="#"><span class="bmark" aria-hidden="true">日</span><span class="bname">Tài · 日本語</span></a>
-    <button class="installbtn" id="installBtn" type="button" hidden>📲 <span>Cài app</span></button>
+    <div class="instgrp" id="installBtn" hidden>
+      <button class="installbtn and" id="instAndroid" type="button" aria-label="Cài app cho Android">🤖 <span>Android</span></button>
+      <button class="installbtn ios" id="instIOS" type="button" aria-label="Cài app cho iOS"><span class="apl" aria-hidden="true"></span><span>iOS</span></button>
+    </div>
     <div class="tabs">
       <a class="tab on" href="#" data-view="home" aria-current="page">📅 <span>Lịch học</span></a>
       <a class="tab" href="#bai-hoc" data-view="lessons">📚 <span>Bài học</span></a>
@@ -2745,22 +2753,25 @@ function addRomaji(root){root.querySelectorAll(".jr:not([data-r])").forEach(el=>
 /* nút cài app (PWA) */
 let instEvt=null;
 const isStandalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
-addEventListener("beforeinstallprompt",e=>{e.preventDefault();instEvt=e;$("installBtn").hidden=false});
-addEventListener("appinstalled",()=>{instEvt=null;$("installBtn").hidden=true;toast("Đã cài app 🎉 Mở từ màn hình chính nhé",4000)});
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();instEvt=e});
+addEventListener("appinstalled",()=>{instEvt=null;toast("Đã cài app 🎉 Mở từ màn hình chính nhé",4000)});
 if(!isStandalone())$("installBtn").hidden=false;
-function instGuide(){
-  const ua=navigator.userAgent, ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1), android=/Android/.test(ua), mac=/Macintosh/.test(ua)&&!ios, edge=/Edg\//.test(ua), safari=/Safari/.test(ua)&&!/Chrome|Chromium|Edg|CriOS|FxiOS/.test(ua), samsung=/SamsungBrowser/.test(ua), fx=/Firefox|FxiOS/.test(ua);
-  let steps;
-  if(ios)steps=["Mở trang này bằng <b>Safari</b> (Chrome trên iPhone cũng được với iOS mới).","Bấm nút <b>Chia sẻ</b> <span class='ik'>⬆️</span> ở thanh dưới.","Kéo xuống chọn <b>Thêm vào MH chính</b> (Add to Home Screen) → <b>Thêm</b>."];
-  else if(android&&samsung)steps=["Bấm menu <b>☰</b> ở góc dưới.","Chọn <b>Thêm trang vào</b> → <b>Màn hình chờ</b>."];
-  else if(android)steps=["Bấm menu <b>⋮</b> ở góc trên bên phải của Chrome.","Chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b> → <b>Cài đặt</b>.","Nếu chưa thấy mục này: tải lại trang 1–2 lần rồi thử lại."];
-  else if(mac&&safari)steps=["Trên thanh menu của Safari chọn <b>Tệp</b> (File) → <b>Thêm vào Dock…</b> (Add to Dock).","Bấm <b>Thêm</b>. App sẽ nằm trong Dock và thư mục Ứng dụng."];
-  else if(fx)steps=["Firefox chưa hỗ trợ cài app. Hãy mở trang bằng <b>Chrome</b>, <b>Edge</b> hoặc <b>Safari</b> rồi bấm lại nút Cài app."];
-  else steps=["Nhìn bên phải <b>thanh địa chỉ</b> sẽ thấy biểu tượng <span class='ik'>⊕</span> hoặc màn hình có mũi tên — bấm vào rồi chọn <b>Cài đặt</b>.","Hoặc bấm menu <b>⋮</b> → <b>Truyền, lưu và chia sẻ</b> → <b>Cài đặt trang dưới dạng ứng dụng</b>"+(edge?" (Edge: <b>Ứng dụng</b> → <b>Cài đặt trang web này dưới dạng ứng dụng</b>)":"")+".","Nếu chưa thấy: nhấn Cmd+Shift+R (Ctrl+Shift+R) để tải lại rồi thử lại."];
-  $("instBody").innerHTML=`<ol class="inst-steps">${steps.map(x=>`<li>${x}</li>`).join("")}</ol><p class="vp-tip">Sau khi cài, app có icon riêng, mở toàn màn hình và dùng chung dữ liệu với web.</p>`;
+function instShow(title,steps,tip){
+  $("instT").textContent=title;
+  $("instBody").innerHTML=`<ol class="inst-steps">${steps.map(x=>`<li>${x}</li>`).join("")}</ol>${tip?`<p class="vp-tip">${tip}</p>`:""}`;
   $("instPanel").hidden=false;$("instPanel").classList.remove("vin");void $("instPanel").offsetWidth;$("instPanel").classList.add("vin");
 }
-$("installBtn").onclick=async()=>{if(instEvt){instEvt.prompt();const r=await instEvt.userChoice.catch(()=>({}));instEvt=null;if(r&&r.outcome==="accepted")$("installBtn").hidden=true}else instGuide()};
+function instAndroidGuide(){
+  const ua=navigator.userAgent, android=/Android/.test(ua), samsung=/SamsungBrowser/.test(ua);
+  if(!android)return instShow("🤖 Cài app cho Android",["Mở điện thoại Android, vào Chrome và mở trang:<br><b>taipd3110-sketch.github.io/lich-hoc-tieng-nhat</b>","Bấm nút <b>🤖 Android</b> trên trang đó để cài."],"Nút này cần bấm trên chính điện thoại Android.");
+  if(samsung)return instShow("🤖 Cài app cho Android",["Bấm menu <b>☰</b> ở góc dưới.","Chọn <b>Thêm trang vào</b> → <b>Màn hình chờ</b>."],"Hoặc mở trang bằng Chrome để cài nhanh hơn.");
+  instShow("🤖 Cài app cho Android",["Bấm menu <b>⋮</b> ở góc trên bên phải của Chrome.","Chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b> → <b>Cài đặt</b>.","Nếu chưa thấy mục này: tải lại trang 1–2 lần rồi thử lại."],"Sau khi cài, app có icon riêng, mở toàn màn hình và dùng chung dữ liệu với web.");
+}
+function instIOSGuide(){
+  instShow(" App cho iOS",["Bản app iOS <b>đang được chuẩn bị</b>, sẽ có trong thời gian tới.","Trong lúc chờ, trên iPhone/iPad bạn có thể mở trang bằng <b>Safari</b> → nút <b>Chia sẻ</b> ⬆️ → <b>Thêm vào MH chính</b> để dùng như app."],"Dữ liệu vẫn đồng bộ với web.");
+}
+$("instAndroid").onclick=async()=>{if(instEvt&&/Android/.test(navigator.userAgent)){instEvt.prompt();const r=await instEvt.userChoice.catch(()=>({}));instEvt=null;if(r&&r.outcome==="accepted")toast("Đang cài app… 🎉",3000)}else instAndroidGuide()};
+$("instIOS").onclick=instIOSGuide;
 $("instClose").onclick=()=>$("instPanel").hidden=true;$("instPanel").addEventListener("click",e=>{if(e.target===$("instPanel"))$("instPanel").hidden=true});
 const sayBtnHtml=(text,label)=>`<button type="button" class="say" data-say="${esc(text)}" aria-label="${label||"Nghe phát âm"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="w1" d="M16 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M18.5 6a8.5 8.5 0 0 1 0 12"/></svg></button>`;
 document.addEventListener("click",e=>{const b=e.target.closest(".say");if(!b)return;e.stopPropagation();e.preventDefault();say(b.dataset.say,b)},true);
