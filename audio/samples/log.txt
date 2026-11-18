@@ -1,23 +1,22 @@
 số nhân vật VOICEVOX: 44
-lỗi 四国めたん [Errno 2] No such file or directory: 'ffmpeg'
-lỗi ずんだもん [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 春日部つむぎ [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 雨晴はう [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 青山龍星 [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 冥鳴ひまり [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 九州そら [Errno 2] No such file or directory: 'ffmpeg'
-lỗi もち子さん [Errno 2] No such file or directory: 'ffmpeg'
-lỗi WhiteCUL [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 後鬼 [Errno 2] No such file or directory: 'ffmpeg'
-lỗi No.7 [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 櫻歌ミコ [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 小夜/SAYO [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 春歌ナナ [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 猫使ビィ [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 中国うさぎ [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 東北ずん子 [Errno 2] No such file or directory: 'ffmpeg'
-lỗi 東北きりたん [Errno 2] No such file or directory: 'ffmpeg'
-lỗi vi_VN-vais1000-medium [Errno 2] No such file or directory: 'ffmpeg'
-lỗi vi_VN-25hours_single-low [Errno 2] No such file or directory: 'ffmpeg'
-lỗi vi_VN-vivos-x_low [Errno 2] No such file or directory: 'ffmpeg'
-xong 0 mẫu
+ok 四国めたん ノーマル 2
+ok ずんだもん ノーマル 3
+ok 春日部つむぎ ノーマル 8
+ok 雨晴はう ノーマル 10
+ok 冥鳴ひまり ノーマル 14
+ok 九州そら ノーマル 16
+ok もち子さん ノーマル 20
+ok WhiteCUL ノーマル 23
+ok 後鬼 人間ver. 27
+ok No.7 ノーマル 29
+ok 櫻歌ミコ ノーマル 43
+ok 小夜/SAYO ノーマル 46
+ok 春歌ナナ ノーマル 54
+ok 猫使ビィ ノーマル 58
+ok 中国うさぎ ノーマル 61
+ok 東北ずん子 ノーマル 107
+ok 東北きりたん ノーマル 108
+ok vi_VN-vais1000-medium
+ok vi_VN-25hours_single-low
+ok vi_VN-vivos-x_low
+xong 20 mẫu
