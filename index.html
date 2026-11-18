@@ -1276,6 +1276,11 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
 .view-in .lsec+.lsec{animation-delay:.08s}
 @keyframes cardRise{from{opacity:0;transform:translateY(22px) scale(.985)}}
 @media (max-width:520px){.lk-branch{width:46%;opacity:.8}.lk-enso{inset:-10px;width:calc(100% + 20px);height:calc(100% + 20px)}.lq-steps::before{left:29px}}
+.rmx.rmin{animation:rmIn .45s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rmIn{from{opacity:0;transform:translateY(-4px);filter:blur(3px)}}
+.lq-q .rmx{display:block;margin-top:4px}
+.qo.right .rmo{color:#2d7a45!important}
+.lq-q .blank.filled{animation:none;color:#2d7a45;border-bottom-color:#4fae6a;border-bottom-style:solid}
 
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
@@ -3002,18 +3007,22 @@ function lqShow(){
   $("lqNum").textContent=`Câu ${LQ.i+1}/${LQ.list.length}`;$("lqProg").style.width=(LQ.i/LQ.list.length*100)+"%";
   $("lqAsk").textContent=q.ask;
   $("lqQ").className="lq-q "+q.kind;
-  $("lqQ").innerHTML=q.kind==="gr"?rb(q.q).replace("＿",'<span class="blank">？</span>'):q.kind==="jv"?`<span class="w">${esc(q.q)}</span>${q.sub?`<span class="r">${esc(q.sub)}</span>`:""}<span class="lq-sayrow">${sayBtnHtml(q.sub||q.q)}</span>`:`<span class="vn">${esc(q.q)}</span>`;
+  const ans=(q.opts.find(o=>o.ok)||{}).t||"";
+  const qRo=q.kind==="gr"?roma(kanaOf(q.q.replace("＿",ans))):q.kind==="jv"?romaWord(q.sub||q.q):"";
+  $("lqQ").innerHTML=(q.kind==="gr"?rb(q.q).replace("＿",'<span class="blank">？</span>'):q.kind==="jv"?`<span class="w">${esc(q.q)}</span>${q.sub?`<span class="r">${esc(q.sub)}</span>`:""}<span class="lq-sayrow">${sayBtnHtml(q.sub||q.q)}</span>`:`<span class="vn">${esc(q.q)}</span>`)+(qRo?`<span class="rmj rmx" hidden>${esc(qRo)}</span>`:"");
   $("lqOpts").classList.toggle("long",q.kind==="sv");
-  $("lqOpts").innerHTML=q.opts.map((o,j)=>`<button type="button" class="qo ${q.kind==="jv"?"vn":"jp"}" data-j="${j}"><span class="qk">${j+1}</span><span class="qt">${o.rb?rb(o.t):esc(o.t)}${o.sub?`<small>${esc(o.sub)}</small>`:""}</span></button>`).join("");
+  $("lqOpts").innerHTML=q.opts.map((o,j)=>`<button type="button" class="qo ${q.kind==="jv"?"vn":"jp"}" data-j="${j}"><span class="qk">${j+1}</span><span class="qt">${o.rb?rb(o.t):esc(o.t)}${o.sub?`<small>${esc(o.sub)}</small>`:""}${q.kind==="jv"?"":`<small class="rmo rmx" hidden>${esc(o.rb?roma(kanaOf(o.t)):q.kind==="gr"?romaOne(o.t):romaWord(o.sub||o.t))}</small>`}</span></button>`).join("");
   const c=$("lqCard");c.classList.remove("qin");void c.offsetWidth;c.classList.add("qin");
   $("lqFb").textContent="";$("lqFb").className="qfb";$("lqNext").hidden=true;LQ.answered=false;
 }
 function lqAnswer(j){
   if(!LQ||LQ.answered||$("lqPlay").hidden)return;LQ.answered=true;
   const q=LQ.list[LQ.i], btns=[...$("lqOpts").children], ok=q.opts[j].ok;
+  document.querySelectorAll("#lqPlay .rmx").forEach(el=>{el.hidden=false;el.classList.add("rmin")});
+  const bl=document.querySelector("#lqQ .blank");if(bl){bl.textContent=(q.opts.find(o=>o.ok)||{}).t||"";bl.classList.add("filled")}
   btns.forEach((b,x)=>{b.disabled=true;if(q.opts[x].ok){b.classList.add("right");b.insertAdjacentHTML("beforeend",'<svg class="mark maru" viewBox="0 0 100 100" aria-hidden="true"><path d="M52 12c22 1 38 17 38 38 0 22-18 39-40 39S10 72 10 50c0-19 13-34 32-37" pathLength="100"/></svg>')}});
   if(!ok)btns[j].insertAdjacentHTML("beforeend",'<svg class="mark batsu" viewBox="0 0 100 100" aria-hidden="true"><path d="M22 22L78 78" pathLength="100"/><path d="M78 22L22 78" pathLength="100" style="animation-delay:.18s"/></svg>');
-  if(ok){LQ.score++;$("lqFb").className="qfb ok";$("lqFb").textContent=RIGHT[Math.floor(Math.random()*RIGHT.length)];setTimeout(lqNext,RM?500:850)}
+  if(ok){LQ.score++;$("lqFb").className="qfb ok";$("lqFb").textContent=RIGHT[Math.floor(Math.random()*RIGHT.length)];const at=LQ.i;setTimeout(()=>{if(LQ&&LQ.i===at)lqNext()},RM?900:1600)}
   else{btns[j].classList.add("wrong");LQ.wrong.push(q);$("lqFb").className="qfb no";$("lqFb").textContent="Chưa đúng. "+q.why;$("lqNext").hidden=false;$("lqNext").focus({preventScroll:true})}
 }
 function lqNext(){if(!LQ)return;LQ.i++;if(LQ.i>=LQ.list.length)lqFinish();else lqShow()}
