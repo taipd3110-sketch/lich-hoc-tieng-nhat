@@ -1581,9 +1581,8 @@ let canEdit=true;
 const HINT_EDIT="Chạm vào một ngày để đánh dấu đã học, viết ghi chú và ghi phạt nếu làm bài tập về nhà chưa tốt.";
 const HINT_RO="Chạm vào ngày có vòng tròn để xem ghi chú và tình hình buổi học.";
 function applyRO(){document.body.classList.toggle("ro",!canEdit);$("calHint").textContent=canEdit?HINT_EDIT:HINT_RO;
-  document.querySelectorAll('.topnav .tab[data-view="lessons"]').forEach(t=>t.hidden=!canEdit);
   try{lsSync()}catch(e){}
-  try{if(/^#bai/.test(location.hash)&&lsGateShown!==!canEdit)route()}catch(e){}}
+}
 const DEF_FTYPES=["Chép phạt","Học thuộc thêm","Làm thêm bài tập"];
 let state={days:{},payments:[],notes:{},quiz:{},fines:{},fineTypes:[...DEF_FTYPES],lessons:{}};
 let prevPaid=new Set(), justMarked=null, firstRender=true;
@@ -1605,10 +1604,7 @@ function persist(){
   if(!canEdit)return;
   saveLocal();
   if(!ref)return;
-  const all=JSON.parse(JSON.stringify(state)), lessons=all.lessons||{};delete all.lessons;
-  const snap=all;
-  /* tiến độ & từ tự nhập của trang Bài học: chỉ lưu vào kho riêng của Tài */
-  if(privRef&&privLoaded){const sig=JSON.stringify(lessons);if(sig!==privSig){privSig=sig;privRef.set({lessons}).catch(()=>toast("Chưa lưu được phần Bài học lên đám mây"))}}
+  const snap=JSON.parse(JSON.stringify(state));
   $("sync").textContent="Đang lưu…";
   saving=saving.then(()=>ref.set(snap)).then(()=>{$("sync").textContent="Đã lưu lên đám mây ✓"}).catch(()=>{$("sync").textContent="Chưa lưu được lên đám mây, dữ liệu vẫn giữ trên máy này."});
 }
@@ -1640,10 +1636,7 @@ if(!FIREBASE_CONFIG||!window.firebase){
   $("sync").textContent="Đang tải lịch…";
   pub.onSnapshot(snap=>{
     cloudExists=snap.exists;
-    if(snap.exists){const keep=state.lessons, d=snap.data(), legacy=d.lessons;state=norm(d);
-      state.lessons=canEdit&&privLoaded?keep:canEdit?(legacy||keep||{}):{};
-      if(canEdit&&legacy&&Object.keys(legacy).length&&privLoaded)persist(); /* dọn tiến độ cũ khỏi bản công khai */
-      saveLocal();renderQuiet();qStats();$("sync").textContent=canEdit?"Đã đồng bộ với đám mây ✓":"Đang xem bản mới nhất ✓"}
+    if(snap.exists){state=norm(snap.data());saveLocal();renderQuiet();qStats();$("sync").textContent=canEdit?"Đã đồng bộ với đám mây ✓":"Đang xem bản mới nhất ✓"}
     else{if(!canEdit){state=norm({});renderQuiet();qStats()}$("sync").textContent="Lịch chưa có dữ liệu trên đám mây."}
     maybeSeed();
   },()=>{$("sync").textContent="Không tải được lịch. Thử tải lại trang."});
@@ -1653,15 +1646,17 @@ if(!FIREBASE_CONFIG||!window.firebase){
   auth.onAuthStateChanged(u=>{
     fbUser=u;showAcct();
     ref=canEdit&&u?pub:null;
+    /* chuyển phần Bài học từng để ở kho riêng về lại bản công khai, rồi xóa kho riêng */
     if(canEdit&&u&&!privRef){
       privRef=fs.doc(PRIVATE_DOC);
-      privRef.onSnapshot(sn=>{
-        const first=!privLoaded;privLoaded=true;
-        if(sn.exists){state.lessons={...((sn.data()||{}).lessons||{})};privSig=JSON.stringify(state.lessons);saveLocal();lsSync();if(first)persist()}
-        else if(first){privSig="";persist()} /* lần đầu: chuyển tiến độ hiện có sang kho riêng */
-      },()=>{toast("Không tải được phần Bài học riêng. Kiểm tra quyền Firestore.",5000)});
+      const go=()=>{if(cloudExists===null)return setTimeout(go,300); /* đợi tải xong bản công khai */
+      privRef.get().then(sn=>{
+        if(!sn.exists)return;
+        const L=(sn.data()||{}).lessons||{};
+        if(Object.keys(L).length){state.lessons={...L,...(state.lessons||{})};for(const k in L)state.lessons[k]={...L[k],...((state.lessons||{})[k]||{}),mine:[...((L[k]||{}).mine||[])]};persist();lsSync()}
+        return privRef.delete();
+      }).catch(()=>{})};go();
     }
-    if(!canEdit){state.lessons={};}
     if(canEdit)$("sync").textContent="Đã đăng nhập, bạn có thể chỉnh sửa ✓";
     renderQuiet();maybeSeed();
   });
@@ -2863,7 +2858,7 @@ function route(){
   try{lpStop()}catch(e){}
   const h=location.hash, m=h.match(/^#bai-(\d+)$/), n=m?Number(m[1]):0;
   const v=h==="#on-tap"?"quiz":h==="#bai-hoc"?"lessons":(n>=1&&n<=50)?"lesson":"home";
-  const gate=(v==="lessons"||v==="lesson")&&!canEdit;lsGateShown=gate;
+  const gate=false;lsGateShown=gate; /* trang Bài học công khai cho mọi người xem */
   if(gate){for(const id of ["viewHome","viewQuiz","viewLesson"])$(id).hidden=true;$("viewLessons").hidden=false;
     [...$("viewLessons").children].forEach(c=>c.hidden=c.id!=="lsPriv");
     document.querySelectorAll(".topnav .tab").forEach(t=>{t.classList.remove("on");t.removeAttribute("aria-current")});scrollTo(0,0);return}
