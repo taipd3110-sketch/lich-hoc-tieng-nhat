@@ -1042,6 +1042,22 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
 #qChart .qc:not(.blank){cursor:pointer;transition:transform .2s cubic-bezier(.3,1.4,.5,1)}
 #qChart .qc:not(.blank):hover{transform:translateY(-2px)}
 #qChart .qc.saying{animation:qpop .45s cubic-bezier(.3,1.6,.5,1);background:var(--sakura-soft)}
+.lk-vrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.lk-vrow .lk-vmode{margin-bottom:0}
+.lsplay{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 10px;border-radius:16px;background:#fff8fb;border:1.5px dashed #f3c2d4;transition:background .3s,border-color .3s}
+#lk_g .lsplay{margin-bottom:12px}
+.lsplay.on{background:var(--sakura-soft);border-style:solid;border-color:var(--md)}
+.lp-go{border:0;border-radius:999px;padding:8px 15px;font:inherit;font-weight:800;font-size:.84rem;color:#fff;background:linear-gradient(135deg,#ff8fb3,var(--md));cursor:pointer;box-shadow:0 6px 14px -8px rgba(214,90,140,.8);transition:transform .2s cubic-bezier(.3,1.4,.5,1)}
+.lp-go:hover{transform:translateY(-1px) scale(1.03)}
+.lsplay.on .lp-go{background:var(--ink);animation:sayp 1.2s ease-in-out infinite}
+.lp-opt{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;font-weight:600;color:var(--muted);cursor:pointer}
+.lp-opt input{accent-color:var(--md);width:16px;height:16px}
+.lp-rate{font:inherit;font-size:.8rem;font-weight:700;color:var(--ink);border:1.5px solid #f3c2d4;border-radius:999px;padding:4px 8px;background:#fff}
+.lp-st{font-size:.8rem;font-weight:800;color:var(--md);min-width:3em}
+.vlist li.playing,.geg.playing{background:var(--sakura-soft);border-color:var(--md);transform:scale(1.02);box-shadow:0 8px 20px -12px rgba(214,90,140,.7)}
+.vlist li.playing .say,.geg.playing .say{background:var(--md);color:#fff;border-color:var(--md)}
+.fc.playing .fc-face.front{box-shadow:0 0 0 4px rgba(232,93,140,.25),0 14px 30px -16px rgba(214,90,140,.5)}
+.geg{transition:background .3s,transform .3s,box-shadow .3s}
 
 .acct{margin-top:10px;display:grid;gap:6px}
 .acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
@@ -1327,7 +1343,7 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
     </div>
     <div class="lk-soon" id="lkSoon" hidden></div>
     <div id="lk_v" class="lkpane">
-      <div class="lk-vmode" id="lkVMode"><button class="on" type="button" data-m="list" aria-pressed="true">☰ Danh sách</button><button type="button" data-m="fc" aria-pressed="false">🎴 Thẻ lật</button></div>
+      <div class="lk-vrow"><div class="lk-vmode" id="lkVMode"><button class="on" type="button" data-m="list" aria-pressed="true">☰ Danh sách</button><button type="button" data-m="fc" aria-pressed="false">🎴 Thẻ lật</button></div><div class="lsplay" data-scope="v"><button class="lp-go" type="button"></button><label class="lp-opt"><input type="checkbox" class="lp-vi"> Đọc cả nghĩa</label><label class="lp-opt"><input type="checkbox" class="lp-loop"> Lặp lại</label><select class="lp-rate" aria-label="Tốc độ đọc"><option value="0.65">🐢 Chậm</option><option value="0.85">Vừa</option><option value="1">🐇 Nhanh</option></select><span class="lp-st" aria-live="polite"></span></div></div>
       <ol class="vlist" id="lkVocab"></ol>
       <div class="fcwrap" id="fcWrap" hidden>
         <div class="fcbar" aria-hidden="true"><i id="fcBar"></i></div>
@@ -1336,7 +1352,7 @@ body.sceneview .scenebtn{opacity:0;pointer-events:none}
         <div class="fc-ctl"><button class="chip" id="fcShuf" type="button">🔀 Xáo thẻ</button><span class="fc-hint">Chạm vào thẻ để lật · phím ← → và Space</span></div>
       </div>
     </div>
-    <div id="lk_g" class="lkpane" hidden><div class="glist" id="lkGram"></div></div>
+    <div id="lk_g" class="lkpane" hidden><div class="lsplay" data-scope="g"><button class="lp-go" type="button"></button><label class="lp-opt"><input type="checkbox" class="lp-vi"> Đọc cả nghĩa</label><label class="lp-opt"><input type="checkbox" class="lp-loop"> Lặp lại</label><select class="lp-rate" aria-label="Tốc độ đọc"><option value="0.65">🐢 Chậm</option><option value="0.85">Vừa</option><option value="1">🐇 Nhanh</option></select><span class="lp-st" aria-live="polite"></span></div><div class="glist" id="lkGram"></div></div>
     <div id="lk_q" class="lkpane" hidden>
       <div id="lqStart" class="lq-start">
         <div class="lq-torii" aria-hidden="true">⛩️</div>
@@ -2248,10 +2264,11 @@ function say(text,btn){
   const ss=window.speechSynthesis;
   if(!ss||!window.SpeechSynthesisUtterance){sayMsg("Trình duyệt này không hỗ trợ giọng đọc. Thử mở bằng Safari hoặc Chrome nhé");return}
   const t=text.replace(/[～~]/g,"").trim();if(!t)return;
+  if(LP)lpStop();
   if(sayBtn)sayBtn.classList.remove("on");
   if(!jaVoice)pickVoice();
   const u=new SpeechSynthesisUtterance(t);curU=u;
-  u.lang="ja-JP";u.rate=.85;u.volume=1;u.pitch=1;if(jaVoice)u.voice=jaVoice;
+  u.lang="ja-JP";u.rate=.85;u.volume=1;u.pitch=1;try{if(jaVoice)u.voice=jaVoice}catch(e){}
   sayBtn=btn||null;if(btn)btn.classList.add("on");
   let started=false;
   const end=()=>{if(btn)btn.classList.remove("on")};
@@ -2264,6 +2281,81 @@ function say(text,btn){
     const hasVoices=(()=>{try{return speechSynthesis.getVoices().length}catch(e){return 0}})();
     sayMsg(!jaVoice&&hasVoices?"Máy chưa có giọng tiếng Nhật. Vào Cài đặt › Trợ năng › Nội dung được đọc › Giọng nói để tải giọng Japanese":"Chưa nghe thấy? Tăng âm lượng và tắt chế độ im lặng (nút gạt bên hông iPhone) rồi bấm lại nhé")}},3000);
 }
+/* ---------- đọc hàng loạt ---------- */
+const LPS={vi:true,loop:false,rate:.85};
+try{Object.assign(LPS,JSON.parse(localStorage.getItem("jp-lp")||"{}"))}catch(e){}
+let LP=null, viVoice=null;
+function pickVi(){try{const v=speechSynthesis.getVoices().filter(x=>/^vi/i.test(x.lang));viVoice=v.find(x=>/google|linh|an\b/i.test(x.name))||v[0]||null}catch(e){}}
+try{pickVi();speechSynthesis.addEventListener("voiceschanged",pickVi)}catch(e){}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function speakP(text,lang,rate){return new Promise(res=>{
+  const t=text.replace(/[～~]/g,"").trim();if(!t)return res(true);
+  const u=new SpeechSynthesisUtterance(t);curU=u;u.lang=lang;u.rate=rate;u.volume=1;
+  const v=/^ja/.test(lang)?jaVoice:viVoice;try{if(v)u.voice=v}catch(e){}
+  let st=false,done=false;const fin=ok=>{if(!done){done=true;res(ok)}};
+  u.onstart=()=>{st=true};u.onend=()=>fin(true);u.onerror=ev=>fin(/interrupted|canceled/.test(ev.error||"")?null:false);
+  try{speechSynthesis.resume();speechSynthesis.speak(u)}catch(e){fin(false)}
+  setTimeout(()=>{if(!st)fin(false)},4000);
+})}
+function lpItems(scope){
+  if(scope==="g")return [...$("lkGram").querySelectorAll(".geg")].map(el=>({jp:el.dataset.jp,vi:el.dataset.vi,el}));
+  const v=LS_DATA[lsN].v;
+  if(!$("fcWrap").hidden){if(!fcOrder)fcOrder=v.map((_,i)=>i);return fcOrder.map(k=>({jp:v[k][1]||v[k][0],vi:v[k][2],fc:true}))}
+  const lis=$("lkVocab").children;return v.map(([w,r,m],i)=>({jp:r||w,vi:m,el:lis[i]}));
+}
+function lpMark(el){
+  document.querySelectorAll(".playing").forEach(x=>x.classList.remove("playing"));
+  if(el){el.classList.add("playing");const r=el.getBoundingClientRect();if(r.top<90||r.bottom>innerHeight-40)el.scrollIntoView({block:"center",behavior:RM?"auto":"smooth"})}
+}
+function lpUI(){
+  document.querySelectorAll(".lsplay").forEach(bar=>{
+    const on=!!LP&&LP.scope===bar.dataset.scope;
+    bar.classList.toggle("on",on);
+    bar.querySelector(".lp-go").innerHTML=on?"⏹ Dừng đọc":(bar.dataset.scope==="g"?"▶ Đọc tất cả câu ví dụ":"▶ Đọc tất cả");
+    bar.querySelector(".lp-vi").checked=LPS.vi;bar.querySelector(".lp-loop").checked=LPS.loop;bar.querySelector(".lp-rate").value=String(LPS.rate);
+    if(!on)bar.querySelector(".lp-st").textContent="";
+  });
+}
+function lpStop(){if(!LP)return;LP.stop=true;LP=null;try{speechSynthesis.cancel()}catch(e){}lpMark(null);lpUI()}
+async function lpPlay(scope){
+  if(LP){const same=LP.scope===scope;lpStop();if(same)return}
+  if(!window.speechSynthesis||!window.SpeechSynthesisUtterance){sayMsg("Trình duyệt này không hỗ trợ giọng đọc. Thử mở bằng Safari hoặc Chrome nhé");return}
+  if(!jaVoice)pickVoice();if(!viVoice)pickVi();
+  if(LPS.vi&&!viVoice&&speechSynthesis.getVoices().length&&!lpPlay.warned){lpPlay.warned=1;toast("Máy chưa có giọng tiếng Việt, nghĩa sẽ đọc bằng giọng mặc định",4000)}
+  if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();await wait(80)}
+  const run=LP={scope,stop:false};lpUI();
+  const items=lpItems(scope), fc=scope==="v"&&!$("fcWrap").hidden, st=document.querySelector(`.lsplay[data-scope="${scope}"] .lp-st`);
+  let i=fc?fcI:0;
+  do{
+    for(;i<items.length;i++){
+      if(run.stop)break;
+      const it=items[i];
+      if(fc){fcI=i;fcFlip=false;fcRender();lpMark($("fcCard"))}else lpMark(it.el);
+      st.textContent=`${i+1}/${items.length}`;
+      const ok=await speakP(it.jp,"ja-JP",LPS.rate);
+      if(run.stop)break;
+      if(ok===false){sayMsg("Chưa nghe thấy? Tăng âm lượng, tắt chế độ im lặng (iPhone) và kiểm tra máy đã có giọng tiếng Nhật chưa");run.stop=true;break}
+      if(LPS.vi){
+        if(fc){fcFlip=true;$("fcCard").classList.add("flip")}
+        await wait(300);if(run.stop)break;
+        await speakP(it.vi,"vi-VN",Math.min(1.1,LPS.rate+.15));if(run.stop)break;
+      }
+      await wait(fc?900:550);
+    }
+    i=0;
+  }while(LPS.loop&&!run.stop);
+  if(LP===run){LP=null;lpMark(null);lpUI()}
+}
+document.addEventListener("click",e=>{const b=e.target.closest(".lp-go");if(b)lpPlay(b.closest(".lsplay").dataset.scope)});
+document.addEventListener("change",e=>{
+  const bar=e.target.closest(".lsplay");if(!bar)return;
+  if(e.target.classList.contains("lp-vi"))LPS.vi=e.target.checked;
+  if(e.target.classList.contains("lp-loop"))LPS.loop=e.target.checked;
+  if(e.target.classList.contains("lp-rate"))LPS.rate=Number(e.target.value);
+  try{localStorage.setItem("jp-lp",JSON.stringify(LPS))}catch(err){}
+  lpUI();
+});
+
 const sayBtnHtml=(text,label)=>`<button type="button" class="say" data-say="${esc(text)}" aria-label="${label||"Nghe phát âm"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="w1" d="M16 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M18.5 6a8.5 8.5 0 0 1 0 12"/></svg></button>`;
 document.addEventListener("click",e=>{const b=e.target.closest(".say");if(!b)return;e.stopPropagation();e.preventDefault();say(b.dataset.say,b)},true);
 
@@ -2403,6 +2495,7 @@ function lsOpenLesson(n){
   location.hash="bai-"+n;
 }
 function lsRenderLesson(n){
+  lpStop();lpUI();
   lsN=n;LQ=null;fcI=0;fcFlip=false;fcOrder=null;
   const [,t,g]=LS_LIST[n-1], D=LS_DATA[n], d=lsDone(n);
   $("lkNo").textContent="第"+KNUM(n)+"課";$("lkNum").textContent="Bài "+n;$("lkTitle").textContent=t;
@@ -2418,11 +2511,11 @@ function lsRenderLesson(n){
   lsTabTo("v",true);
   $("lkVc").textContent=D.v.length;$("lkGc").textContent=D.g.length;
   $("lkVocab").innerHTML=D.v.map(([w,r,m],i)=>`<li style="--d:${i*30}ms"><span class="vtx"><span class="vw">${esc(w)}</span><span class="vr">${esc(r)}</span><span class="rmj">${esc(romaWord(r||w))}</span><span class="vm">${esc(m)}</span></span>${sayBtnHtml(r||w,"Nghe: "+w)}</li>`).join("");
-  $("lkGram").innerHTML=D.g.map(([p,ex,eg],i)=>`<article class="gcard" style="--d:${i*60}ms"><div class="gpat"><span class="gidx">${i+1}</span>${esc(p)}</div><p class="gex">${esc(ex)}</p>${eg.map(([j,v])=>`<div class="geg"><div class="gj">${rb(j)}</div><div class="rmj">${esc(roma(kanaOf(j)))}</div><div class="gv">${esc(v)}</div>${sayBtnHtml(plainOf(j),"Nghe câu ví dụ")}</div>`).join("")}</article>`).join("");
+  $("lkGram").innerHTML=D.g.map(([p,ex,eg],i)=>`<article class="gcard" style="--d:${i*60}ms"><div class="gpat"><span class="gidx">${i+1}</span>${esc(p)}</div><p class="gex">${esc(ex)}</p>${eg.map(([j,v])=>`<div class="geg" data-jp="${esc(plainOf(j))}" data-vi="${esc(v)}"><div class="gj">${rb(j)}</div><div class="rmj">${esc(roma(kanaOf(j)))}</div><div class="gv">${esc(v)}</div>${sayBtnHtml(plainOf(j),"Nghe câu ví dụ")}</div>`).join("")}</article>`).join("");
   fcRender();lqIntro();
 }
 function lsTabTo(x,quiet){
-  lsTab=x;
+  lpStop();lsTab=x;
   [...$("lkTabs").children].forEach(b=>{const on=b.dataset.t===x;b.classList.toggle("on",on);b.setAttribute("aria-selected",on)});
   ["v","g","q"].forEach(k=>{const el=$("lk_"+k);el.hidden=k!==x;if(k===x&&!quiet){el.classList.remove("tabin");void el.offsetWidth;el.classList.add("tabin")}});
   $("viewLesson").classList.toggle("testing",x==="q"&&!!LQ&&!LQ.over);
@@ -2504,7 +2597,7 @@ $("lkMark").onclick=()=>{if(!canEdit)return;const d=!lsDone(lsN);lsSet(lsN,{done
 $("fcCard").onclick=()=>{fcFlip=!fcFlip;$("fcCard").classList.toggle("flip",fcFlip)};
 $("fcPrev").onclick=()=>fcGo(-1);$("fcNext").onclick=()=>fcGo(1);
 $("fcShuf").onclick=()=>{fcOrder=shuffle(LS_DATA[lsN].v.map((_,i)=>i));fcI=0;fcFlip=false;fcGo(0);toast("Đã xáo trộn thẻ 🔀")};
-$("lkVMode").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;[...$("lkVMode").children].forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});
+$("lkVMode").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;lpStop();[...$("lkVMode").children].forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});
   const fc=b.dataset.m==="fc";$("lkVocab").hidden=fc;$("fcWrap").hidden=!fc;const el=fc?$("fcWrap"):$("lkVocab");el.classList.remove("tabin");void el.offsetWidth;el.classList.add("tabin")});
 $("lqGo").onclick=lqBegin;$("lqAgain").onclick=lqBegin;
 $("lqToVocab").onclick=()=>{LQ=null;lqIntro();lsTabTo("v")};
@@ -2514,6 +2607,7 @@ $("lqOpts").addEventListener("click",e=>{const b=e.target.closest(".qo");if(b)lq
 function lsSync(){if(!$("viewLessons").hidden)lsRenderList();else if(!$("viewLesson").hidden&&lsN&&!(LQ&&!LQ.over)){$("lkSeal").hidden=!lsDone(lsN);$("lkNext").classList.toggle("locked",!lsOpen(lsN+1));$("lkMark").hidden=!LS_DATA[lsN]||!canEdit;$("lkMark").textContent=lsDone(lsN)?"↺ Bỏ đánh dấu hoàn thành":"✓ Đánh dấu đã học xong"}}
 
 function route(){
+  try{lpStop()}catch(e){}
   const h=location.hash, m=h.match(/^#bai-(\d+)$/), n=m?Number(m[1]):0;
   const v=h==="#on-tap"?"quiz":h==="#bai-hoc"?"lessons":(n>=1&&n<=50)?"lesson":"home";
   if(v==="lesson"&&!lsOpen(n)){toast(`Hoàn thành bài ${n-1} để mở khóa bài ${n} nhé 🔒`);location.replace("#bai-hoc");return}
