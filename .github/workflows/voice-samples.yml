@@ -23,8 +23,10 @@ jobs:
           python-version: "3.11"
       - name: Khởi động VOICEVOX
         run: docker run -d --name vv -p 50021:50021 voicevox/voicevox_engine:cpu-latest || docker run -d --name vv -p 50021:50021 voicevox/voicevox_engine:cpu-ubuntu20.04-latest
-      - name: Cài Piper
-        run: pip install piper-tts==1.2.0
+      - name: Cài Piper và ffmpeg
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+          pip install piper-tts==1.2.0
       - name: Tạo file nghe thử
         run: python scripts/voice_samples.py
       - name: Lưu vào kho
