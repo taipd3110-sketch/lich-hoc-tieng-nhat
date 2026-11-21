@@ -20,6 +20,12 @@ scripts.forEach((code, i) => {
   catch (e) { fail(`JavaScript #${i + 1} lỗi cú pháp:\n${e.stderr}`); }
 });
 
+if (existsSync("game.js")) {
+  writeFileSync("/tmp/game-check.mjs", readFileSync("game.js", "utf8"));
+  try { execFileSync("node", ["--check", "/tmp/game-check.mjs"], { stdio: "pipe" }); ok("game.js đúng cú pháp"); }
+  catch (e) { fail(`game.js lỗi cú pháp:\n${e.stderr}`); }
+}
+
 if (existsSync("firebase-config.txt")) {
   const t = readFileSync("firebase-config.txt", "utf8");
   /apiKey\s*:/.test(t) && /projectId\s*:/.test(t) ? ok("có cấu hình Firebase") : fail("firebase-config.txt thiếu apiKey hoặc projectId");
