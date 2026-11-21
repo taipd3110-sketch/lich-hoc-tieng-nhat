@@ -3573,7 +3573,7 @@ let lsGateShown=null;
 function bnInd(){const nav=document.querySelector(".botnav"),on=nav&&nav.querySelector(".bn.on"),ind=nav&&nav.querySelector(".bn-ind");if(!on||!ind||getComputedStyle(nav).display==="none")return;ind.style.width=on.offsetWidth+"px";ind.style.transform=`translateX(${on.offsetLeft}px)`;ind.style.opacity=1;
   const i=on.querySelector(".bn-i");i.classList.remove("pop");void i.offsetWidth;i.classList.add("pop")}
 addEventListener("resize",()=>{try{bnInd()}catch(e){}});
-const GAME_N=[1], GAME_V="6";
+const GAME_N=[1], GAME_V="7";
 let G3=null;
 async function openG3(key,run,fail){
   if(G3&&G3.key===key)return;closeGame();
