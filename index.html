@@ -3275,18 +3275,25 @@ function tkRender(){
   try{sessionStorage.setItem("tk-reach",reach)}catch(e){}
   tkRun(P,last,reach);
 }
-let tkRunId=0;
+let tkRunId=0,tkFlip=false,tkAnim=null;
 function tkRun(P,last,reach){
   const road=document.querySelector("#tkMap .tk-r0"),W=$("tkWalker"),Pt=$("tkPet");if(!road||!W)return;const id=++tkRunId;
   const lenTo=k=>{if(k<=0)return 0;const t=document.createElementNS("http://www.w3.org/2000/svg","path");t.setAttribute("d",tkPath(P,0,k));road.parentNode.appendChild(t);const v=t.getTotalLength();t.remove();return v};
-  const from=reach>last?lenTo(last):lenTo(Math.max(0,reach-1)),to=lenTo(reach),img=W.querySelector("img");
-  const put=(l,end)=>{const p=road.getPointAtLength(Math.max(0,l)),q=road.getPointAtLength(Math.max(0,l-40)),a=road.getPointAtLength(Math.min(to,l+2));const left=a.x<p.x-.01;
-    W.style.left=(p.x+(end?-34:0))+"px";W.style.top=p.y+"px";Pt.style.left=(end?p.x+30:q.x)+"px";Pt.style.top=(end?p.y+2:q.y)+"px";W.classList.toggle("flip",left&&!end);Pt.classList.toggle("flip",left&&!end)};
-  if(matchMedia("(prefers-reduced-motion: reduce)").matches||to-from<1){put(to,true);return}
-  const dur=Math.min(4200,Math.max(1400,(to-from)*4)),t0=performance.now();W.classList.add("run");Pt.classList.add("run");
-  (function step(t){if(id!==tkRunId)return;const k=Math.min(1,(t-t0)/dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;put(from+(to-from)*e,false);img.src=Math.floor(t/140)%2?"tai-run.webp":"tai-icon.webp";
-    if(k<1)requestAnimationFrame(step);else{W.classList.remove("run");Pt.classList.remove("run");img.src="tai-icon.webp";put(to,true)}})(t0);
+  const LEAD=30,GAP=44,img=W.querySelector("img");
+  let ran=false;try{ran=sessionStorage.getItem("tk-ran")==="1"}catch(e){}
+  const now0=performance.now();let An=tkAnim&&tkAnim.toK===reach&&now0<tkAnim.t0+tkAnim.dur?tkAnim:null;
+  if(!An){const fk=reach>last?last:(!ran?Math.max(0,reach-1):reach);if(fk!==reach)An=tkAnim={fromK:fk,toK:reach,t0:now0,dur:0}}
+  const to=lenTo(reach),from=An?lenTo(An.fromK):to;if(An&&!An.dur)An.dur=Math.min(4200,Math.max(1400,(to-from)*4));
+  const at=l=>road.getPointAtLength(Math.max(0,l));
+  const put=l=>{const a=at(l-LEAD),b=at(l-LEAD-GAP),d=at(l-LEAD+3);if(Math.abs(d.x-a.x)>.3)tkFlip=d.x<a.x;
+    W.style.left=a.x+"px";W.style.top=a.y+"px";Pt.style.left=b.x+"px";Pt.style.top=b.y+"px";W.classList.toggle("flip",tkFlip);Pt.classList.toggle("flip",tkFlip)};
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches||to-from<1){put(to);return}
+  try{sessionStorage.setItem("tk-ran","1")}catch(e){}
+  const dur=An.dur,t0=An.t0;W.classList.add("run");Pt.classList.add("run");
+  (function step(t){if(id!==tkRunId)return;const k=Math.min(1,(t-t0)/dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;put(from+(to-from)*e);img.src=Math.floor(t/140)%2?"tai-run.webp":"tai-icon.webp";
+    if(k<1)requestAnimationFrame(step);else{tkAnim=null;W.classList.remove("run");Pt.classList.remove("run");img.src="tai-icon.webp";put(to)}})(performance.now());
 }
+
 $("tkMap").addEventListener("click",e=>{const b=e.target.closest(".tk-st");if(b)lsOpenLesson(Number(b.dataset.n))});
 $("tkGo").onclick=()=>{const c=document.querySelector("#tkMap .tk-st.cur")||document.querySelector("#tkMap .tk-walker");if(c)c.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});const b=document.querySelector("#tkMap .tk-st.cur");if(b)b.focus({preventScroll:true})};
 if(window.ResizeObserver)new ResizeObserver(()=>{const b=$("tkMap");if(b&&b.clientWidth&&Math.abs(b.clientWidth-tkW)>4)tkRender()}).observe($("tkMap"));
