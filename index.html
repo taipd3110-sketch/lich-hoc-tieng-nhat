@@ -1419,12 +1419,6 @@ a:focus-visible,select:focus-visible,summary:focus-visible,[tabindex]:not([tabin
 .tk-walker span{display:block;animation:tkWalk 1.1s ease-in-out infinite}
 .tk-walker svg{width:62px;height:62px;overflow:visible;filter:drop-shadow(0 4px 3px rgba(80,50,20,.25))}
 @keyframes tkWalk{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}}
-
-.acct{margin-top:10px;display:grid;gap:6px}
-.acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
-.acct-btns{display:flex;flex-wrap:wrap;gap:6px}
-.loginbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:16px;background:#fff;border:2px solid #f6c1d4;box-shadow:0 10px 26px -18px rgba(200,80,120,.6);font-weight:600;font-size:.9rem}
-.loginbar .chip{font-weight:700}
 @media (prefers-reduced-motion:reduce){.tk-walker span,.tk-st.cur .tk-n{animation:none}}
 /* stamp book */
 .gs-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 16px;margin-bottom:14px}
@@ -1497,6 +1491,24 @@ body.sceneview #bokashi{opacity:1}
 .lk-game-t small{font-size:.8rem;opacity:.92}
 .lk-game-go{flex:none;background:#fff;color:#2b3a67;border-radius:999px;padding:8px 14px;font-weight:800;font-size:.85rem}
 .tk-3d{color:#2b3a67}
+
+/* Tài + con giáp chạy trên bản đồ Tōkaidō */
+.tk-walker,.tk-pet{position:absolute;z-index:5;pointer-events:none;transform:translate(-50%,-92%)}
+.tk-walker{width:64px;height:64px}.tk-walker img{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 3px rgba(80,50,20,.3))}
+.tk-pet{width:48px;height:48px}.tk-pet svg{width:48px;height:48px;overflow:visible;filter:drop-shadow(0 3px 2px rgba(80,50,20,.25))}
+.tk-walker.flip img,.tk-pet.flip svg{transform:scaleX(-1)}
+.tk-walker.run,.tk-pet.run{animation:tkHop .28s ease-in-out infinite alternate}
+.tk-pet.run{animation-delay:.12s}
+@keyframes tkHop{from{transform:translate(-50%,-92%)}to{transform:translate(-50%,calc(-92% - 7px))}}
+.tk-walker:not(.run){animation:tkIdle 2.4s ease-in-out infinite}
+@keyframes tkIdle{50%{transform:translate(-50%,calc(-92% - 3px))}}
+
+.acct{margin-top:10px;display:grid;gap:6px}
+.acct-who{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
+.acct-btns{display:flex;flex-wrap:wrap;gap:6px}
+.loginbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:16px;background:#fff;border:2px solid #f6c1d4;box-shadow:0 10px 26px -18px rgba(200,80,120,.6);font-weight:600;font-size:.9rem}
+.loginbar .chip{font-weight:700}
+@media (prefers-reduced-motion:reduce){.tk-walker,.tk-pet{animation:none!important}}
 </style>
 
 <div class="scenery" id="scenery" aria-hidden="true"></div>
@@ -3250,9 +3262,8 @@ function tkRender(){
     const lw=desk?Math.min(gx-14,186):Math.max(110,(p.side==="R"?W-p.x:p.x)-44);
     h+=`<button type="button" class="${cls}" data-n="${n}" style="left:${p.x.toFixed(1)}px;top:${p.y.toFixed(1)}px;--lw:${lw.toFixed(0)}px" aria-label="Bài ${n}, trạm ${ro}: ${esc(t)}. ${meta}">
       <span class="tk-n"><b>${n}</b>${d?`<i aria-hidden="true">済</i>`:""}</span>
-      <span class="tk-l"><span class="tk-s"><span lang="ja">${k}</span> · ${ro}</span><span class="tk-t">${esc(t)}</span><span class="tk-m">${meta}${GAME_N.includes(n)?` · <b class="tk-3d">Dạo phố 3D</b>`:""}</span></span></button>`}
-  const wp=P[all?51:cur], wside=desk?"B":wp.side;
-  h+=`<div class="tk-walker ${wside}" id="tkWalker" style="left:${wp.x.toFixed(1)}px;top:${wp.y.toFixed(1)}px" aria-hidden="true"><span>${chibi(themeM??now.getMonth(),2)}</span></div>`;
+      <span class="tk-l"><span class="tk-s"><span lang="ja">${k}</span> · ${ro}</span><span class="tk-t">${esc(t)}</span><span class="tk-m">${meta}${GAME_N.includes(n)?` · <b class="tk-3d">3D</b>`:""}</span></span></button>`}
+  h+=`<div class="tk-pet" id="tkPet" aria-hidden="true"><span>${chibi(themeM??now.getMonth(),2)}</span></div><div class="tk-walker" id="tkWalker" aria-hidden="true"><img src="tai-icon.webp" alt="" width="64" height="64"></div>`;
   box.style.height=H+"px";box.innerHTML=h;
   $("tkSub").textContent=all?"Bạn đã đi hết 53 trạm Tōkaidō tới Kyoto. お疲れさま!":`Đã qua ${doneN}/50 trạm · Đang ở trạm ${tkSt(cur)[1]} (bài ${cur})`;
   let last=0;try{last=Number(sessionStorage.getItem("tk-reach")||0)}catch(e){}
@@ -3262,6 +3273,19 @@ function tkRender(){
     dp.style.strokeDasharray=L;dp.style.strokeDashoffset=L-L0;requestAnimationFrame(()=>requestAnimationFrame(()=>{dp.style.transition="stroke-dashoffset 1.6s cubic-bezier(.4,0,.2,1)";dp.style.strokeDashoffset=0}));
   }
   try{sessionStorage.setItem("tk-reach",reach)}catch(e){}
+  tkRun(P,last,reach);
+}
+let tkRunId=0;
+function tkRun(P,last,reach){
+  const road=document.querySelector("#tkMap .tk-r0"),W=$("tkWalker"),Pt=$("tkPet");if(!road||!W)return;const id=++tkRunId;
+  const lenTo=k=>{if(k<=0)return 0;const t=document.createElementNS("http://www.w3.org/2000/svg","path");t.setAttribute("d",tkPath(P,0,k));road.parentNode.appendChild(t);const v=t.getTotalLength();t.remove();return v};
+  const from=reach>last?lenTo(last):lenTo(Math.max(0,reach-1)),to=lenTo(reach),img=W.querySelector("img");
+  const put=(l,end)=>{const p=road.getPointAtLength(Math.max(0,l)),q=road.getPointAtLength(Math.max(0,l-40)),a=road.getPointAtLength(Math.min(to,l+2));const left=a.x<p.x-.01;
+    W.style.left=(p.x+(end?-34:0))+"px";W.style.top=p.y+"px";Pt.style.left=(end?p.x+30:q.x)+"px";Pt.style.top=(end?p.y+2:q.y)+"px";W.classList.toggle("flip",left&&!end);Pt.classList.toggle("flip",left&&!end)};
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches||to-from<1){put(to,true);return}
+  const dur=Math.min(4200,Math.max(1400,(to-from)*4)),t0=performance.now();W.classList.add("run");Pt.classList.add("run");
+  (function step(t){if(id!==tkRunId)return;const k=Math.min(1,(t-t0)/dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;put(from+(to-from)*e,false);img.src=Math.floor(t/140)%2?"tai-run.webp":"tai-icon.webp";
+    if(k<1)requestAnimationFrame(step);else{W.classList.remove("run");Pt.classList.remove("run");img.src="tai-icon.webp";put(to,true)}})(t0);
 }
 $("tkMap").addEventListener("click",e=>{const b=e.target.closest(".tk-st");if(b)lsOpenLesson(Number(b.dataset.n))});
 $("tkGo").onclick=()=>{const c=document.querySelector("#tkMap .tk-st.cur")||document.querySelector("#tkMap .tk-walker");if(c)c.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});const b=document.querySelector("#tkMap .tk-st.cur");if(b)b.focus({preventScroll:true})};
@@ -3542,7 +3566,7 @@ let lsGateShown=null;
 function bnInd(){const nav=document.querySelector(".botnav"),on=nav&&nav.querySelector(".bn.on"),ind=nav&&nav.querySelector(".bn-ind");if(!on||!ind||getComputedStyle(nav).display==="none")return;ind.style.width=on.offsetWidth+"px";ind.style.transform=`translateX(${on.offsetLeft}px)`;ind.style.opacity=1;
   const i=on.querySelector(".bn-i");i.classList.remove("pop");void i.offsetWidth;i.classList.add("pop")}
 addEventListener("resize",()=>{try{bnInd()}catch(e){}});
-const GAME_N=[1], GAME_V="4";
+const GAME_N=[1], GAME_V="6";
 let G3=null;
 async function openG3(key,run,fail){
   if(G3&&G3.key===key)return;closeGame();
@@ -3557,7 +3581,7 @@ function openGame(n){
 }
 let sceneFrom="#";
 function openScene3D(m){
-  openG3("canh-"+m,(mod,root)=>mod.startScene(root,m,{...G3API(),exit:()=>{location.hash=sceneFrom},go:k=>location.replace("#canh-"+(k+1))}),
+  openG3("canh-"+m,(mod,root)=>mod.startScene(root,m,{...G3API(),names:Z.map(a=>[a.vn,a.jn,a.sp]),greets:TM.map(t=>t.g),stage:gNow(m),exit:()=>{location.hash=sceneFrom},go:k=>location.replace("#canh-"+(k+1))}),
     ()=>{location.replace(sceneFrom);setTimeout(()=>setSceneView(true),300);toast("Máy chưa mở được cảnh 3D, chuyển sang chế độ ngắm cảnh thường.",4000)});
 }
 function closeGame(){if(!G3)return;try{G3.h&&G3.h.stop()}catch(e){}G3.root.remove();G3=null;document.body.style.overflow=""}
