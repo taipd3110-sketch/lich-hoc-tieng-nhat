@@ -3542,19 +3542,28 @@ let lsGateShown=null;
 function bnInd(){const nav=document.querySelector(".botnav"),on=nav&&nav.querySelector(".bn.on"),ind=nav&&nav.querySelector(".bn-ind");if(!on||!ind||getComputedStyle(nav).display==="none")return;ind.style.width=on.offsetWidth+"px";ind.style.transform=`translateX(${on.offsetLeft}px)`;ind.style.opacity=1;
   const i=on.querySelector(".bn-i");i.classList.remove("pop");void i.offsetWidth;i.classList.add("pop")}
 addEventListener("resize",()=>{try{bnInd()}catch(e){}});
-const GAME_N=[1], GAME_V="2";
+const GAME_N=[1], GAME_V="4";
 let G3=null;
-async function openGame(n){
+async function openG3(key,run,fail){
+  if(G3&&G3.key===key)return;closeGame();
+  const root=document.createElement("div");root.id="g3root";document.body.appendChild(root);document.body.style.overflow="hidden";G3={key,root,h:null};
+  try{const mod=await import("./game.js?v="+GAME_V);if(!G3||G3.root!==root)return;const h=await run(mod,root);if(G3&&G3.root===root)G3.h=h;else h.stop()}
+  catch(e){console.error(e);if(G3&&G3.root===root){root.remove();G3=null;document.body.style.overflow=""}fail()}
+}
+const G3API=()=>({say,toast,markReview,roma,kanaOf,plainOf,rb,esc});
+function openGame(n){
   if(!GAME_N.includes(n)){location.replace("#bai-"+n);return}
-  if(G3&&G3.n===n)return;closeGame();
-  const root=document.createElement("div");root.id="g3root";document.body.appendChild(root);document.body.style.overflow="hidden";G3={n,root,h:null};
-  try{const mod=await import("./game.js?v="+GAME_V);if(!G3||G3.root!==root)return;
-    G3.h=await mod.start(root,n,{say,toast,markReview,roma,kanaOf,plainOf,rb,esc,exit:()=>{location.hash="#bai-"+n}})}
-  catch(e){console.error(e);if(G3&&G3.root===root){root.remove();G3=null;document.body.style.overflow=""}toast("Chưa mở được minigame. Kiểm tra kết nối mạng rồi thử lại nhé.",4000);location.replace("#bai-"+n)}
+  openG3("pho-"+n,(mod,root)=>mod.start(root,n,{...G3API(),exit:()=>{location.hash="#bai-"+n}}),()=>{toast("Chưa mở được minigame. Kiểm tra kết nối mạng rồi thử lại nhé.",4000);location.replace("#bai-"+n)});
+}
+let sceneFrom="#";
+function openScene3D(m){
+  openG3("canh-"+m,(mod,root)=>mod.startScene(root,m,{...G3API(),exit:()=>{location.hash=sceneFrom},go:k=>location.replace("#canh-"+(k+1))}),
+    ()=>{location.replace(sceneFrom);setTimeout(()=>setSceneView(true),300);toast("Máy chưa mở được cảnh 3D, chuyển sang chế độ ngắm cảnh thường.",4000)});
 }
 function closeGame(){if(!G3)return;try{G3.h&&G3.h.stop()}catch(e){}G3.root.remove();G3=null;document.body.style.overflow=""}
 function route(){
-  const gm=location.hash.match(/^#pho-(\d+)$/);if(gm){openGame(Number(gm[1]));return}closeGame();
+  const gm=location.hash.match(/^#pho-(\d+)$/);if(gm){openGame(Number(gm[1]));return}
+  const cm=location.hash.match(/^#canh-(\d+)$/);if(cm&&Number(cm[1])>=1&&Number(cm[1])<=12){openScene3D(Number(cm[1])-1);return}closeGame();
   try{lpStop()}catch(e){}
   const h=location.hash, m=h.match(/^#bai-(\d+)$/), n=m?Number(m[1]):0;
   const v=h==="#on-tap"?"quiz":h==="#bai-hoc"?"lessons":(n>=1&&n<=50)?"lesson":"home";
@@ -3602,7 +3611,7 @@ function setSceneView(on){
   if(on){updSceneBar();setTimeout(()=>$("sceneBack").focus({preventScroll:true}),60)}
   else $("sceneBtn").focus({preventScroll:true});
 }
-$("sceneBtn").onclick=()=>setSceneView(true);
+$("sceneBtn").onclick=()=>{sceneFrom=/^#(pho|canh)-/.test(location.hash)?"#":(location.hash||"#");location.hash="#canh-"+((themeM??now.getMonth())+1)};
 $("sceneBack").onclick=()=>setSceneView(false);
 $("scPrev").onclick=()=>{$("prev").click();updSceneBar()};
 $("scNext").onclick=()=>{$("next").click();updSceneBar()};
