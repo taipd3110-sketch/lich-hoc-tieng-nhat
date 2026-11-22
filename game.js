@@ -1210,7 +1210,54 @@ Object.assign(PK,{パンダ:["panda"],ぞう:["elephant"],うま:["horse"],ピ�
  マンガ:["book","#ffcf4a"],ざっし:["mag"],ケーキ:["cake"],べんとう:["bento"],かし:["choco"],おかし:["choco"],たばこ:["boxp"],ネクタイ:["tie"],くつ:["shoes"]});
 Object.assign(PK,{紙:["paper"],花:["flower"],木:["tree"],箸:["chopsticks"],リンゴ:["fruit","#e5484d"],細かいお金:["money"],生け花:["flower"],ビザ:["passport"],インターネット:["pc"],ひっこし:["boxp"],引っ越し:["boxp"],やちん:["money"],家賃:["money"],絵:["photo"],パーティー:["cake"],誕生日:["cake"],映画:["film"],速達:["letter"],書留:["letter"],航空便:["letter"],船便:["boxp"],放送:["tv"],ニュース:["tv"],野球:["ball"],スポーツ:["ball"],試合:["ball"],母の日:["flower"],父の日:["gift"],旅行:["bag"],病気:["medicine"],熱:["medicine"],サイズ:["shirt"],寿司:["sushi"],天ぷら:["sushi"],砂糖:["salt","#ffffff"],塩:["salt"],下着:["shirt","#f6f4f0"],帽子:["hat"],眼鏡:["glasses"],手紙:["letter"],写真:["photo"],宿題:["book","#e5484d"],ビール:["bottle","#c8862a"],お酒:["bottle","#f6f4f0"],ジュース:["bottle","#f5a043"],クリスマス:["tree"],スイッチ:["aircon"],地球:["ball"],日本語:["book","#c23b2a"],英語:["book","#3d6fd6"]});
 PLACE.とこや="store";PLACE.床屋="store";
-const FLOOR=new Set(["train","bus","taxi","plane","ship","bike","car","elev","esc","stairsP","vend","postbox","panda","elephant","horse","piano","desk","chair","fridge","bed","tree","dog","cat","shelf","door","window"]);
+/* đồ vật thêm: ATM, lịch, micro, quả địa cầu, cây thông Noel, thời tiết, nhiệt kế, cấm hút thuốc, cờ, thư pháp */
+const txtTex=(w,h,draw)=>canvasTex(w,h,draw);
+Object.assign(P3,{
+ atm:()=>{const g=new THREE.Group();g.add(outline(box(1.3,2.2,.9,"#3d6fd6",0,1.1,0)));g.add(box(1.32,.35,.92,"#ffcf4a",0,2.05,0));
+   const sc=new THREE.Mesh(new THREE.PlaneGeometry(.8,.5),new THREE.MeshBasicMaterial({map:txtTex(160,100,(c,W,H)=>{c.fillStyle="#bfe6ff";c.fillRect(0,0,W,H);c.fillStyle="#2b3a67";c.font=`700 34px ${JPF}`;c.textAlign="center";c.fillText("¥ ATM",W/2,44);c.font=`600 22px ${VNF}`;c.fillText("****",W/2,80)})}));sc.position.set(0,1.45,.46);sc.rotation.x=-.25;g.add(sc);
+   g.add(box(.6,.06,.3,"#2b2540",0,1.05,.5));for(let i=0;i<9;i++)g.add(box(.12,.03,.1,"#d6dde5",-.15+(i%3)*.15,1.1,.42+((i/3)|0)*.06));g.add(box(.4,.05,.05,"#2b2540",0,.78,.46));
+   const sg=sign("ATM","",{w:1,h:.32,border:"#3d6fd6"});sg.position.set(0,2.05,.47);g.add(sg);return g},
+ calendar:t=>{const g=new THREE.Group();const label=t||"今日";const tex=txtTex(200,240,(c,W,H)=>{c.fillStyle="#ffffff";c.fillRect(0,0,W,H);c.fillStyle="#e5484d";c.fillRect(0,0,W,56);c.fillStyle="#fff";c.font=`700 34px ${VNF}`;c.textAlign="center";c.fillText("2026",W/2,40);
+     c.fillStyle="#2b2540";c.font=`800 ${Math.min(96,170/Math.max(1,label.length))}px ${JPF}`;c.textBaseline="middle";c.fillText(label,W/2,150);c.strokeStyle="#9aa3ae";c.lineWidth=2;for(let i=0;i<5;i++){c.beginPath();c.arc(30+i*35,8,5,0,TAU);c.stroke()}});
+   const m=new THREE.Mesh(new THREE.PlaneGeometry(.7,.84),new THREE.MeshBasicMaterial({map:tex}));m.position.set(0,.5,0);m.rotation.x=-.2;m.userData.sign=label;g.add(m);const st=box(.7,.84,.04,"#c9a27a",0,.5,-.05);st.rotation.x=-.2;g.add(st);const b=box(.08,.5,.3,"#8a5a44",0,.25,-.2);b.rotation.x=.4;g.add(b);return g},
+ mic:()=>{const g=new THREE.Group();g.add(outline(cyl(.3,.35,.06,"#2b2540",0,.03,0,16)));g.add(cyl(.03,.03,1.1,"#9aa3ae",0,.6,0,8));const h=outline(cyl(.06,.08,.35,"#2b2540",0,1.3,.05,10));h.rotation.x=.4;g.add(h);
+   const head=outline(sph(.13,"#c9cfd8",0,1.5,.13,12,10));g.add(head);return g},
+ globe:()=>{const g=new THREE.Group();g.add(outline(cyl(.25,.3,.08,"#8a5a44",0,.04,0,16)));g.add(cyl(.03,.03,.3,"#8a5a44",0,.2,0,6));const tex=txtTex(256,128,(c,W,H)=>{c.fillStyle="#4fa6d4";c.fillRect(0,0,W,H);c.fillStyle="#6fbf5a";
+     [[40,40,30,22],[70,80,18,26],[130,35,34,20],[150,70,22,28],[200,50,26,18],[215,95,16,12]].forEach(([x,y,a,b])=>{c.beginPath();c.ellipse(x,y,a,b,0,0,TAU);c.fill()})});
+   const ball=new THREE.Mesh(new THREE.SphereGeometry(.38,24,16),new THREE.MeshToonMaterial({map:tex,gradientMap:toonGrad()}));ball.position.y=.72;ball.rotation.z=.4;g.add(outline(ball,1.03));
+   const ring=new THREE.Mesh(new THREE.TorusGeometry(.44,.025,6,32,Math.PI*1.2),M("#e0b23a"));ring.position.y=.72;ring.rotation.set(0,Math.PI/2,.4);g.add(ring);return g},
+ xmas:()=>{const g=new THREE.Group();g.add(outline(box(.8,.5,.8,"#c23b2a",0,.25,0)));g.add(cyl(.15,.18,.5,"#6b4433",0,.7,0,8));[[1.3,1.5,1.4],[1,1.2,2.2],[.7,1,2.9]].forEach(([r,h,y])=>{const c=outline(new THREE.Mesh(new THREE.ConeGeometry(r,h,10),M("#2f7f55")));c.position.y=y;g.add(c)});
+   const st=new THREE.Mesh(new THREE.OctahedronGeometry(.25),new THREE.MeshBasicMaterial({color:0xffd43b}));st.position.y=3.6;g.add(st);
+   ["#e5484d","#ffd43b","#5ad1ff","#ff8fab","#ffffff"].forEach((c,i)=>{for(let k=0;k<3;k++){const a=k*2.1+i,y=1.2+i*.4,r=1.25-i*.17;g.add(sph(.1,c,Math.cos(a)*r,y,Math.sin(a)*r,8,6))}});
+   [[.9,.3],[-.8,.5]].forEach(([x,z],i)=>{const b=P3.gift(i?"#3d6fd6":"#e85d8c");b.position.set(x,0,z);b.scale.setScalar(.8);g.add(b)});return g},
+ weather:k=>{const g=new THREE.Group();g.add(cyl(.05,.05,1.2,"#6b4433",0,.6,0,6));const tex=txtTex(200,200,(c,W,H)=>{c.fillStyle="#e8f4ff";c.fillRect(0,0,W,H);c.strokeStyle="#3d6fd6";c.lineWidth=10;c.strokeRect(5,5,W-10,H-10);
+     const cloud=(x,y,col)=>{c.fillStyle=col;[[0,0,34],[30,-14,28],[-30,-8,24],[52,8,22]].forEach(([dx,dy,r])=>{c.beginPath();c.arc(x+dx,y+dy,r,0,TAU);c.fill()})};
+     if(k==="sun"){c.fillStyle="#ffb400";c.beginPath();c.arc(100,100,46,0,TAU);c.fill();for(let i=0;i<8;i++){const a=i*Math.PI/4;c.fillRect(100+Math.cos(a)*62-6,100+Math.sin(a)*62-6,12,12)}}
+     else{cloud(90,90,k==="cloud"?"#9aa3ae":"#b8c4d2");if(k==="rain"){c.strokeStyle="#3d6fd6";c.lineWidth=7;for(let i=0;i<5;i++){c.beginPath();c.moveTo(55+i*22,130);c.lineTo(47+i*22,160);c.stroke()}}
+       if(k==="snow"){c.fillStyle="#7fb8e6";for(let i=0;i<6;i++){c.beginPath();c.arc(50+i*20,140+(i%2)*16,7,0,TAU);c.fill()}}}});
+   const p=new THREE.Mesh(new THREE.PlaneGeometry(.8,.8),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));p.position.y=1.4;g.add(p);return g},
+ thermo:()=>{const g=new THREE.Group();g.add(outline(box(.25,.06,.9,"#ffffff",0,.04,0)));g.add(box(.06,.02,.6,"#e5484d",0,.08,-.05));g.add(sph(.08,"#e5484d",0,.08,.33,10,8));for(let i=0;i<6;i++)g.add(box(.1,.01,.015,"#2b2540",.07,.075,-.3+i*.1));return g},
+ nosmoke:()=>{const g=new THREE.Group();g.add(cyl(.05,.05,1.3,"#9aa3ae",0,.65,0,6));const tex=txtTex(200,200,(c,W,H)=>{c.fillStyle="#fff";c.fillRect(0,0,W,H);c.fillStyle="#2b2540";c.fillRect(40,92,110,18);c.fillStyle="#e5484d";c.fillRect(150,92,14,18);
+     c.strokeStyle="#e5484d";c.lineWidth=16;c.beginPath();c.arc(100,100,80,0,TAU);c.stroke();c.beginPath();c.moveTo(43,43);c.lineTo(157,157);c.stroke()});
+   const p=new THREE.Mesh(new THREE.CircleGeometry(.4,24),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));p.position.y=1.45;g.add(p);return g},
+ flag:k=>{const g=new THREE.Group();g.add(outline(cyl(.04,.05,1.6,"#c9cfd8",0,.8,0,8)));const tex=txtTex(180,120,(c,W,H)=>{if(k==="jp"){c.fillStyle="#fff";c.fillRect(0,0,W,H);c.fillStyle="#d8302a";c.beginPath();c.arc(W/2,H/2,34,0,TAU);c.fill();return}
+     c.fillStyle="#da251d";c.fillRect(0,0,W,H);c.fillStyle="#ffde00";c.beginPath();for(let i=0;i<10;i++){const r=i%2?16:40,a=-Math.PI/2+i*Math.PI/5;c.lineTo(W/2+Math.cos(a)*r,H/2+Math.sin(a)*r)}c.closePath();c.fill()});
+   const f=new THREE.Mesh(new THREE.PlaneGeometry(.75,.5),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));f.position.set(.4,1.33,0);g.add(f);return g},
+ brush:t=>{const g=new THREE.Group();const label=t||"字";const tex=txtTex(160,220,(c,W,H)=>{c.fillStyle="#fbf6ea";c.fillRect(0,0,W,H);c.fillStyle="#1f1b24";c.font=`700 ${Math.min(130,190/Math.max(1,label.length))}px ${JPF}`;c.textAlign="center";c.textBaseline="middle";c.fillText(label,W/2,H/2);c.fillStyle="#d8302a";c.fillRect(W-30,H-34,18,18)});
+   const m=new THREE.Mesh(new THREE.PlaneGeometry(.55,.75),new THREE.MeshBasicMaterial({map:tex}));m.rotation.x=-Math.PI/2+.25;m.position.set(-.1,.08,0);m.userData.sign=label;g.add(m);
+   const br=cyl(.025,.03,.6,"#a0693e",.38,.06,.05,8);br.rotation.z=Math.PI/2;br.rotation.y=.5;g.add(br);g.add(sph(.05,"#1f1b24",.08,.06,.2,8,6));g.add(outline(box(.22,.06,.14,"#2b2540",.4,.03,-.25)));return g},
+});
+Object.assign(PK,{暗証番号:["atm"],金額:["atm"],確認:["atm"],下ろします:["atm"],キャッシュカード:["card"],
+ 月曜日:["calendar","月"],火曜日:["calendar","火"],水曜日:["calendar","水"],木曜日:["calendar","木"],金曜日:["calendar","金"],土曜日:["calendar","土"],日曜日:["calendar","日"],
+ 今日:["calendar","今日"],明日:["calendar","明日"],昨日:["calendar","昨日"],あさって:["calendar","あさって"],おととい:["calendar","おととい"],毎日:["calendar","毎日"],先週:["calendar","先週"],今週:["calendar","今週"],来週:["calendar","来週"],先月:["calendar","先月"],今月:["calendar","今月"],来月:["calendar","来月"],
+ 去年:["calendar","去年"],今年:["calendar","今年"],来年:["calendar","来年"],週末:["calendar","週末"],休み:["calendar","休み"],お正月:["calendar","正月"],季節:["calendar","季節"],春:["calendar","春"],夏:["calendar","夏"],秋:["calendar","秋"],冬:["calendar","冬"],母の日:["calendar","母の日"],父の日:["calendar","父の日"],
+ 歌:["mic"],歌います:["mic"],音楽:["mic"],コンサート:["mic"],カラオケ:["mic"],
+ 地球:["globe"],世界:["globe"],外国:["globe"],国際:["globe"],留学生:["globe"],
+ クリスマス:["xmas"],
+ 天気:["weather","sun"],雨:["weather","rain"],雪:["weather","snow"],曇り:["weather","cloud"],
+ 熱:["thermo"],禁煙:["nosmoke"],吸います:["nosmoke"],ベトナム:["flag","vn"],国:["flag","jp"],お国:["flag","jp"],
+ 漢字:["brush","漢字"],字:["brush","字"],ひらがな:["brush","あ"],かたかな:["brush","ア"],ローマ字:["brush","ABC"],日記:["brush","日記"],今:["clock"],時間:["clock"],半:["clock"],何時:["clock"]});
+const FLOOR=new Set(["atm","xmas","weather","nosmoke","flag","train","bus","taxi","plane","ship","bike","car","elev","esc","stairsP","vend","postbox","panda","elephant","horse","piano","desk","chair","fridge","bed","tree","dog","cat","shelf","door","window"]);
 const BIGP=new Set(["train","bus","taxi","plane","ship","car","elev","esc","stairsP","elephant","horse","piano"]);
 Object.assign(PLACE,{きょうしつ:"school",しょくどう:"food",じむしょ:"office",かいぎしつ:"meeting",うけつけ:"reception",へや:"home",トイレ:"toilet",うりば:"store",かいしゃ:"office",アパート:"apartment",りょう:"home",こうこう:"school",とこや:"food",はいしゃ:"hospital",プレイガイド:"store",みせ:"food",レストラン:"food",
  きっさてん:"food",ほんや:"library",ビル:"office",しやくしょ:"office",プール:"pool",ホテル:"hotel",くうこう:"airport",デパート:"store",ぎんこう:"bank",ゆうびんきょく:"post",としょかん:"library",びじゅつかん:"museum",がっこう:"school",スーパー:"store",えき:"station",こうえん:"park",うち:"home",いえ:"home",にわ:"park"});
