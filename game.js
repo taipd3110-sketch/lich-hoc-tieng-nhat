@@ -367,7 +367,7 @@ const OSM_K=.3,OSM_V="1",FUJI=[35.3606,138.7274];
 const LMAPS=new Set([]),LCFG={12:{water:"-z"},13:{water:"-z"}};
 /* cấu hình ghép bản đồ với phần địa danh làm tay: off = vị trí (trong cảnh) đặt tâm bản đồ; rot = xoay;
    view = toạ độ cần nằm phía trước (-z); water = hướng từ tâm tới mặt nước gần nhất ("-z" hoặc "+z"); clear = bán kính dọn nhà thật quanh địa danh */
-const REAL={0:{k:.6,off:[0,-46],rot:-90,clear:0,clearRect:[[-13,13,-58,38]]},1:{k:.6,off:[0,-20],rot:0,clear:7,roof:"gassho",clearRect:[[-6,6,-14,16]]},2:{off:[-6,-16],view:FUJI,clear:12,poi:/忠霊塔/},3:{off:[0,-22],rot:0,clear:24,poi:/天守|姫路城/},
+const REAL={0:{k:.6,off:[0,-46],rot:-90,clear:0,clearRect:[[-13,13,-58,38]]},1:{k:.6,off:[0,-20],rot:0,clear:7,roof:"gassho",clearRect:[[-6,6,-14,16]]},2:{k:.6,off:[-6,-16],view:FUJI,clear:10,poi:/忠霊塔/,clearRect:[[-16,10,-28,16]]},3:{off:[0,-22],rot:0,clear:24,poi:/天守|姫路城/},
   4:{off:[0,-42],view:FUJI,clear:9,tower:1,poi:/東京タワー/},5:{off:[0,-16],rot:0,clear:13,poi:/明月院/},6:{off:[0,-24],water:"-z",clear:6,dropWater:1,poi:/大鳥居/,keepWet:["torii"]},7:{off:[0,-6],water:"-z",clear:10,dropWater:1,skytree:1},
   8:{off:[0,-12],rot:0,clear:12},9:{off:[0,-25],water:"+z",clear:9,dropWater:1,poi:/金閣|舎利殿|鹿苑寺/},10:{off:[0,-4],view:FUJI,clear:8,dropWater:1},11:{off:[0,-18],rot:0,clear:12,poi:/時計台/}};
 /* cắt vật liệu theo hình vuông trung tâm: keepInside=true chỉ vẽ phần trong, false chỉ vẽ phần ngoài */
@@ -498,8 +498,9 @@ function osmWorld(scene,D,cfg,opt){
   const isWater=(x,z)=>{const id=gi(x,z);return id>=0&&grid[id]===3};
   const nearestLand=(x,z,minR=0)=>{for(let r=minR;r<90;r+=1)for(let a=0;a<TAU;a+=.15){const X=x+Math.cos(a)*r,Z=z+Math.sin(a)*r,id=gi(X,Z);if(id>=0&&(grid[id]===0||grid[id]===2))return [X,Z]}return null};
   const nearestWater=(x,z)=>{for(let r=0;r<80;r+=1)for(let a=0;a<TAU;a+=.2){const X=x+Math.cos(a)*r,Z=z+Math.sin(a)*r,id=gi(X,Z);if(id>=0&&grid[id]===3)return [X,Z]}return null};
+  const openAt=(x,z,r)=>{for(let a=0;a<TAU;a+=Math.PI/4)for(const d of [r*.5,r]){const id=gi(x+Math.cos(a)*d,z+Math.sin(a)*d);if(id>=0&&grid[id]===1)return false}return true};
   const plantIn=(fn,n,R0)=>{const P=[];for(let i=0;i<n*6&&P.length<n;i++){const a=rng()*TAU,r=Math.sqrt(rng())*R0,x=Math.cos(a)*r,z=Math.sin(a)*r;if(!fn(x,z))continue;const id=gi(x,z);if(id>=0&&grid[id])continue;if(clr(x,z,null)||(opt.noTree&&opt.noTree(x,z)))continue;P.push([x,z,.8+rng()*.7,TK[(rng()*TK.length)|0]])}plant(P);return P.length};
-  return {blocked,onRoad,isWater,nearestLand,poi,T,rot,nB,nearestWater,LIM,footP,gi,grid,plantIn}}
+  return {blocked,onRoad,isWater,nearestLand,poi,T,rot,nB,nearestWater,LIM,footP,gi,grid,plantIn,openAt}}
 /* tháp Tokyo & Skytree đơn giản */
 function tower3(){const g=new THREE.Group();const H=30;for(let i=0;i<6;i++){const y0=i*H/6,r0=6*(1-i/6.4)+.4,r1=6*(1-(i+1)/6.4)+.4;const c=new THREE.Mesh(new THREE.CylinderGeometry(r1,r0,H/6,4,1,true),M(i%2?"#f6f4f0":"#e8553f",{side:THREE.DoubleSide,wireframe:false}));c.position.y=y0+H/12;c.rotation.y=Math.PI/4;g.add(c)}
   [10,18].forEach((y,i)=>g.add(outline(cyl(i?1.6:3,i?1.6:3,1.4,"#e8553f",0,y,0,12))));g.add(cyl(.25,.45,8,"#e8553f",0,H+4,0,8));g.traverse(o=>{if(o.isMesh)o.castShadow=true});return g}
@@ -921,7 +922,7 @@ export async function startScene(root,m,api){
       if(o.solid)o.solid.forEach(([dx,dz,w,d])=>{const sw=w*(obj.scale.x||1)*(o.scaleSolid||1),sd=d*(obj.scale.z||1);solids.push({x0:x+dx-sw/2,x1:x+dx+sw/2,z0:z+dz-sd/2,z1:z+dz+sd/2})});
       if(o.water){if(OD&&CFG.dropWater){obj.visible=false;if(o.spot)wSpots.push([o.spot,obj])}else waters.push(o.water)}
       if(o.spot){obj.traverse(c=>{if(c.isMesh&&!c.userData.isOutline)c.userData.pick={spot:o.spot}});if(!spotObj[o.spot])spotObj[o.spot]=[obj,.6,1]}return obj},
-    far(obj,spot){if(OD){const d=Math.hypot(obj.position.x,obj.position.z);if(d>1&&d<420){const f=430/d;obj.position.x*=f;obj.position.z*=f;obj.scale.multiplyScalar(f)}}scene.add(obj);if(spot){obj.traverse(c=>{if(c.isMesh)c.userData.pick={spot}});if(!spotObj[spot])spotObj[spot]=[obj,2,4]}return obj},
+    far(obj,spot){if(OD){const d=Math.hypot(obj.position.x,obj.position.z);if(d>1&&d<420){const f=430/d;obj.position.x*=f;obj.position.z*=f;obj.scale.multiplyScalar(f)}obj.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.fog=false}})}scene.add(obj);if(spot){obj.traverse(c=>{if(c.isMesh)c.userData.pick={spot}});if(!spotObj[spot])spotObj[spot]=[obj,2,4]}return obj},
     sky(obj,x,y,z,spot){if(OD){const d=Math.hypot(x,z);if(d>1&&d<480){const f=520/d;x*=f;z*=f;y*=f;obj.scale.multiplyScalar(f*.6)}}obj.position.set(x,y,z);obj.userData.billboard=true;scene.add(obj);if(spot){obj.traverse(c=>{if(c.isMesh)c.userData.pick={spot}});if(!spotObj[spot])spotObj[spot]=[obj,1.5,4]}return obj},
     start(x,z){startP=[x,z]}};
   S.build(A);
@@ -941,6 +942,8 @@ export async function startScene(root,m,api){
       if(o.spot&&!(CFG.keepWet||[]).includes(o.spot)){const L=osm.nearestLand(x,z);if(L){const dx=L[0]-x,dz=L[1]-z;obj.position.x+=dx;obj.position.z+=dz;for(let q=s0;q<e;q++){solids[q].x0+=dx;solids[q].x1+=dx;solids[q].z0+=dz;solids[q].z1+=dz}return}}
       if(!o.spot){scene.remove(obj);for(let q=s0;q<e;q++)solids[q]={x0:1e9,x1:1e9,z0:1e9,z1:1e9};const t=trees.findIndex(t=>t.x===x&&t.z===z);if(t>=0)trees.splice(t,1)}});
     /* tháng 1: hàng nghìn cổng torii dọc các lối mòn thật lên núi Inari, khách đi lễ đầu năm */
+    if(m===2){osm.plantIn((x,z)=>Math.hypot(x-CFG.off[0],z-CFG.off[1])>9&&osm.openAt(x,z,7)&&!osm.onRoad(x,z),2400,110);osm.plantIn((x,z)=>osm.openAt(x,z,9)&&!osm.onRoad(x,z),2200,330);
+      const dk=new THREE.Group();dk.add(outline(box(9,.4,5,"#a0693e",0,.6,0)));for(let i=0;i<9;i++)dk.add(box(.12,.6,.12,"#7a4a2a",-4.4+i*1.1,1.1,2.45));dk.add(box(9,.08,.1,"#7a4a2a",0,1.4,2.45));[-4.3,4.3].forEach(x=>[-2.3,2.3].forEach(z=>dk.add(box(.2,.6,.2,"#7a4a2a",x,.3,z))));dk.position.set(startP[0],0,startP[1]-4.2);scene.add(dk)}
     if(m===1){osm.plantIn((x,z)=>x>100||x<-275,3000,360);[[240,-200,70,40],[260,60,80,55],[230,280,70,40],[-400,-150,80,50],[-420,180,90,60]].forEach(([x,z,r,h])=>{const md=mound(r,h,"#e9eef5");md.position.set(x,0,z);scene.add(md)})}
     if(m===0){const TL=[];osm.footP.forEach(P=>{if(!P.some(p=>p[1]<-50))return;for(let i=0;i+1<P.length;i++){const [ax,az]=P[i],[bx,bz]=P[i+1],L=Math.hypot(bx-ax,bz-az);if(L<.01)continue;const ux=(bx-ax)/L,uz=(bz-az)/L;
         for(let t=.6;t<L&&TL.length<1800;t+=1.25){const x=ax+ux*t,z=az+uz*t;if(z>-50||Math.hypot(x,z)>190)continue;const id=osm.gi(x,z);if(id>=0&&osm.grid[id]===1)continue;TL.push([x,z,Math.atan2(ux,uz)])}}});
