@@ -8,7 +8,7 @@ from shapely.validation import make_valid
 
 R = 1000  # bán kính (m)
 SC = [
- (1, "伏見稲荷大社", 34.96714, 135.77267),
+ (1, "伏見稲荷大社 本殿", 34.96717, 135.77335),
  (2, "白川郷 荻町", 36.25780, 136.90630),
  (3, "新倉山浅間公園 忠霊塔", 35.50130, 138.80200),
  (4, "姫路城", 34.83940, 134.69390),
@@ -89,7 +89,7 @@ def run(sid, name, lat, lon):
     global R
     R = 800 if sid in (8, "L3") else 1000
     print(f"[{sid}] {name}", flush=True)
-    lat, lon = geocode(name, lat, lon)
+    # dùng toạ độ đã kiểm tra tay (tra địa chỉ hay trả về tâm cả khu, lệch hàng trăm mét)
     P = proj(lat, lon); BB = box(-R, -R, R, R)
     dla = R * 1.05 / 110540; dlo = R * 1.05 / (111320 * math.cos(math.radians(lat)))
     A = f"({lat-dla:.5f},{lon-dlo:.5f},{lat+dla:.5f},{lon+dlo:.5f})"
