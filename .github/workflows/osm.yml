@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-concurrency: osm-v4
+concurrency: osm-v5
 jobs:
   fetch:
     runs-on: ubuntu-latest
