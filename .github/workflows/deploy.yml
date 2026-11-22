@@ -52,6 +52,7 @@ jobs:
           [ -f giong.html ] && cp giong.html _site/ || true
           for f in manifest.webmanifest sw.js game.js tai.glb tai-icon.webp tai-run.webp; do [ -f $f ] && cp $f _site/ || true; done
           [ -d icons ] && cp -r icons _site/ || true
+          [ -d scenes ] && cp -r scenes _site/ || true
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

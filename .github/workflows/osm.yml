@@ -1,0 +1,25 @@
+name: Tải bản đồ OSM cho cảnh 3D
+on:
+  push:
+    paths: ["scripts/osm/**", ".github/workflows/osm.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: osm
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install shapely==2.0.6
+      - run: python scripts/osm/fetch.py
+      - name: Lưu dữ liệu vào repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+          git add scenes
+          git diff --cached --quiet || git commit -m "Cập nhật dữ liệu bản đồ OSM cho cảnh 3D (© OpenStreetMap contributors, ODbL)"
+          git pull --rebase origin main && git push origin HEAD:main
