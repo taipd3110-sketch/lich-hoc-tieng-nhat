@@ -82,7 +82,9 @@ def run(sid, name, lat, lon):
     R = 800 if sid in (8,) else 1000
     print(f"[{sid}] {name}", flush=True)
     lat, lon = geocode(name, lat, lon)
-    P = proj(lat, lon); BB = box(-R, -R, R, R); A = f"(around:{int(R*1.45)},{lat},{lon})"
+    P = proj(lat, lon); BB = box(-R, -R, R, R)
+    dla = R * 1.05 / 110540; dlo = R * 1.05 / (111320 * math.cos(math.radians(lat)))
+    A = f"({lat-dla:.5f},{lon-dlo:.5f},{lat+dla:.5f},{lon+dlo:.5f})"
     q = f"""[out:json][timeout:200];(
 way["building"]{A};relation["building"]{A};
 way["highway"]{A};way["railway"~"^(rail|subway|light_rail|tram|narrow_gauge|monorail)$"]{A};
@@ -90,15 +92,16 @@ way["waterway"~"^(river|stream|canal|ditch|drain)$"]{A};
 way["natural"~"^(water|wood|scrub|beach|sand|bare_rock)$"]{A};relation["natural"~"^(water|wood)$"]{A};
 way["water"]{A};way["landuse"~"^(forest|grass|meadow|farmland|orchard|cemetery|village_green|recreation_ground|reservoir|basin|paddy)$"]{A};
 relation["landuse"~"^(forest|reservoir)$"]{A};way["leisure"~"^(park|garden|pitch)$"]{A};relation["leisure"="park"]{A};
-way["natural"="coastline"](around:{int(R*3)},{lat},{lon});
+way["natural"="coastline"]({lat-dla*3:.5f},{lon-dlo*3:.5f},{lat+dla*3:.5f},{lon+dlo*3:.5f});
 );out geom;"""
     qp = f"""[out:json][timeout:120];(
 nwr["name"]["tourism"~"^(attraction|viewpoint|museum)$"]{A};nwr["name"]["historic"]{A};nwr["name"]["amenity"="place_of_worship"]{A};
 nwr["name"]["man_made"~"^(tower|torii|lighthouse|bridge)$"]{A};nwr["name"]["building"~"^(shrine|temple|castle|tower)$"]{A};nwr["name"]["leisure"="park"]{A};
 nwr["name"]["bridge"="yes"]["highway"]{A};node["natural"="peak"]["name"]{A};
 );out center tags;"""
-    d = overpass(q)
-    els = d["elements"]; print("  phần tử:", len(els), flush=True)
+    qb = f"""[out:json][timeout:200];(way["building"]{A};relation["building"]{A};);out geom;"""
+    qo = q.replace(f'way["building"]{A};relation["building"]{A};', "")
+    els = overpass(qb)["elements"] + overpass(qo)["elements"]; print("  phần tử:", len(els), flush=True)
     def ring(geom): return [P(g["lat"], g["lon"]) for g in geom]
     def wpoly(e):
         if e["type"] == "way":
