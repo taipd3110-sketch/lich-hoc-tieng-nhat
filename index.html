@@ -2835,6 +2835,8 @@ function roma(t){
 }
 const kanaOf=t=>t.replace(/([一-龯々〆ヵヶ]+)\{([^}]+)\}/g,"\u0001$2\u0002");
 const plainOf=t=>t.replace(/\{[^}]+\}/g,"");
+/* giọng đọc: đọc theo furigana (kana) để máy không đọc sai âm Hán */
+const spOf=t=>String(t).replace(/([一-龯々〆ヵヶ]+)\{([^}]+)\}/g,"$2").replace(/\{[^}]+\}/g,"").replace(/・/g," ");
 /* chọn giọng: ưu tiên giọng nữ, giọng chất lượng cao; người dùng có thể tự chọn */
 const VS={ja:"",vi:"",pitch:1.1};
 try{Object.assign(VS,JSON.parse(localStorage.getItem("jp-voice")||"{}"))}catch(e){}
@@ -2854,7 +2856,7 @@ function sayMsg(m){toast(m,5500)}
 function say(text,btn){
   const ss=window.speechSynthesis;
   if(!ss||!window.SpeechSynthesisUtterance){sayMsg("Trình duyệt này không hỗ trợ giọng đọc. Thử mở bằng Safari hoặc Chrome nhé");return}
-  const t=text.replace(/\s*[\[［(（][^\]］)）]*[\]］)）]/g,"").replace(/[～~〜]/g,"").trim();if(!t)return;
+  const t=spOf(text).replace(/\s*[\[［(（][^\]］)）]*[\]］)）]/g,"").replace(/[～~〜]/g,"").trim();if(!t)return;
   if(LP)lpStop();
   if(sayBtn)sayBtn.classList.remove("on");
   if(!jaVoice)pickVoice();
@@ -2880,7 +2882,7 @@ function pickVi(){const v=voicesOf(/^vi/i);viVoice=v.find(x=>x.name===VS.vi)||v.
 try{pickVi();speechSynthesis.addEventListener("voiceschanged",pickVi)}catch(e){}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 function speakP(text,lang,rate){return new Promise(res=>{
-  const t=text.replace(/\s*[\[［(（][^\]］)）]*[\]］)）]/g,"").replace(/[～~〜]/g,"").trim();if(!t)return res(true);
+  const t=spOf(text).replace(/\s*[\[［(（][^\]］)）]*[\]］)）]/g,"").replace(/[～~〜]/g,"").trim();if(!t)return res(true);
   const ja=/^ja/.test(lang);if(!ja&&!viVoice){if(!viVoice)pickVi();if(!viVoice)return res("skip")}
   const u=new SpeechSynthesisUtterance(t);curU=u;u.lang=lang;u.rate=rate;u.volume=1;u.pitch=ja?VS.pitch:1;
   const v=/^ja/.test(lang)?jaVoice:viVoice;try{if(v)u.voice=v}catch(e){}
@@ -3357,7 +3359,7 @@ function lsRenderLesson(n){
   $("lkRef").innerHTML=R.length?`<div class="vgh-ref">📚 Từ và thông tin tham khảo</div>`+R.map(([t,h],i)=>`<details class="refcard"${i===0?" open":""}><summary>${esc(t)}</summary><div class="gmd">${h}</div></details>`).join(""):"";
   const G=D?D.g:g.map(x=>[x,"Phần giải thích đang được soạn.",[]]);
   $("lkGc").textContent=G.length;
-  const egHtml=eg=>eg.map(([j,v])=>`<div class="geg" data-jp="${esc(plainOf(j))}" data-vi="${esc(v)}"><div class="gj">${rb(j)}</div><div class="rmj">${esc(j.split("\n").map(x=>roma(kanaOf(x))).join("\n"))}</div><div class="gv">${esc(v)}</div>${sayBtnHtml(plainOf(j),"Nghe câu ví dụ")}</div>`).join("");
+  const egHtml=eg=>eg.map(([j,v])=>`<div class="geg" data-jp="${esc(j)}" data-vi="${esc(v)}"><div class="gj">${rb(j)}</div><div class="rmj">${esc(j.split("\n").map(x=>roma(kanaOf(x))).join("\n"))}</div><div class="gv">${esc(v)}</div>${sayBtnHtml(j,"Nghe câu ví dụ")}</div>`).join("");
   const exHtml=ex=>!ex?"":typeof ex==="string"?`<p class="gex">${esc(ex)}</p>`:`<div class="gex gmd">${ex.html}</div>`;
   let ci=0;const card=(idx,title,ex,eg,cls,th)=>`<article class="gcard ${cls||""}" style="--d:${(ci++)*60}ms"><div class="gpat"><span class="gidx">${idx}</span><span>${th||esc(title)}</span></div>${exHtml(ex)}${egHtml(eg||[])}</article>`;
   let html="";
@@ -3370,7 +3372,7 @@ function lsRenderLesson(n){
   if(hasD){
     $("dlgT").innerHTML=`<span class="dlg-ic">🎎</span> ${esc(D.d.t)}`+(D.d.ctx?`<small class="dlg-ctx">${esc(D.d.ctx)}</small>`:"");
     const me=who=>who==="タイ"||/^nam\b/i.test(who);
-    $("lkDlg").innerHTML=D.d.l.map(([who,j,v,ro],i)=>`<div class="dl${me(who)?" me":""}" style="--d:${i*90}ms" data-jp="${esc(plainOf(j))}" data-vi="${esc(v)}"><div class="dl-who">${who==="タイ"?"Tài":rb(who)}</div><div class="dl-b"><div class="gj">${rb(j)}</div><div class="rmj">${esc(ro||roma(kanaOf(j)))}</div><div class="gv">${esc(v)}</div></div>${sayBtnHtml(plainOf(j),"Nghe câu này")}</div>`).join("");
+    $("lkDlg").innerHTML=D.d.l.map(([who,j,v,ro],i)=>`<div class="dl${me(who)?" me":""}" style="--d:${i*90}ms" data-jp="${esc(j)}" data-vi="${esc(v)}"><div class="dl-who">${who==="タイ"?"Tài":rb(who)}</div><div class="dl-b"><div class="gj">${rb(j)}</div><div class="rmj">${esc(ro||roma(kanaOf(j)))}</div><div class="gv">${esc(v)}</div></div>${sayBtnHtml(plainOf(j),"Nghe câu này")}</div>`).join("");
   }
   lqIntro();
 }
@@ -3527,7 +3529,7 @@ function lqExOpen(){
   const EX=((LS_DATA[lsN]||{}).ex||[]);
   LQ=null;$("lqStart").hidden=true;$("lqEnd").hidden=true;$("lqPlay").hidden=true;$("lqEx").hidden=false;
   const ansHtml=a=>a.split(/\s*\.\.\.\s*/).length>1?a.split(/\s*\.\.\.\s*/).join("\n…"):a;
-  $("lqExBody").innerHTML=EX.map(([t,items],pi)=>`<section class="exp" style="--d:${pi*70}ms"><div class="exp-h"><span class="gidx">${pi+1}</span><b>${esc(t)}</b><button class="chip exp-all" type="button" data-p="${pi}">Hiện tất cả đáp án</button></div><ol class="exl">${items.map(([q,a],i)=>`<li><div class="exq">${rb(q).replace(/_{3,}/g,'<span class="exblank"></span>')}</div>${a?`<button class="chip exb" type="button">Xem đáp án</button><div class="exa" hidden><div class="gj">${rb(ansHtml(a))}</div><div class="rmj">${esc(ansHtml(a).split("\n").map(x=>roma(kanaOf(x))).join("\n"))}</div>${/[\u3040-\u30ff\u4e00-\u9fff]{2}/.test(a)?sayBtnHtml(plainOf(a),"Nghe đáp án"):""}</div>`:""}</li>`).join("")}</ol></section>`).join("");
+  $("lqExBody").innerHTML=EX.map(([t,items],pi)=>`<section class="exp" style="--d:${pi*70}ms"><div class="exp-h"><span class="gidx">${pi+1}</span><b>${esc(t)}</b><button class="chip exp-all" type="button" data-p="${pi}">Hiện tất cả đáp án</button></div><ol class="exl">${items.map(([q,a],i)=>`<li><div class="exq">${rb(q).replace(/_{3,}/g,'<span class="exblank"></span>')}</div>${a?`<button class="chip exb" type="button">Xem đáp án</button><div class="exa" hidden><div class="gj">${rb(ansHtml(a))}</div><div class="rmj">${esc(ansHtml(a).split("\n").map(x=>roma(kanaOf(x))).join("\n"))}</div>${/[\u3040-\u30ff\u4e00-\u9fff]{2}/.test(a)?sayBtnHtml(a,"Nghe đáp án"):""}</div>`:""}</li>`).join("")}</ol></section>`).join("");
   $("lqEx").classList.remove("tabin");void $("lqEx").offsetWidth;$("lqEx").classList.add("tabin");
   if(canEdit&&!lsSt(lsN).exSeen)lsSet(lsN,{exSeen:true});
 }
@@ -3574,7 +3576,7 @@ function bnInd(){const nav=document.querySelector(".botnav"),on=nav&&nav.querySe
   const i=on.querySelector(".bn-i");i.classList.remove("pop");void i.offsetWidth;i.classList.add("pop")}
 addEventListener("resize",()=>{try{bnInd()}catch(e){}});
 const G3_TH={1:["はじめまして通り","Đi dạo khu phố Nhật, làm quen 7 người và tìm 22 từ mới của bài"],2:["にぎわい商店街","Phố mua sắm"],3:["さくらビル","Bên trong tòa nhà"],4:["さくら町","Phố Sakura"],5:["さくら駅前","Quảng trường trước ga"],6:["お花見まつり","Lễ hội ngắm hoa"],7:["ひだまり住宅街","Khu nhà ở"],8:["桜の丘","Đồi hoa anh đào"],9:["夜の繁華街","Phố đêm"],10:["どうぶつ公園","Công viên sở thú"],11:["ゆうびん通り","Phố bưu điện"],12:["青空ビーチ","Bãi biển"],13:["森と川","Rừng và suối"],14:["まちかど通り","Góc phố chỉ đường"],15:["ショッピング通り","Phố mua sắm"],16:["稲荷の杜","Khu đền thần"],17:["雪の温泉郷","Làng suối nước nóng"],18:["ひろびろ牧場","Nông trại"],19:["富士山の登山道","Đường lên núi Phú Sĩ"],20:["京の夕暮れ","Phố cổ Kyoto"],21:["アキバの夜","Akiba về đêm"],22:["アパート通り","Phố chung cư"],23:["運河の町","Phố bên kênh"],24:["ふるさとの村","Làng quê"],25:["夕焼けの村","Làng quê chiều tà"]};
-const GAME_N=[1,...Array.from({length:24},(_,i)=>i+2).filter(n=>LS_DATA[n])], GAME_V="18";
+const GAME_N=[1,...Array.from({length:24},(_,i)=>i+2).filter(n=>LS_DATA[n])], GAME_V="19";
 /* dữ liệu bài học đưa sang minigame (bài 2 trở đi tự dựng môi trường theo chủ đề) */
 function g3Lesson(n){const D=LS_DATA[n];if(!D)return null;const defs=LS_GROUPS[n]||[],used=new Set(),words=[];
   for(const [name,ws] of defs)for(const w of ws){const x=D.v.find(y=>y[0]===w&&!used.has(y));if(x){used.add(x);words.push({jp:x[0],kana:x[1],vi:x[2],g:name})}}
@@ -3589,7 +3591,7 @@ async function openG3(key,run,fail){
   try{const mod=await import("./game.js?v="+GAME_V);if(!G3||G3.root!==root)return;const h=await run(mod,root);if(G3&&G3.root===root)G3.h=h;else h.stop()}
   catch(e){console.error(e);if(G3&&G3.root===root){root.remove();G3=null;document.body.style.overflow=""}fail()}
 }
-const G3API=()=>({say,toast,markReview,roma,kanaOf,plainOf,rb,esc});
+const G3API=()=>({say,spOf,toast,markReview,roma,kanaOf,plainOf,rb,esc});
 function openGame(n){
   if(!GAME_N.includes(n)){location.replace("#bai-"+n);return}
   openG3("pho-"+n,(mod,root)=>mod.start(root,n,{...G3API(),lesson:n>1?g3Lesson(n):null,exit:()=>{location.hash="#bai-"+n}}),()=>{toast("Chưa mở được minigame. Kiểm tra kết nối mạng rồi thử lại nhé.",4000);location.replace("#bai-"+n)});
