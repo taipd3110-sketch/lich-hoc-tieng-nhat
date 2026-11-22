@@ -41,3 +41,14 @@
   rail: 2
   b: 3500
   kích thước: 466 KB
+[5] 東京タワー
+  geocode 東京タワー: 35.65845,139.74554 (lệch 17 m)
+  phần tử: 16287
+  sea: 0
+  water: 12
+  river: 17
+  land: 231
+  road: 3172
+  rail: 77
+  b: 3501
+  kích thước: 547 KB
