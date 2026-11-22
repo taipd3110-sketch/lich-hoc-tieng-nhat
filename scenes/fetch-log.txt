@@ -30,3 +30,14 @@
   rail: 12
   b: 3501
   kích thước: 376 KB
+[4] 姫路城
+  geocode 姫路城: 34.83933,134.69402 (lệch 13 m)
+  phần tử: 12403
+  sea: 0
+  water: 35
+  river: 44
+  land: 144
+  road: 1623
+  rail: 2
+  b: 3500
+  kích thước: 466 KB
