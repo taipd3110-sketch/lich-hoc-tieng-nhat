@@ -368,7 +368,7 @@ const LMAPS=new Set([]),LCFG={12:{water:"-z"},13:{water:"-z"}};
 /* cấu hình ghép bản đồ với phần địa danh làm tay: off = vị trí (trong cảnh) đặt tâm bản đồ; rot = xoay;
    view = toạ độ cần nằm phía trước (-z); water = hướng từ tâm tới mặt nước gần nhất ("-z" hoặc "+z"); clear = bán kính dọn nhà thật quanh địa danh */
 const REAL={0:{k:.6,off:[0,-46],rot:-90,clear:0,clearRect:[[-13,13,-58,38]]},1:{k:.6,off:[0,-20],rot:0,clear:7,roof:"gassho",clearRect:[[-6,6,-14,16]]},2:{k:.6,off:[-6,-16],view:FUJI,clear:10,poi:/忠霊塔/,clearRect:[[-16,10,-28,16]]},3:{k:.6,off:[0,-22],rot:0,clear:15,poi:/^姫路城$/,clearRect:[[-15,15,-38,-6]]},
-  4:{k:.6,off:[0,-50],view:FUJI,clear:14,tower:2.4,poi:/東京タワー/,clearRect:[[-22,22,-66,-30]]},5:{off:[0,-16],rot:0,clear:13,poi:/明月院/},6:{off:[0,-24],water:"-z",clear:6,dropWater:1,poi:/大鳥居/,keepWet:["torii"]},7:{off:[0,-6],water:"-z",clear:10,dropWater:1,skytree:1},
+  4:{k:.6,off:[0,-50],view:FUJI,clear:14,tower:2.4,poi:/東京タワー/,clearRect:[[-22,22,-66,-30]]},5:{k:.6,off:[0,0],rot:0,clear:5,poi:/^明月院$/,clearRect:[[-28,-8,-3,16],[6,16,-20,-9]]},6:{off:[0,-24],water:"-z",clear:6,dropWater:1,poi:/大鳥居/,keepWet:["torii"]},7:{off:[0,-6],water:"-z",clear:10,dropWater:1,skytree:1},
   8:{off:[0,-12],rot:0,clear:12},9:{off:[0,-25],water:"+z",clear:9,dropWater:1,poi:/金閣|舎利殿|鹿苑寺/},10:{off:[0,-4],view:FUJI,clear:8,dropWater:1},11:{off:[0,-18],rot:0,clear:12,poi:/時計台/}};
 /* cắt vật liệu theo hình vuông trung tâm: keepInside=true chỉ vẽ phần trong, false chỉ vẽ phần ngoài */
 function clipBox(mat,half,keepInside){const m=mat.clone();m.onBeforeCompile=sh=>{sh.uniforms.uClipH={value:half};
@@ -779,6 +779,10 @@ function tree3(kind,s=1){const g=new THREE.Group();
 function hyd3(c1,c2){const g=new THREE.Group();g.add(sph(.7,"#3f9d62",0,.35,0,10,8));for(let i=0;i<9;i++){const a=i/9*TAU;g.add(sph(.26,i%3?c1:c2,Math.cos(a)*.45,.7+((i*7)%3)*.08,Math.sin(a)*.45,8,6))}g.add(sph(.3,c1,0,.95,0,8,6));return g}
 function wagasa3(){const g=new THREE.Group();g.add(cyl(.04,.04,2.4,"#6b4433",0,1.2,0,6));const c=outline(new THREE.Mesh(new THREE.ConeGeometry(1.4,.7,16,1,true),M("#d63b3b",{side:THREE.DoubleSide})),1.03);c.position.y=2.55;g.add(c);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(.75,.08,6,20),M("#ffffff"));ring.rotation.x=Math.PI/2;ring.position.y=2.6;g.add(ring);g.rotation.z=.25;return g}
+/* cổng chùa gỗ mộc mái tranh (山門 của chùa thiền) */
+function kayamon3(){const g=new THREE.Group(),W="#7a5a40";[-1.9,1.9].forEach(x=>{g.add(outline(cyl(.22,.24,3.4,W,x,1.7,0,10)))});g.add(outline(box(4.6,.3,.35,W,0,3.1,0)));g.add(outline(box(4.2,.22,.3,W,0,2.4,0)));
+  const r=new THREE.Mesh(new THREE.CylinderGeometry(.01,1.9,1.3,4,1),M("#6b5a45"));r.rotation.y=Math.PI/4;r.scale.set(1.75,1,.75);r.position.y=3.9;g.add(outline(r));
+  const dr=box(1.8,2.2,.08,"#5a4030",-.95,1.2,-.05);dr.rotation.y=-.9;dr.position.x=-1.55;g.add(dr);const d2=box(1.8,2.2,.08,"#5a4030",.95,1.2,-.05);d2.rotation.y=.9;d2.position.x=1.55;g.add(d2);return g}
 function ishidoro3(){const g=new THREE.Group();g.add(outline(box(.9,.25,.9,"#a39e94",0,.12,0)));g.add(outline(cyl(.2,.24,1,"#b8b2a6",0,.75,0,8)));g.add(outline(box(.9,.18,.9,"#a39e94",0,1.3,0)));
   const lb=box(.6,.5,.6,"#c9c3b6",0,1.64,0);g.add(lb);const l=new THREE.Mesh(new THREE.BoxGeometry(.4,.3,.62),new THREE.MeshBasicMaterial({color:0xffd36b}));l.position.y=1.64;g.add(l);g.add(roofQuad(.75,.45,"#8f897e"));g.children.at(-1).position.y=2.12;return g}
 function snowman3(){const g=new THREE.Group();g.add(outline(sph(.75,"#ffffff",0,.7,0,16,12)));g.add(outline(sph(.52,"#ffffff",0,1.75,0,16,12)));[-.17,.17].forEach(x=>g.add(sph(.06,"#2b2540",x,1.85,.48,6,4)));
@@ -867,7 +871,13 @@ const SC=[
      [[-12,-10],[-16,0],[14,4],[-8,8],[10,10],[0,-20],[-14,-20]].forEach(([x,z])=>A.add(tree3("green",1.05),x,z,{solid:[[0,0,1,1]]}));A.start(0,9)}},
  {focus:[0,-16],name:"明月院",vn:"Chùa Meigetsu-in mùa cẩm tú cầu",sky:["#8fa0c8","#e3e6f5"],ground:"#9fd88f",ps:"drop",spots:[
    ["ajisai","紫陽花{あじさい}","hoa cẩm tú cầu","Nở rộ vào mùa mưa (梅雨, tháng 6)"],["kasa","傘{かさ}","cái ô","Ô giấy truyền thống gọi là 和傘 (wagasa)"],["tera","お寺{てら}","ngôi chùa","Chùa Meigetsu-in nổi tiếng với ô cửa tròn"]],
-   build(A){A.add(temple3(1.3),0,-16,{solid:[[0,0,10,7]],spot:"tera"});A.add(wagasa3(),5,-4,{spot:"kasa"});
+   build(A){if(OD_K>.4){/* bố cục theo bản đồ thật: cổng ở phía tây bắc, bậc đá cẩm tú cầu dẫn lên chính điện (本堂) có ô cửa tròn, 開山堂 phía đông */
+       A.add(temple3(2.1),-18,6.5,{rot:Math.PI,solid:[[0,0,16,11]],spot:"tera"});A.add(shrine3(1.1),11,-14.5,{rot:-Math.PI/2,solid:[[0,0,6.5,5]]});
+       A.add(kayamon3(),-31,-38,{rot:-.7,solid:[[-1.9,0,.5,.5],[1.9,0,.5,.5]]});
+       const bench=new THREE.Group();bench.add(box(2.4,.12,.9,"#c8342b",0,.55,0));[[-1,-.35],[1,-.35],[-1,.35],[1,.35]].forEach(([x,z])=>bench.add(box(.1,.5,.1,"#6b4433",x,.25,z)));A.add(bench,-21.5,-21,{rot:-.7,solid:[[0,0,2.4,1]]});
+       A.add(wagasa3(),-20.6,-20.2,{spot:"kasa"});A.add(hyd3("#5d8df0","#9dbcff"),-17,-22,{spot:"ajisai",solid:[[0,0,1.2,1.2]]});
+       [[-6,8],[-30,12],[2,-6]].forEach(([x,z])=>A.add(ishidoro3(),x,z,{solid:[[0,0,.9,.9]]}));A.start(-23.5,-25.5);return}
+     A.add(temple3(1.3),0,-16,{solid:[[0,0,10,7]],spot:"tera"});A.add(wagasa3(),5,-4,{spot:"kasa"});
      for(let i=0;i<14;i++){const side=i%2?1:-1,z=6-i*1.6;A.add(hyd3(["#7aa7ff","#b48cf0","#ff9fc8"][i%3],["#a9c4ff","#d2b8ff","#ffc2dc"][i%3]),side*2.6,z,{solid:[[0,0,1.2,1.2]],spot:i===3?"ajisai":null})}
      [[-12,-8],[12,-8],[-14,4],[14,4],[-8,-24],[8,-24]].forEach(([x,z])=>A.add(tree3("green",1.1),x,z,{solid:[[0,0,1,1]]}));A.start(0,10)}},
  {focus:[0,-8],name:"厳島神社",vn:"Cổng torii nổi Itsukushima",sky:["#4f9be0","#c8eefc"],ground:"#f2dca5",ps:"star",spots:[
@@ -950,6 +960,15 @@ export async function startScene(root,m,api){
       if(o.spot&&!(CFG.keepWet||[]).includes(o.spot)){const L=osm.nearestLand(x,z);if(L){const dx=L[0]-x,dz=L[1]-z;obj.position.x+=dx;obj.position.z+=dz;for(let q=s0;q<e;q++){solids[q].x0+=dx;solids[q].x1+=dx;solids[q].z0+=dz;solids[q].z1+=dz}return}}
       if(!o.spot){scene.remove(obj);for(let q=s0;q<e;q++)solids[q]={x0:1e9,x1:1e9,z0:1e9,z1:1e9};const t=trees.findIndex(t=>t.x===x&&t.z===z);if(t>=0)trees.splice(t,1)}});
     /* tháng 1: hàng nghìn cổng torii dọc các lối mòn thật lên núi Inari, khách đi lễ đầu năm */
+    if(m===5){const HL=[],inP=(x,z)=>x>-46&&x<26&&z>-48&&z<40;osm.footP.forEach(P=>{for(let i=0;i+1<P.length;i++){const [ax,az]=P[i],[bx,bz]=P[i+1],L=Math.hypot(bx-ax,bz-az);if(L<.01)continue;const ux=(bx-ax)/L,uz=(bz-az)/L;
+        for(let t=.4;t<L&&HL.length<900;t+=1.15)for(const sd of [-1,1]){const x=ax+ux*t-uz*sd*1.25,z=az+uz*t+ux*sd*1.25;if(!inP(x,z)||osm.onRoad(x,z)||osm.isWater(x,z))continue;const id=osm.gi(x,z);if(id>=0&&osm.grid[id]===1)continue;if(solids.some(b=>x>b.x0-.6&&x<b.x1+.6&&z>b.z0-.6&&z<b.z1+.6))continue;HL.push([x,z,.85+((t*7+i)%5)*.08])}}});
+      hydField(scene,HL);osm.plantIn((x,z)=>!inP(x,z)&&osm.openAt(x,z,5)&&!osm.onRoad(x,z),2600,240);osm.plantIn((x,z)=>inP(x,z)&&Math.hypot(x+18,z-6.5)>12&&osm.openAt(x,z,4)&&!osm.onRoad(x,z),160,60);
+      const KM=[["#ffe0c7","#2b2321","bun","#7a8fc8","#2b2540",1,"#3d6fd6"],["#f6d2b3","#1f1b24","short","#3a4a6a","#2a2d3a",0,"#2b2540"],["#ffe3cc","#3b2a26","long","#e9a1b9","#7a2f4a",1,"#e5484d"],["#f3cfae","#2a2220","cap","#5a6f9a","#2a2d3a",0,"#2f9e64"]];
+      let path=null;osm.footP.forEach(P=>{const n=P.filter(p=>inP(p[0],p[1])).length;if(n>=3&&(!path||n>path.length))path=P.filter(p=>inP(p[0],p[1]))});
+      if(path){const seg=[];let tot=0;for(let i=0;i+1<path.length;i++){const L=Math.hypot(path[i+1][0]-path[i][0],path[i+1][1]-path[i][1]);seg.push(L);tot+=L}
+        const at=d=>{for(let i=0;i<seg.length;i++){if(d<=seg[i]){const f=d/(seg[i]||1);return [path[i][0]+(path[i+1][0]-path[i][0])*f,path[i][1]+(path[i+1][1]-path[i][1])*f,Math.atan2(path[i+1][0]-path[i][0],path[i+1][1]-path[i][1])]}d-=seg[i]}const q=path[path.length-1];return [q[0],q[1],0]};
+        const vis=KM.map(([sk,hr,st,tp,bt,fem,uc],i)=>{const c=makeChar({skin:sk,hair:hr,style:st,top:tp,bottom:bt,fem});c.scale.setScalar(1.1);const um=new THREE.Group();um.add(cyl(.03,.03,1.3,"#6b4433",0,.65,0,5));const cn=new THREE.Mesh(new THREE.ConeGeometry(.95,.42,12,1,true),M(uc,{side:THREE.DoubleSide}));cn.position.y=1.35;um.add(cn);um.position.set(.28,1.25,.1);c.add(um);scene.add(c);return {c,d:tot*i/KM.length,dir:i%2?1:-1}});
+        ticks.push(dt=>vis.forEach(v=>{v.d+=v.dir*dt*1.3;if(v.d>tot){v.d=tot;v.dir=-1}if(v.d<0){v.d=0;v.dir=1}const [x,z,a]=at(v.d);v.c.position.set(x+.5,0,z);v.c.rotation.y=v.dir>0?a:a+Math.PI;animChar(v.c,dt,true)}))}}
     if(m===4){[[-26,-28,26,-28,11,24],[-30,-20,30,-20,9,26],[-22,-12,22,-12,7.5,20]].forEach(([a,b,c2,d,y,n])=>{const cl=carpLine(a,b,c2,d,y,n,ticks);scene.add(cl);solids.push({x0:a-.3,x1:a+.3,z0:b-.3,z1:b+.3},{x0:c2-.3,x1:c2+.3,z0:d-.3,z1:d+.3})});osm.plantIn((x,z)=>osm.openAt(x,z,6)&&!osm.onRoad(x,z),1200,200)}
     if(m===2){osm.plantIn((x,z)=>Math.hypot(x-CFG.off[0],z-CFG.off[1])>9&&osm.openAt(x,z,7)&&!osm.onRoad(x,z),2400,110);osm.plantIn((x,z)=>osm.openAt(x,z,9)&&!osm.onRoad(x,z),2200,330);
       const dk=new THREE.Group();dk.add(outline(box(9,.4,5,"#a0693e",0,.6,0)));for(let i=0;i<9;i++)dk.add(box(.12,.6,.12,"#7a4a2a",-4.4+i*1.1,1.1,2.45));dk.add(box(9,.08,.1,"#7a4a2a",0,1.4,2.45));[-4.3,4.3].forEach(x=>[-2.3,2.3].forEach(z=>dk.add(box(.2,.6,.2,"#7a4a2a",x,.3,z))));dk.position.set(startP[0],0,startP[1]-4.2);scene.add(dk)}
@@ -982,9 +1001,9 @@ export async function startScene(root,m,api){
   const tufts=[],flw=[];for(let k=0;k<900&&tufts.length<340;k++){const a=rng()*TAU,r=3+Math.sqrt(rng())*29,x=Math.cos(a)*r,z=Math.sin(a)*r;if(!free(x,z,.3)||nearPath(x,z,.9))continue;tufts.push([x,0,z,rng()*3,.7+rng()*.8,GC[k%2]]);if(rng()<.45)flw.push([x+.25,.22,z+.15,0,.8+rng()*.6,FL[k%FL.length]])}
   if(SEAS==="winter")instScatter(scene,new THREE.SphereGeometry(.28,8,6,0,TAU,0,Math.PI/2),M("#ffffff"),tufts,1);
   else{instScatter(scene,new THREE.ConeGeometry(.16,.5,5),M("#ffffff"),tufts.map(t=>[t[0],.22,t[2],t[3],t[4],t[5]]),1);instScatter(scene,new THREE.SphereGeometry(.09,6,5),M("#ffffff"),flw,1)}
-  const RC={winter:"#a9b8d4",spring:"#9fb7d8",rain:"#97a9c4",summer:"#8fb8c8",night:"#3a3560",autumn:"#b89a86"}[SEAS];
+  const RC={winter:"#a9b8d4",spring:"#9fb7d8",rain:"#86a394",summer:"#8fb8c8",night:"#3a3560",autumn:"#b89a86"}[SEAS];
   for(let k=0;k<18;k++){const a=k/18*TAU+rng()*.2,r=(osm?470:100)+rng()*14,h=(10+rng()*14)*(osm?3:1);const c=new THREE.Mesh(new THREE.ConeGeometry((16+rng()*10)*(osm?3:1),h,7),M(RC));c.position.set(Math.cos(a)*r,h/2-1,Math.sin(a)*r);scene.add(c)}
-  if(!night){const cl=[];for(let k=0;k<7;k++){const c=kasumi3();c.position.set((rng()-.5)*120,24+rng()*12,-30-rng()*60);c.scale.setScalar(1+rng()*.8);scene.add(c);cl.push(c)}ticks.push(dt=>cl.forEach((c,i)=>{c.position.x+=dt*(.6+i*.1);if(c.position.x>70)c.position.x=-70}));
+  const CLS=[];if(!night){const cl=CLS;for(let k=0;k<7;k++){const c=kasumi3();c.position.set((rng()-.5)*120,24+rng()*12,-30-rng()*60);c.scale.setScalar(1+rng()*.8);scene.add(c);cl.push(c)}ticks.push(dt=>cl.forEach((c,i)=>{c.position.x+=dt*(.6+i*.1);if(c.position.x>70)c.position.x=-70}));
     const bd=[];for(let k=0;k<5;k++){const b=bird3();scene.add(b);bd.push(b)}ticks.push(()=>{const t=performance.now()/1000;bd.forEach((b,i)=>{const a=t*.25+i*1.3;b.position.set(FC[0]+Math.cos(a)*(14+i*2),15+i*1.2+Math.sin(t*2+i)*.4,FC[1]+Math.sin(a)*(10+i));b.rotation.y=-a;b.children.forEach((w,j)=>w.rotation.z=(j?1:-1)*(.35+Math.sin(t*9+i)*.4))})})}
   /* điểm nhấn riêng từng cảnh */
   if(m===0&&!osm){[-1,1].forEach(sx=>rocks.push([sx*3.2,-3.6,2.1,"statue"]))}
@@ -1066,7 +1085,7 @@ export async function startScene(root,m,api){
   function resize(){const w=root.clientWidth,h=root.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
   resize();placeCam(true);addEventListener("resize",resize);
   $("g3Zin").onclick=()=>dist=Math.max(DMIN(),dist/1.3);$("g3Zout").onclick=()=>dist=Math.min(DMAX(),dist*1.3);
-  const setPano=on=>{if(on===pano)return;pano=on;const b=$("g3Pano");b.setAttribute("aria-pressed",String(on));b.classList.toggle("on",on);
+  const setPano=on=>{if(on===pano)return;pano=on;try{ps.visible=!on;CLS.forEach(c=>c.visible=!on)}catch(e){}const b=$("g3Pano");b.setAttribute("aria-pressed",String(on));b.classList.toggle("on",on);
     if(on){panoSave={dist,pitch};dist=osm?200:90;pitch=.95;scene.fog.far=(scene.fog.far||320)*2.2;try{hintOff()}catch(e){}}else{if(panoSave){dist=panoSave.dist;pitch=panoSave.pitch}scene.fog.far=scene.fog.far/2.2}};
   $("g3Pano").onclick=()=>setPano(!pano);
   const blocked=(x,z)=>(osm?osm.blocked(x,z):Math.hypot(x,z)>40)||solids.some(s=>x>s.x0-.35&&x<s.x1+.35&&z>s.z0-.35&&z<s.z1+.35)||waters.some(([a,b,c,d])=>x>a&&x<c&&z>b&&z<d);
@@ -1133,6 +1152,14 @@ function romon3(){const g=new THREE.Group(),V="#d8432f",Wt="#f6f1e6",D="#2f2b3a"
   const r2=roofQuad(6.6,2.2,D);r2.position.y=9.4;r2.scale.set(1,1,.6);g.add(r2);g.add(box(1.4,.7,.08,"#f2bf3a",0,6.25,1.6));
   [-3.3,3.3].forEach(x=>{const l=new THREE.Mesh(new THREE.SphereGeometry(.32,10,8),new THREE.MeshBasicMaterial({color:0xffe9b0}));l.scale.y=1.3;l.position.set(x,4.2,1.9);g.add(l)});return g}
 /* hàng nghìn cổng torii theo lối đi thật (instanced: 1 lần vẽ cho mỗi bộ phận) */
+/* luống cẩm tú cầu dọc lối đi (instanced): bụi lá + 4 chùm hoa, chủ yếu xanh lam kiểu 明月院ブルー */
+function hydField(scene,list){if(!list.length)return;const N=list.length,o=new THREE.Object3D(),col=new THREE.Color();
+  const lf=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.62,1),M("#3f8f5a"),N),fl=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.27,1),M("#ffffff"),N*4);
+  const PAL=["#4f7fe8","#6d95f2","#3f6ad8","#8aa8ff","#9b7fe0","#b8a4f2","#e9eefc"];
+  list.forEach(([x,z,s],i)=>{o.position.set(x,.42*s,z);o.rotation.set(0,i*1.7,0);o.scale.set(s,s*.8,s);o.updateMatrix();lf.setMatrixAt(i,o.matrix);
+    for(let j=0;j<4;j++){const a=j/4*TAU+i,r=.36*s;o.position.set(x+Math.cos(a)*r,(.72+(j%2)*.12)*s,z+Math.sin(a)*r);o.scale.setScalar(s*(.9+(j%3)*.12));o.updateMatrix();fl.setMatrixAt(i*4+j,o.matrix);
+      col.set(PAL[(i*3+j*(i%2?1:2))%PAL.length]);fl.setColorAt(i*4+j,col)}});
+  [lf,fl].forEach(m=>{m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;m.castShadow=false;m.receiveShadow=true;m.frustumCulled=false;scene.add(m)})}
 function toriiTunnel(scene,list){if(!list.length)return;const o=new THREE.Object3D(),N=list.length,V="#e0482f";
   const post=new THREE.CylinderGeometry(.11,.13,2.6,6,1,true),beam=new THREE.BoxGeometry(2.3,.18,.24),top=new THREE.BoxGeometry(2.6,.2,.3),base=new THREE.CylinderGeometry(.15,.15,.35,6);
   const parts=[[post,V,-.95,1.3,0],[post,V,.95,1.3,0],[beam,V,0,2.15,0],[top,"#231f26",0,2.55,0],[base,"#231f26",-.95,.17,0],[base,"#231f26",.95,.17,0]];
