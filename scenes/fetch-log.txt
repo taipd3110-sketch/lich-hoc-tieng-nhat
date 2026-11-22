@@ -176,3 +176,14 @@ overpass failed
   rail: 33
   b: 3500
   kích thước: 438 KB
+[10] 金閣寺
+  geocode 金閣寺: 35.03953,135.72954 (lệch 34 m)
+  phần tử: 15098
+  sea: 0
+  water: 8
+  river: 42
+  land: 120
+  road: 1243
+  rail: 0
+  b: 3500
+  kích thước: 423 KB
