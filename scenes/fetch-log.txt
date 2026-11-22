@@ -162,3 +162,17 @@ overpass failed
   overpass retry https://overpass-api.de/api/interpreter <urlopen error [Errno 101] Network is unreachable>
   overpass retry https://maps.mail.ru/osm/tools/overpass/api/interpreter HTTP Error 504: Gateway Time-out
   overpass retry https://overpass.private.coffee/api/interpreter The read operation timed out
+[8] 隅田公園
+  geocode 隅田公園: 35.71641,139.80282 (lệch 483 m)
+  overpass retry https://overpass-api.de/api/interpreter HTTP Error 502: Bad Gateway
+  overpass retry https://maps.mail.ru/osm/tools/overpass/api/interpreter HTTP Error 504: Gateway Timeout
+  phần tử: 13718
+  overpass retry https://overpass-api.de/api/interpreter HTTP Error 502: Bad Gateway
+  sea: 0
+  water: 9
+  river: 4
+  land: 115
+  road: 2359
+  rail: 33
+  b: 3500
+  kích thước: 438 KB
