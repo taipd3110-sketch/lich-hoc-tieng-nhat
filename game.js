@@ -363,11 +363,18 @@ const makePlayer=av=>{const p=av.model!==false&&TAI_GLB?makeTai():makeChar(av);p
    Dữ liệu © OpenStreetMap contributors (ODbL), tải sẵn vào scenes/osm-N.json
    ===================================================================== */
 const OSM_K=.3,OSM_V="1",FUJI=[35.3606,138.7274];
+const LMAPS=new Set([]),LCFG={12:{water:"-z"},13:{water:"-z"}};
 /* cấu hình ghép bản đồ với phần địa danh làm tay: off = vị trí (trong cảnh) đặt tâm bản đồ; rot = xoay;
    view = toạ độ cần nằm phía trước (-z); water = hướng từ tâm tới mặt nước gần nhất ("-z" hoặc "+z"); clear = bán kính dọn nhà thật quanh địa danh */
-const REAL={0:{off:[0,-30],rot:-90,clear:20,poi:/^伏見稲荷大社$|本殿/},1:{off:[0,-16],rot:0,clear:10,roof:"gassho"},2:{off:[-6,-16],view:FUJI,clear:12,poi:/忠霊塔/},3:{off:[0,-22],rot:0,clear:24,poi:/天守|姫路城/},
+const REAL={0:{k:.6,off:[0,-46],rot:-90,clear:0,clearRect:[[-13,13,-58,38]]},1:{off:[0,-16],rot:0,clear:10,roof:"gassho"},2:{off:[-6,-16],view:FUJI,clear:12,poi:/忠霊塔/},3:{off:[0,-22],rot:0,clear:24,poi:/天守|姫路城/},
   4:{off:[0,-42],view:FUJI,clear:9,tower:1,poi:/東京タワー/},5:{off:[0,-16],rot:0,clear:13,poi:/明月院/},6:{off:[0,-24],water:"-z",clear:6,dropWater:1,poi:/大鳥居/,keepWet:["torii"]},7:{off:[0,-6],water:"-z",clear:10,dropWater:1,skytree:1},
   8:{off:[0,-12],rot:0,clear:12},9:{off:[0,-25],water:"+z",clear:9,dropWater:1,poi:/金閣|舎利殿|鹿苑寺/},10:{off:[0,-4],view:FUJI,clear:8,dropWater:1},11:{off:[0,-18],rot:0,clear:12,poi:/時計台/}};
+/* cắt vật liệu theo hình vuông trung tâm: keepInside=true chỉ vẽ phần trong, false chỉ vẽ phần ngoài */
+function clipBox(mat,half,keepInside){const m=mat.clone();m.onBeforeCompile=sh=>{sh.uniforms.uClipH={value:half};
+  sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;").replace("#include <project_vertex>","#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;");
+  sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;uniform float uClipH;").replace("void main() {","void main() {\n  bool insideC=abs(vWP.x)<uClipH&&abs(vWP.z)<uClipH;\n  if("+(keepInside?"!insideC":"insideC")+") discard;")};
+  m.customProgramCacheKey=()=>"clip"+(keepInside?1:0)+half;return m}
+async function loadLessonMap(n){try{const r=await fetch(`./scenes/lesson-${n}.json?v=${OSM_V}`);if(!r.ok)return null;return await r.json()}catch(e){return null}}
 async function loadOSM(m){try{const r=await fetch(`./scenes/osm-${m+1}.json?v=${OSM_V}`);if(!r.ok)return null;return await r.json()}catch(e){return null}}
 function mergeTris(parts){let n=0;parts.forEach(g=>n+=g.attributes.position.count);const P=new Float32Array(n*3),N=new Float32Array(n*3),C=parts.some(g=>g.attributes.color)?new Float32Array(n*3):null;let k=0;
   parts.forEach(g=>{const c=g.attributes.position.count;P.set(g.attributes.position.array,k*3);if(g.attributes.normal)N.set(g.attributes.normal.array,k*3);if(C&&g.attributes.color)C.set(g.attributes.color.array,k*3);k+=c});
@@ -377,7 +384,8 @@ function flatTris(rings,y,out){const cont=rings[0].map(p=>new THREE.Vector2(p[0]
   let tri;try{tri=THREE.ShapeUtils.triangulateShape(cont,holes)}catch(e){return}const all=cont.concat(...holes);tri.forEach(t=>{for(let i=2;i>=0;i--){const v=all[t[i]];out.push(v.x,y,v.y)}})}
 function ptIn(ring,x,z){let ins=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])ins=!ins}return ins}
 function osmWorld(scene,D,cfg,opt){
-  const k=OSM_K,season=opt.season,rng=rngOf(opt.seed||7);
+  const k=cfg.k||OSM_K,season=opt.season,rng=rngOf(opt.seed||7),CM=m=>opt.core?clipBox(m,opt.core,false):m;
+  if(opt.base){const bg=new THREE.Mesh(new THREE.CircleGeometry(720,64),M(opt.base));bg.rotation.x=-Math.PI/2;bg.position.y=-.03;bg.receiveShadow=true;bg.userData.ground=true;scene.add(bg)}
   /* xoay */
   let C0=[0,0];if(cfg.poi&&D.poi){const hit=D.poi.filter(q=>cfg.poi.test(q[0])&&Math.hypot(q[2],q[3])<900).sort((a,b)=>Math.hypot(a[2],a[3])-Math.hypot(b[2],b[3]))[0];if(hit)C0=[hit[2],hit[3]]}
   let rot=(cfg.rot||0)*Math.PI/180;
@@ -400,31 +408,41 @@ function osmWorld(scene,D,cfg,opt){
   const LY={farm:.012,park:.016,cem:.018,forest:.02,sand:.022,rock:.024};
   const layers={};D.land.forEach(([cls,rings])=>{const R=rings.map(TR);(layers[cls]=layers[cls]||[]).push(R)});
   Object.entries(layers).forEach(([cls,list])=>{const arr=[];list.forEach(R=>flatTris(R,LY[cls]||.015,arr));if(!arr.length)return;const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(arr),3));g.computeVertexNormals();
-    const m=new THREE.Mesh(g,M(LC[cls]||"#8fc47a"));m.receiveShadow=true;m.userData.ground=true;scene.add(m)});
+    const m=new THREE.Mesh(g,CM(M(LC[cls]||"#8fc47a")));m.receiveShadow=true;m.userData.ground=true;scene.add(m)});
   /* nước & biển */
   const wArr=[];[...D.sea,...D.water].forEach(rings=>{const R=rings.map(TR);flatTris(R,.06,wArr);fillPoly(R,3)});
   const wcol=W?"#7fb0d8":"#4fa6d8";
   if(wArr.length){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(wArr),3));g.computeVertexNormals();
-    const m=new THREE.Mesh(g,new THREE.MeshToonMaterial({color:wcol,gradientMap:toonGrad(),transparent:true,opacity:.92,polygonOffset:true,polygonOffsetFactor:-1}));m.userData.ground=true;m.receiveShadow=true;scene.add(m);opt.ticks.push(()=>{m.material.opacity=.88+Math.sin(performance.now()/900)*.04})}
+    const m=new THREE.Mesh(g,CM(new THREE.MeshToonMaterial({color:wcol,gradientMap:toonGrad(),transparent:true,opacity:.92,polygonOffset:true,polygonOffsetFactor:-1})));m.userData.ground=true;m.receiveShadow=true;scene.add(m);opt.ticks.push(()=>{m.material.opacity=.88+Math.sin(performance.now()/900)*.04})}
   /* dải: sông, đường, đường sắt */
   const ribbon=(pts,w,y,arr)=>{for(let i=0;i+1<pts.length;i++){const [ax,az]=pts[i],[bx,bz]=pts[i+1];const dx=bx-ax,dz=bz-az,L=Math.hypot(dx,dz)||1,nx=-dz/L*w/2,nz=dx/L*w/2,ex=dx/L*w*.25,ez=dz/L*w*.25;
     const A=[ax-ex+nx,az-ez+nz],B=[ax-ex-nx,az-ez-nz],C2=[bx+ex-nx,bz+ez-nz],D2=[bx+ex+nx,bz+ez+nz];arr.push(A[0],y,A[1],C2[0],y,C2[1],B[0],y,B[1],A[0],y,A[1],D2[0],y,D2[1],C2[0],y,C2[1])}};
   const rv=[];D.river.forEach(([w,pts])=>{const P=pts.map(T),ww=Math.max(.9,w*k);ribbon(P,ww,.058,rv);fillLine(P,ww,3)});
-  if(rv.length){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(rv),3));g.computeVertexNormals();const m=new THREE.Mesh(g,M(wcol));m.userData.ground=true;scene.add(m)}
-  const RD=[[],[]];D.road.forEach(([w,foot,pts])=>{const P=pts.map(T),ww=Math.max(foot?.8:1.6,w*k*1.3);ribbon(P,ww,foot?.07:.075,RD[foot]);fillLine(P,ww,2,0);fillLine(P,ww,2,3)});
+  if(rv.length){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(rv),3));g.computeVertexNormals();const m=new THREE.Mesh(g,CM(M(wcol)));m.userData.ground=true;scene.add(m)}
+  const RD=[[],[]],SW=[],DASH=[],poles=[],lamps=[],footP=[];const pstep=20*k,lstep=34*k;
+  D.road.forEach(([w,foot,pts])=>{const P=pts.map(T),ww=Math.max(foot?.8:1.6,w*k*1.3);ribbon(P,ww,foot?.07:.075,RD[foot]);fillLine(P,ww,2,0);fillLine(P,ww,2,3);
+    if(foot){footP.push(P);return}if(w>=8)ribbon(P,ww+1.6,.072,SW);
+    /* vạch giữa, cột điện, đèn đường dọc theo đường */
+    let acc=0,accL=0,side=1;for(let i=0;i+1<P.length;i++){const [ax,az]=P[i],[bx,bz]=P[i+1],dx=bx-ax,dz=bz-az,L=Math.hypot(dx,dz);if(L<.01)continue;const ux=dx/L,uz=dz/L,nx=-uz,nz=ux;
+      if(w>=8)for(let t=(i?0:1);t<L-1.2;t+=3.2){const x=ax+ux*t,z=az+uz*t;DASH.push([x,z,x+ux*1.6,z+uz*1.6])}
+      for(let t=pstep-acc;t<L;t+=pstep){const x=ax+ux*t+nx*(ww/2+.5)*side,z=az+uz*t+nz*(ww/2+.5)*side;if(w<8)poles.push([x,z,Math.atan2(ux,uz)]);acc=0}acc=(acc+L)%pstep;
+      if(w>=8)for(let t=lstep-accL;t<L;t+=lstep){[-1,1].forEach(sd=>lamps.push([ax+ux*t+nx*(ww/2+.9)*sd,az+uz*t+nz*(ww/2+.9)*sd,Math.atan2(nx*sd,nz*sd)]))}accL=(accL+L)%lstep}});
+  if(SW.length){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(SW),3));g.computeVertexNormals();const m=new THREE.Mesh(g,CM(M(W?"#e8ebf0":"#c9c3b6")));m.receiveShadow=true;m.userData.ground=true;scene.add(m)}
+  if(DASH.length){const arr=[];DASH.forEach(([a,b,c2,d2])=>ribbon([[a,b],[c2,d2]],.18,.08,arr));const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(arr),3));g.computeVertexNormals();scene.add(new THREE.Mesh(g,CM(M("#f4f1e8"))))}
   const rcol=[W?"#c7ccd6":"#8d909a",W?"#dfe3ea":"#cdbf9f"];
-  RD.forEach((arr,i)=>{if(!arr.length)return;const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(arr),3));g.computeVertexNormals();const m=new THREE.Mesh(g,M(rcol[i]));m.receiveShadow=true;m.userData.ground=true;scene.add(m)});
+  RD.forEach((arr,i)=>{if(!arr.length)return;const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(arr),3));g.computeVertexNormals();const m=new THREE.Mesh(g,CM(M(rcol[i])));m.receiveShadow=true;m.userData.ground=true;scene.add(m)});
   const ra=[];D.rail.forEach(pts=>{const P=pts.map(T);ribbon(P,1.3,.085,ra);fillLine(P,1.3,1,0)});
-  if(ra.length){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(ra),3));g.computeVertexNormals();scene.add(new THREE.Mesh(g,M("#6b6670")))}
+  if(ra.length){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(ra),3));g.computeVertexNormals();scene.add(new THREE.Mesh(g,CM(M("#6b6670"))))}
   /* nhà: tường + mái, gộp theo ô lưới, tô màu từng đỉnh */
   const col=new THREE.Color(),chunks=new Map(),HX=1.25;
   const pal={h:["#f3ece0","#5d6f86"],a:["#e8e4dc","#8a8f99"],c:["#dfe4ea","#7d8794"],s:["#f6efe4","#c8452f"],t:["#eadfcf","#4a4a52"],o:["#efe8dc","#7a6a5a"]};
   if(cfg.roof==="gassho"){pal.h=["#d9c7a6","#8a6b3e"];pal.o=["#d9c7a6","#8a6b3e"]}
-  const push=(key,pos,cr)=>{let ch=chunks.get(key);if(!ch)chunks.set(key,ch={p:[],c:[]});for(let i=0;i<pos.length;i+=3){ch.p.push(pos[i],pos[i+1],pos[i+2]);ch.c.push(cr.r,cr.g,cr.b)}};
+  const push=(key,pos,cr,uv)=>{let ch=chunks.get(key);if(!ch)chunks.set(key,ch={p:[],c:[],u:[]});for(let i=0,j=0;i<pos.length;i+=3,j+=2){ch.p.push(pos[i],pos[i+1],pos[i+2]);ch.c.push(cr.r,cr.g,cr.b);ch.u.push(uv?uv[j]:.03,uv?uv[j+1]:.03)}};
+  const FLH=3.2*k*1.25,quadUV=(len,h,out)=>{const U=Math.max(1,Math.round(len/(2.6*k/.3*.55))),V=h/FLH;out.push(0,0,U,0,U,V,0,0,U,V,0,V)};
   const clr=opt.clear||(()=>false);let nB=0;
   D.b.forEach(([h,kind,ring])=>{const R=TR(ring);let cx=0,cz=0;R.forEach(p=>{cx+=p[0];cz+=p[1]});cx/=R.length;cz/=R.length;if(clr(cx,cz,R))return;nB++;
     let area=0;for(let i=0,j=R.length-1;i<R.length;j=i++)area+=(R[j][0]+R[i][0])*(R[j][1]-R[i][1]);area=Math.abs(area/2);
-    const hh=Math.max(1.6,h*k*HX),[wc,rc]=pal[kind]||pal.o,key=Math.floor(cx/48)+","+Math.floor(cz/48),wall=[],roof=[];
+    const hh=Math.max(1.6,h*k*HX),[wc,rc]=pal[kind]||pal.o,key=Math.floor(cx/(48*k/.3))+","+Math.floor(cz/(48*k/.3)),wall=[],roof=[],wuv=[];
     const pitched=(kind==="h"||kind==="s"||kind==="t"||cfg.roof==="gassho")&&area<260&&h<14;
     if(pitched){/* hộp hướng theo cạnh dài + mái dốc */
       let best=null;for(let i=0;i<R.length;i++){const a=R[i],b=R[(i+1)%R.length];const ang=Math.atan2(b[1]-a[1],b[0]-a[0]),ca=Math.cos(ang),sa=Math.sin(ang);let u0=1e9,u1=-1e9,v0=1e9,v1=-1e9;
@@ -433,30 +451,45 @@ function osmWorld(scene,D,cfg,opt){
       const Pq=(u,v,y)=>[cx+u*ca-v*sa,y,cz+u*sa+v*ca],wh=Math.min(hh,cfg.roof==="gassho"?1.4:2.2),rh=cfg.roof==="gassho"?(v1-v0)*.9:(v1-v0)*.38,ov=.25;
       const q=(a,b,c2,d,arr)=>arr.push(...a,...b,...c2,...a,...c2,...d);
       const c00=Pq(u0,v0,0),c10=Pq(u1,v0,0),c11=Pq(u1,v1,0),c01=Pq(u0,v1,0),t00=Pq(u0,v0,wh),t10=Pq(u1,v0,wh),t11=Pq(u1,v1,wh),t01=Pq(u0,v1,wh);
-      q(c00,c10,t10,t00,wall);q(c10,c11,t11,t10,wall);q(c11,c01,t01,t11,wall);q(c01,c00,t00,t01,wall);
+      q(c00,c10,t10,t00,wall);q(c10,c11,t11,t10,wall);q(c11,c01,t01,t11,wall);q(c01,c00,t00,t01,wall);[u1-u0,v1-v0,u1-u0,v1-v0].forEach(L=>quadUV(L,wh,wuv));
       const vm=(v0+v1)/2,r0=Pq(u0-ov,v0-ov,wh-.15),r1=Pq(u1+ov,v0-ov,wh-.15),r2=Pq(u1+ov,vm,wh+rh),r3=Pq(u0-ov,vm,wh+rh),r4=Pq(u1+ov,v1+ov,wh-.15),r5=Pq(u0-ov,v1+ov,wh-.15);
-      q(r0,r1,r2,r3,roof);q(r3,r2,r4,r5,roof);wall.push(...t00,...Pq(u0,vm,wh+rh),...t01,...t10,...t11,...Pq(u1,vm,wh+rh));
+      q(r0,r1,r2,r3,roof);q(r3,r2,r4,r5,roof);wall.push(...t00,...Pq(u0,vm,wh+rh),...t01,...t10,...t11,...Pq(u1,vm,wh+rh));for(let q2=0;q2<6;q2++)wuv.push(.03,.03);
       if(W){const sn=[];q(Pq(u0-ov,vm-(v1-v0)*.18,wh+rh*.62),Pq(u1+ov,vm-(v1-v0)*.18,wh+rh*.62),Pq(u1+ov,vm,wh+rh+.02),Pq(u0-ov,vm,wh+rh+.02),sn);q(Pq(u0-ov,vm,wh+rh+.02),Pq(u1+ov,vm,wh+rh+.02),Pq(u1+ov,vm+(v1-v0)*.18,wh+rh*.62),Pq(u0-ov,vm+(v1-v0)*.18,wh+rh*.62),sn);push(key,sn,col.set("#ffffff"))}}
-    else{for(let i=0;i<R.length;i++){const a=R[i],b=R[(i+1)%R.length];wall.push(a[0],0,a[1],b[0],0,b[1],b[0],hh,b[1],a[0],0,a[1],b[0],hh,b[1],a[0],hh,a[1])}flatTris([R],hh,roof);
+    else{for(let i=0;i<R.length;i++){const a=R[i],b=R[(i+1)%R.length];wall.push(a[0],0,a[1],b[0],0,b[1],b[0],hh,b[1],a[0],0,a[1],b[0],hh,b[1],a[0],hh,a[1]);quadUV(Math.hypot(b[0]-a[0],b[1]-a[1]),hh,wuv)}flatTris([R],hh,roof);
       }
-    push(key,wall,col.set(wc).offsetHSL(0,0,(rng()-.5)*.06));push(key,roof,col.set(W&&!pitched?"#f4f7fb":rc).offsetHSL(0,0,(rng()-.5)*.05));
+    push(key,wall,col.set(wc).offsetHSL(0,0,(rng()-.5)*.06),wuv);push(key,roof,col.set(W&&!pitched?"#f4f7fb":rc).offsetHSL(0,0,(rng()-.5)*.05));
     fillPoly([R],1)});
-  const bmat=new THREE.MeshToonMaterial({vertexColors:true,gradientMap:toonGrad(),side:THREE.DoubleSide});
-  chunks.forEach(ch=>{const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(ch.p),3));g.setAttribute("color",new THREE.BufferAttribute(new Float32Array(ch.c),3));g.computeVertexNormals();
+  const winT=canvasTex(64,64,(c)=>{c.fillStyle="#ffffff";c.fillRect(0,0,64,64);c.fillStyle="#d9dde3";c.fillRect(14,12,36,34);c.fillStyle=season==="night"?"#ffe7a8":"#7c93ad";c.fillRect(17,15,30,28);c.fillStyle="#d9dde3";c.fillRect(31,15,2,28)});
+  winT.wrapS=winT.wrapT=THREE.RepeatWrapping;winT.magFilter=THREE.LinearFilter;
+  const bmat=new THREE.MeshToonMaterial({vertexColors:true,gradientMap:toonGrad(),side:THREE.DoubleSide,map:winT});
+  if(season==="night"||cfg.dusk){const em=canvasTex(64,64,(c)=>{c.fillStyle="#000";c.fillRect(0,0,64,64);c.fillStyle="#ffffff";c.fillRect(17,15,30,28)});em.wrapS=em.wrapT=THREE.RepeatWrapping;bmat.emissive=new THREE.Color(season==="night"?"#ffcf70":"#ffb060");bmat.emissiveMap=em;bmat.emissiveIntensity=season==="night"?.85:.35}
+  chunks.forEach(ch=>{const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(ch.p),3));g.setAttribute("color",new THREE.BufferAttribute(new Float32Array(ch.c),3));g.setAttribute("uv",new THREE.BufferAttribute(new Float32Array(ch.u),2));g.computeVertexNormals();
     const m=new THREE.Mesh(g,bmat);m.castShadow=true;m.receiveShadow=true;m.userData.osm=true;m.userData.noBake=true;scene.add(m)});
+  /* cột điện + dây điện, đèn đường (bỏ chỗ trùng nhà/nước/vùng trung tâm) */
+  {const okP=(x,z)=>{const id=gi(x,z);return !(id>=0&&(grid[id]===1||grid[id]===3))&&!clr(x,z,null)&&!(opt.noTree&&opt.noTree(x,z))&&Math.hypot(x,z)<LIM*2.6};
+   const PL=poles.filter(p=>okP(p[0],p[1])).slice(0,900),LP=lamps.filter(p=>okP(p[0],p[1])).slice(0,500),o=new THREE.Object3D(),ph=10*k*1.1;
+   if(PL.length){const pg=new THREE.CylinderGeometry(.09,.13,ph,6);pg.translate(0,ph/2,0);const cb=new THREE.BoxGeometry(1.1,.08,.08);cb.translate(0,ph*.9,0);
+     const pm=new THREE.InstancedMesh(pg,M("#9a958c"),PL.length),cm2=new THREE.InstancedMesh(cb,M("#6b6670"),PL.length);
+     PL.forEach((p,i)=>{o.position.set(p[0],0,p[1]);o.rotation.set(0,p[2]+Math.PI/2,0);o.scale.setScalar(1);o.updateMatrix();pm.setMatrixAt(i,o.matrix);cm2.setMatrixAt(i,o.matrix)});scene.add(pm,cm2);
+     const wv=[];for(let i=0;i+1<PL.length;i++){const a=PL[i],b=PL[i+1],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(d>pstep*1.6||d<1)continue;[-.45,.45].forEach(off=>{const ca=Math.cos(a[2]),sa=Math.sin(a[2]);wv.push(a[0]+ca*off,ph*.9,a[1]-sa*off,b[0]+ca*off,ph*.9,b[1]-sa*off)})}
+     if(wv.length){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(wv),3));scene.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x3a3640,transparent:true,opacity:.55})))}
+     PL.forEach(p=>{const id=gi(p[0],p[1]);if(id>=0)grid[id]=1})}
+   if(LP.length){const lh=7*k*1.1,lg=new THREE.CylinderGeometry(.07,.09,lh,6);lg.translate(0,lh/2,0);const hg=new THREE.BoxGeometry(.25,.14,.9);hg.translate(0,lh,.35);
+     const lm=new THREE.InstancedMesh(lg,M("#5a5f6b"),LP.length),hm=new THREE.InstancedMesh(hg,season==="night"?new THREE.MeshBasicMaterial({color:0xfff2b0}):M("#e9eef5"),LP.length);
+     LP.forEach((p,i)=>{o.position.set(p[0],0,p[1]);o.rotation.set(0,p[2],0);o.updateMatrix();lm.setMatrixAt(i,o.matrix);hm.setMatrixAt(i,o.matrix)});scene.add(lm,hm);LP.forEach(p=>{const id=gi(p[0],p[1]);if(id>=0)grid[id]=1})}}
   /* cây trong rừng, công viên */
   const TK={winter:["pinesnow"],spring:["sakura","green","pine"],rain:["green","pine"],summer:["green","pine"],night:["pine","green"],autumn:["momiji","amber","pine","green"]}[season]||["green"];
   const pts=[];const want=(cls)=>cls==="forest"?1/14:cls==="park"?1/90:cls==="cem"?1/120:0;
   Object.entries(layers).forEach(([cls,list])=>{const d=want(cls);if(!d)return;list.forEach(R=>{let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;R[0].forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);z0=Math.min(z0,p[1]);z1=Math.max(z1,p[1])});
-    const n=Math.min(1800,Math.round((x1-x0)*(z1-z0)*d));for(let i=0;i<n&&pts.length<6500;i++){const x=x0+rng()*(x1-x0),z=z0+rng()*(z1-z0);if(!ptIn(R[0],x,z)||R.slice(1).some(h=>ptIn(h,x,z)))continue;const id=gi(x,z);if(id>=0&&grid[id])continue;if(clr(x,z,null)||(opt.noTree&&opt.noTree(x,z)))continue;pts.push([x,z,.8+rng()*.7,TK[(rng()*TK.length)|0]])}})});
-  const byK={};pts.forEach(p=>(byK[p[3]]=byK[p[3]]||[]).push(p));const o3=new THREE.Object3D();
+    const n=Math.min(1400,Math.round((x1-x0)*(z1-z0)*d*(k>.4?.6:1)));for(let i=0;i<n&&pts.length<4600;i++){const x=x0+rng()*(x1-x0),z=z0+rng()*(z1-z0);if(!ptIn(R[0],x,z)||R.slice(1).some(h=>ptIn(h,x,z)))continue;const id=gi(x,z);if(id>=0&&grid[id])continue;if(clr(x,z,null)||(opt.noTree&&opt.noTree(x,z)))continue;pts.push([x,z,.8+rng()*.7,TK[(rng()*TK.length)|0]])}})});
+  const o3=new THREE.Object3D();const plant=(pts)=>{const byK={};pts.forEach(p=>(byK[p[3]]=byK[p[3]]||[]).push(p));
   const CK={sakura:["#f29ab8","#f7b8cc"],momiji:["#d9472f","#f0743a"],amber:["#e8892c","#f5b04a"],green:["#3f9d62","#5cb87c"],pine:["#2f7f55","#3a8f60"],pinesnow:["#2f7f55","#ffffff"]};
-  Object.entries(byK).forEach(([kn,list])=>{const cone=kn==="pine"||kn==="pinesnow";const tg=new THREE.CylinderGeometry(.14,.2,1.2,6);tg.translate(0,.6,0);const cg=cone?new THREE.ConeGeometry(1.2,2.6,7):new THREE.IcosahedronGeometry(1.05,0);cg.translate(0,cone?2.2:2.1,0);
+  Object.entries(byK).forEach(([kn,list])=>{const cone=kn==="pine"||kn==="pinesnow";const tg=new THREE.CylinderGeometry(.14,.2,1.2,5,1,true);tg.translate(0,.6,0);const cg=cone?new THREE.ConeGeometry(1.2,2.6,6,1,true):new THREE.IcosahedronGeometry(1.05,0);cg.translate(0,cone?2.2:2.1,0);
     const tm=new THREE.InstancedMesh(tg,M("#6b4433"),list.length),cm=new THREE.InstancedMesh(cg,M(CK[kn][0]),list.length);
     list.forEach((p,i)=>{o3.position.set(p[0],0,p[1]);o3.rotation.y=rng()*6;o3.scale.setScalar(p[2]);o3.updateMatrix();tm.setMatrixAt(i,o3.matrix);cm.setMatrixAt(i,o3.matrix);cm.setColorAt(i,col.set(CK[kn][(i%2)])) });
-    cm.castShadow=true;scene.add(tm,cm);
-    if(kn==="pinesnow"){const sg=new THREE.ConeGeometry(.7,1,7);sg.translate(0,3.1,0);const sm=new THREE.InstancedMesh(sg,M("#ffffff"),list.length);list.forEach((p,i)=>{cm.getMatrixAt(i,o3.matrix);sm.setMatrixAt(i,o3.matrix)});scene.add(sm)}
-    list.forEach(p=>{const id=gi(p[0],p[1]);if(id>=0)grid[id]=1})});
+    scene.add(tm,cm);
+    if(kn==="pinesnow"){const sg=new THREE.ConeGeometry(.7,1,6,1,true);sg.translate(0,3.1,0);const sm=new THREE.InstancedMesh(sg,M("#ffffff"),list.length);list.forEach((p,i)=>{cm.getMatrixAt(i,o3.matrix);sm.setMatrixAt(i,o3.matrix)});scene.add(sm)}
+    list.forEach(p=>{const id=gi(p[0],p[1]);if(id>=0)grid[id]=1})})};plant(pts);
   /* điểm có tên */
   const poi=(D.poi||[]).map(([n,kd,x,z])=>{const [X,Z]=T([x,z]);return {n,k:kd,x:X,z:Z}});
   const blocked=(x,z)=>{if(Math.hypot(x,z)>LIM-2)return true;const id=gi(x,z);return id>=0&&(grid[id]===1||grid[id]===3)};
@@ -464,7 +497,8 @@ function osmWorld(scene,D,cfg,opt){
   const isWater=(x,z)=>{const id=gi(x,z);return id>=0&&grid[id]===3};
   const nearestLand=(x,z,minR=0)=>{for(let r=minR;r<90;r+=1)for(let a=0;a<TAU;a+=.15){const X=x+Math.cos(a)*r,Z=z+Math.sin(a)*r,id=gi(X,Z);if(id>=0&&(grid[id]===0||grid[id]===2))return [X,Z]}return null};
   const nearestWater=(x,z)=>{for(let r=0;r<80;r+=1)for(let a=0;a<TAU;a+=.2){const X=x+Math.cos(a)*r,Z=z+Math.sin(a)*r,id=gi(X,Z);if(id>=0&&grid[id]===3)return [X,Z]}return null};
-  return {blocked,onRoad,isWater,nearestLand,poi,T,rot,nB,nearestWater,LIM}}
+  const plantIn=(fn,n,R0)=>{const P=[];for(let i=0;i<n*6&&P.length<n;i++){const a=rng()*TAU,r=Math.sqrt(rng())*R0,x=Math.cos(a)*r,z=Math.sin(a)*r;if(!fn(x,z))continue;const id=gi(x,z);if(id>=0&&grid[id])continue;if(clr(x,z,null)||(opt.noTree&&opt.noTree(x,z)))continue;P.push([x,z,.8+rng()*.7,TK[(rng()*TK.length)|0]])}plant(P);return P.length};
+  return {blocked,onRoad,isWater,nearestLand,poi,T,rot,nB,nearestWater,LIM,footP,gi,grid,plantIn}}
 /* tháp Tokyo & Skytree đơn giản */
 function tower3(){const g=new THREE.Group();const H=30;for(let i=0;i<6;i++){const y0=i*H/6,r0=6*(1-i/6.4)+.4,r1=6*(1-(i+1)/6.4)+.4;const c=new THREE.Mesh(new THREE.CylinderGeometry(r1,r0,H/6,4,1,true),M(i%2?"#f6f4f0":"#e8553f",{side:THREE.DoubleSide,wireframe:false}));c.position.y=y0+H/12;c.rotation.y=Math.PI/4;g.add(c)}
   [10,18].forEach((y,i)=>g.add(outline(cyl(i?1.6:3,i?1.6:3,1.4,"#e8553f",0,y,0,12))));g.add(cyl(.25,.45,8,"#e8553f",0,H+4,0,8));g.traverse(o=>{if(o.isMesh)o.castShadow=true});return g}
@@ -503,6 +537,7 @@ function occluder(scene,camera,getTargets){const ray=new THREE.Raycaster();ray.c
 /* ---------------- game ---------------- */
 export async function start(root,n,api){
   const L=LEVELS[n]||(api.lesson?genLevel(n,api.lesson):null);if(!L)throw new Error("no level");const T=L.T||null;
+  const LD=LMAPS.has(n)&&!/g3noosm/.test(location.search)?await loadLessonMap(n):null,CORE=40;
   if(!document.getElementById("g3css")){const st=document.createElement("style");st.id="g3css";st.textContent=CSS;document.head.appendChild(st)}
   const esc=api.esc, R=t=>api.rb(t), plain=t=>api.plainOf(t), roma=t=>api.roma(api.kanaOf(t));
   const KEY="g3-"+n; let prog={npc:[],words:[]};try{prog={...prog,...JSON.parse(localStorage.getItem(KEY)||"{}")}}catch(e){}
@@ -521,17 +556,30 @@ export async function start(root,n,api){
   scene.add(new THREE.HemisphereLight(night?0x8a8ad0:dusk?0xe8c8e0:0xffffff,night?0x30304a:T&&T.indoor?0xd9cdb8:0xb9d4a8,night?.75:dusk?.72:T&&T.indoor?1.4:1.25));
   const sun=new THREE.DirectionalLight(night?0xaab4ff:dusk?0xffc89a:0xfff3dd,night?.5:dusk?.8:T&&T.indoor?.9:1.5);sun.position.set(18,30,14);sun.castShadow=true;sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);
   Object.assign(sun.shadow.camera,{left:-22,right:22,top:22,bottom:-22,near:1,far:80});sun.shadow.bias=-.0005;scene.add(sun,sun.target);
-  const camera=new THREE.PerspectiveCamera(50,1,.1,500);
+  if(LD){scene.fog.near=120;scene.fog.far=560}
+  const camera=new THREE.PerspectiveCamera(50,1,.1,LD?1500:500);
   const picks=[],solids=[],ticks=[];const wt=[],seenW=new Set(),lampObjs=[];
-  if(L.gen){const W=buildWorld(scene,T,L.plan,picks,solids,ticks,rngOf(n*13+5));wt.push(...W.targets)}else{buildCity(scene,L.words,picks,solids);enrichCity(scene,solids,ticks,rngOf(7));
+  if(L.gen){const W=buildWorld(scene,T,L.plan,picks,solids,ticks,rngOf(n*13+5),{noOuter:!!LD});wt.push(...W.targets)}else{buildCity(scene,L.words,picks,solids);enrichCity(scene,solids,ticks,rngOf(7),!!LD);
   picks.forEach(o=>{let w=null;o.traverse(c=>{if(!w&&c.userData.pick&&c.userData.pick.w)w=c.userData.pick.w});if(!w)return;
     if(w==="denki"){lampObjs.push(o);return}if(w==="daigaku"&&seenW.has(w))return;seenW.add(w);if(w==="daigaku"||w==="byouin"){const a=new THREE.Object3D();a.position.set(w==="daigaku"?-20:19,w==="daigaku"?6.6:9.4,w==="daigaku"?-19.5:-17.2);scene.add(a);wt.push([w,a,.4,1.8]);return}wt.push([w,o,.6,1])});
   lampObjs.sort((a,b)=>Math.hypot(a.position.x-2,a.position.z-3.5)-Math.hypot(b.position.x-2,b.position.z-3.5)).slice(0,3).forEach(o=>wt.push(["denki",o,.5,1]));}
+  /* ---------- bản đồ thật quanh khu vực bài học ---------- */
+  let osmL=null;
+  if(LD){scene.updateMatrixWorld(true);const bb=new THREE.Box3();
+    [...scene.children].forEach(o=>{if(o.isLight||o.isCamera)return;const d=Math.hypot(o.position.x,o.position.z);
+      if(d>=85&&(o.userData.farScene||o.userData.billboard)){if(d<420){const f=430/d;o.position.x*=f;o.position.z*=f;o.scale.multiplyScalar(f)}return}
+      if((Math.abs(o.position.x)>CORE+4||Math.abs(o.position.z)>CORE+4)&&!o.userData.keep&&o.position.y<20){scene.remove(o);return}
+      bb.setFromObject(o);if(bb.isEmpty())return;
+      if(bb.max.x>CORE+1||bb.min.x<-CORE-1||bb.max.z>CORE+1||bb.min.z<-CORE-1)o.traverse(m=>{if(m.isMesh&&!m.isInstancedMesh&&m.material&&!Array.isArray(m.material))m.material=clipBox(m.material,CORE,true)})});
+    const SE=T?(T.ps==="snow"?"winter":T.ps==="petal"?"spring":T.ps==="maple"||T.ps==="leaf"?"autumn":T.night?"night":"summer"):"spring";
+    const inC=(x,z,p=0)=>Math.abs(x)<CORE+p&&Math.abs(z)<CORE+p;
+    osmL=osmWorld(scene,LD,{off:[0,0],rot:0,clear:0,...(LCFG[n]||{})},{season:SE,ticks,seed:n*17+1,walk:150,core:CORE,base:T&&T.ground?T.ground:(SE==="winter"?"#eef3f9":"#a9cf95"),
+      noTree:(x,z)=>inC(x,z,2),clear:(x,z,Rg)=>inC(x,z,3)||(Rg&&Rg.some(p=>inC(p[0],p[1],1)))})}
   const BK=location.search.includes("g3nobake")?null:bakeStatic(scene,ticks);if(BK)picks.forEach(o=>{if(!o.isMesh&&!o.userData.legL)bakeRig(o)});
   const isSolid=(x,z,p=.4)=>solids.some(s=>x>s.x0-p&&x<s.x1+p&&z>s.z0-p&&z<s.z1+p);
   if(L.gen)L.npcs.forEach(d=>{if(!isSolid(d.pos[0],d.pos[1],.8))return;for(let r=1;r<14;r+=.7)for(let a=0;a<TAU;a+=.5){const x=d.pos[0]+Math.cos(a)*r,z=d.pos[1]+Math.sin(a)*r;if(Math.abs(x)<36&&Math.abs(z)<36&&!isSolid(x,z,.8)){d.pos=[x,z];return}}});
   /* nhân vật */
-  await loadTai();let player=makePlayer(av);player.position.set(2,0,3.5);scene.add(player);cityTraffic(scene,ticks,()=>player,L.gen?{cars:!!T.traffic,noZ:T.key==='station',lane:T.path==='road'?7.4:T.path==='floor'?2.4:1.7,ok:(x,z)=>!isSolid(x,z,.9)}:{});
+  await loadTai();let player=makePlayer(av);player.position.set(2,0,3.5);scene.add(player);cityTraffic(scene,ticks,()=>player,!L.gen&&LD?{lim:CORE-1}:L.gen?{lim:LD?CORE-1:48,cars:!!T.traffic,noZ:T.key==='station',lane:T.path==='road'?7.4:T.path==='floor'?2.4:1.7,ok:(x,z)=>!isSolid(x,z,.9)}:{});
   if(T&&T.ps){const pts=particles(T.ps,T.ps==="snow"?520:300);scene.add(pts);ticks.push(dt=>pts.userData.tick(dt,player.position.x,player.position.z))}
   const npcs=L.npcs.map(d=>{const c=makeChar(d.look.style?{...d.look,kid:d.kid}:d.look);c.position.set(d.pos[0],0,d.pos[1]);c.rotation.y=Math.atan2(-d.pos[0],-d.pos[1])*.5;scene.add(c);
     const b=badge(prog.npc.includes(d.id)?"done":"talk");b.position.y=2.3;c.add(b);c.userData.badge=b;c.traverse(o=>{if(o.isMesh)o.userData.pick={npc:d.id}});picks.push(c);solids.push({x0:d.pos[0]-.4,x1:d.pos[0]+.4,z0:d.pos[1]-.4,z1:d.pos[1]+.4,npc:d.id});return {d,c}});
@@ -542,7 +590,7 @@ export async function start(root,n,api){
     <div class="g3-top"><button class="g3-btn" id="g3Exit" type="button" aria-label="Thoát minigame">‹ Thoát</button>
       <div class="g3-title"><b lang="ja">${esc(L.title)}</b><span>${esc(L.sub)}</span></div>
       <button class="g3-btn" id="g3Me" type="button" aria-label="Đổi nhân vật">Nhân vật</button><button class="g3-btn" id="g3Book" type="button">Sổ từ <b id="g3Wc"></b></button></div>
-    <div class="g3-stats"><span>Đã gặp <b id="g3Nc"></b></span></div>
+    <div class="g3-stats"><span>Đã gặp <b id="g3Nc"></b></span></div>${LD?'<div class="g3-osm">Bản đồ thật: © OpenStreetMap contributors</div>':''}
     <div class="g3-zoom"><button type="button" id="g3Zin" aria-label="Phóng to">+</button><button type="button" id="g3Zout" aria-label="Thu nhỏ">−</button></div>
     <div class="g3-hint" id="g3Hint">${mobile?"Chạm vào đường để đi · chạm người có dấu ! để nói chuyện · chạm chỗ có dấu あ để học từ mới · kéo để xoay, chụm 2 ngón để thu phóng":"Bấm vào đường hoặc W A S D để đi · bấm người có dấu ! để nói chuyện · bấm chỗ có dấu あ để học từ mới · kéo chuột để xoay, lăn chuột để thu phóng"}</div>
     <button class="g3-talk" id="g3Talk" type="button" hidden></button>
@@ -562,7 +610,7 @@ export async function start(root,n,api){
   $("g3Zin").onclick=()=>dist=Math.max(6,dist/1.3);$("g3Zout").onclick=()=>dist=Math.min(58,dist*1.3);
   /* di chuyển */
   let target=null,goal=null,panelOpen=false;const keys=new Set();
-  const blocked=(x,z)=>Math.abs(x)>37||Math.abs(z)>37||solids.some(s=>x>s.x0-.35&&x<s.x1+.35&&z>s.z0-.35&&z<s.z1+.35);
+  const blocked=(x,z)=>((Math.abs(x)>37||Math.abs(z)>37)?(osmL?osmL.blocked(x,z):true):false)||solids.some(s=>x>s.x0-.35&&x<s.x1+.35&&z>s.z0-.35&&z<s.z1+.35);
   function step(dx,dz){const p=player.position,nx=p.x+dx,nz=p.z+dz;if(!blocked(nx,nz)){p.x=nx;p.z=nz;return true}if(!blocked(nx,p.z)){p.x=nx;return true}if(!blocked(p.x,nz)){p.z=nz;return true}return false}
   const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();
   function hit(e){const r=renderer.domElement.getBoundingClientRect();ptr.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ptr,camera);
@@ -710,7 +758,7 @@ function clock3(s=1){const g=new THREE.Group();g.add(outline(box(6,3,4,"#fbfaf6"
   let r=roofQuad(4.6,1.4,"#d24a36");r.position.y=3.7;r.scale.z=.75;g.add(r);g.add(outline(box(1.8,2.6,1.8,"#fbfaf6",0,4.9,0)));
   const cf=new THREE.Mesh(new THREE.CircleGeometry(.6,24),new THREE.MeshBasicMaterial({map:canvasTex(128,128,(c)=>{c.fillStyle="#fffaf0";c.beginPath();c.arc(64,64,60,0,TAU);c.fill();c.strokeStyle="#2b2540";c.lineWidth=8;c.stroke();c.lineWidth=7;c.beginPath();c.moveTo(64,64);c.lineTo(64,22);c.moveTo(64,64);c.lineTo(94,74);c.stroke()})}));cf.position.set(0,5.2,.92);g.add(cf);
   r=roofQuad(1.6,1.4,"#d24a36");r.position.y=6.9;g.add(r);g.scale.setScalar(s);return g}
-const fuji3=(x,z,r,h)=>{const g=new THREE.Group();const c=new THREE.Mesh(new THREE.ConeGeometry(r,h,32,1,true),M("#6f95cf",{side:THREE.DoubleSide}));c.position.y=h/2;g.add(c);
+const fuji3=(x,z,r,h)=>{const g=new THREE.Group();g.userData.farScene=true;const c=new THREE.Mesh(new THREE.ConeGeometry(r,h,32,1,true),M("#6f95cf",{side:THREE.DoubleSide}));c.position.y=h/2;g.add(c);
   const cap=new THREE.Mesh(new THREE.ConeGeometry(r*.34,h*.34,32),M("#ffffff"));cap.position.y=h-h*.17+.05;g.add(cap);g.position.set(x,0,z);return g};
 function tree3(kind,s=1){const g=new THREE.Group();
   if(kind==="pine"||kind==="pinesnow"){g.add(cyl(.18,.25,1.2,"#6b4433",0,.6,0,8));[[1.8,1.8,1.6],[1.4,1.6,2.6],[1,1.4,3.5]].forEach(([r,h,y])=>{g.add(outline(new THREE.Mesh(new THREE.ConeGeometry(r,h,8),M("#2f7f55"))));g.children.at(-1).position.y=y;g.children.at(-1).castShadow=true;
@@ -767,11 +815,22 @@ function fireworks(scene){const pool=[];
 
 /* dữ liệu 12 cảnh: bầu trời, mặt đất, công trình, 3 từ học tại chỗ */
 const SC=[
- {focus:[0,-8],name:"伏見稲荷大社",vn:"Đền Fushimi Inari đón năm mới",sky:["#3e5f9e","#ffd9c4"],ground:"#f4f7fb",ps:"snow",spots:[
+ {focus:[0,-19],name:"伏見稲荷大社",vn:"Đền Fushimi Inari đón năm mới",sky:["#3e5f9e","#ffd9c4"],ground:"#f4f7fb",ps:"snow",spots:[
    ["torii","鳥居{とりい}","cổng torii","Cổng đánh dấu lối vào khu vực linh thiêng của đền Thần đạo"],["sen","千本鳥居{せんぼんとりい}","con đường nghìn cổng torii","Hàng nghìn cổng torii xếp liền nhau thành đường hầm màu đỏ"],["sun","初日{はつひ}の出{で}","bình minh đầu năm","Ngắm mặt trời mọc ngày 1/1 để cầu may cả năm"]],
-   build(A){A.sky(sun3("#ff6f4f"),0,16,-90,"sun");for(let i=0;i<16;i++)A.add(torii3("#e0482f",1.05),0,-3-i*1.9,{solid:[[-1.6,0,.5,.5],[1.6,0,.5,.5]],spot:i===0?"torii":i===8?"sen":null});
-     A.add(ishidoro3(),-3.2,0);A.add(ishidoro3(),3.2,0);[[-10,-10],[11,-12],[-14,-28],[13,-30],[-20,-4],[22,-2],[-8,8],[9,10]].forEach(([x,z],i)=>A.add(tree3("pinesnow",.9+(i%3)*.15),x,z,{solid:[[0,0,1,1]]}));
-     [[-16,-20,8,2.4],[18,-22,9,2.8],[0,-44,14,4],[-24,10,7,2],[24,12,7,2]].forEach(([x,z,r,h])=>A.add(mound(r,h,"#eef4fc"),x,z));A.start(0,9)}},
+   build(A){A.sky(sun3("#ff6f4f"),0,16,-90,"sun");
+     /* đường vào đền (表参道): cổng torii lớn, đèn đá, sạp hàng đầu năm, cờ đỏ */
+     A.add(torii3("#e0482f",1.75),0,20,{solid:[[-2.6,0,.6,.6],[2.6,0,.6,.6]],spot:"torii"});
+     for(let z=16;z>-3;z-=4.6)[-1,1].forEach(sx=>A.add(ishidoro3(),sx*4.4,z,{solid:[[0,0,.9,.9]]}));
+     ["#c23b2a","#e5a23a","#2f9e64","#c23b2a","#3d6fd6","#e85d8c"].forEach((c,i)=>{const sx=i%2?1:-1,z=14-((i/2)|0)*6.2;A.add(stall3(c),sx*8.6,z,{rot:sx>0?-Math.PI/2:Math.PI/2,solid:[[0,0,1.9,3]]})});
+     for(let z=18;z>-2;z-=3.4)[-1,1].forEach(sx=>A.add(nobori(z%2?"#c23b2a":"#d8432f","初詣"),sx*6.3,z+1.2,{rot:sx>0?Math.PI:0}));
+     /* cổng lầu 楼門 với hai tượng cáo */
+     A.add(romon3(),0,-8,{solid:[[-4.6,0,2.4,3.4],[4.6,0,2.4,3.4],[-1.7,0,.6,3.4],[1.7,0,.6,3.4]]});
+     [-1,1].forEach(sx=>{const k=kitsune3();k.scale.setScalar(1.5);A.add(k,sx*3.2,-3.6,{rot:-sx*.25,solid:[[0,0,1.2,1.2]]})});
+     const tz=new THREE.Group();tz.add(outline(box(2.6,.8,1.2,"#9aa3ae",0,.4,0)));const wt=box(2.3,.05,.9,"#7fc4ec",0,.82,0);tz.add(wt);[-1.1,1.1].forEach(x=>[-.5,.5].forEach(z=>tz.add(cyl(.08,.08,2.4,"#d8432f",x,1.2,z,6))));const tr=roofQuad(1.9,.8,"#2f2b3a");tr.position.y=2.6;tr.scale.z=.6;tz.add(tr);A.add(tz,8.5,-14,{solid:[[0,0,2.8,1.4]]});
+     /* điện thờ ngoài (外拝殿) và chính điện (本殿) */
+     A.add(shrine3(1.65),0,-20,{solid:[[0,0,9.9,7.4]]});A.add(shrine3(2.2),0,-43,{solid:[[0,0,13.2,9.9]]});
+     const ema=new THREE.Group();ema.add(box(3.2,.12,.12,"#6b4433",0,1.7,0));[-1.5,1.5].forEach(x=>ema.add(cyl(.06,.06,1.8,"#6b4433",x,.9,0,6)));for(let i=0;i<9;i++){const e=box(.3,.22,.03,"#e9d3a8",-1.2+i*.3,1.45-(i%2)*.24,.05);e.rotation.z=(i%3-1)*.1;ema.add(e)}A.add(ema,-7.5,-27,{rot:.4,solid:[[0,0,3.2,.4]]});
+     [[-10,-6],[10,-4],[-12,-30],[12,-32],[-13,8],[13,6]].forEach(([x,z],i)=>A.add(tree3("pinesnow",1+(i%3)*.15),x,z,{solid:[[0,0,1,1]]}));A.start(0,30)}},
  {focus:[0,-16],name:"白川郷",vn:"Làng tuyết Shirakawa-go",sky:["#6f96c9","#e6f0fb"],ground:"#f4f7fb",ps:"snow",spots:[
    ["gassho","合掌造{がっしょうづく}り","nhà mái tranh “chắp tay”","Mái dốc như hai bàn tay chắp lại để tuyết dễ trượt xuống"],["yuki","雪{ゆき}だるま","người tuyết","Người tuyết Nhật thường chỉ có 2 khối tròn"],["ume","梅{うめ}","hoa mơ","Nở cuối đông, báo hiệu mùa xuân sắp đến"]],
    build(A){[[-9,-10,0],[0,-16,.2],[9,-9,-.3],[-4,-26,.1],[10,-24,0]].forEach(([x,z,r],i)=>A.add(gassho3(1.25),x,z,{rot:r,solid:[[0,0,5.6,4.2]],spot:i===1?"gassho":null}));
@@ -859,7 +918,7 @@ export async function startScene(root,m,api){
       if(o.water){if(OD&&CFG.dropWater){obj.visible=false;if(o.spot)wSpots.push([o.spot,obj])}else waters.push(o.water)}
       if(o.spot){obj.traverse(c=>{if(c.isMesh&&!c.userData.isOutline)c.userData.pick={spot:o.spot}});if(!spotObj[o.spot])spotObj[o.spot]=[obj,.6,1]}return obj},
     far(obj,spot){if(OD){const d=Math.hypot(obj.position.x,obj.position.z);if(d>1&&d<420){const f=430/d;obj.position.x*=f;obj.position.z*=f;obj.scale.multiplyScalar(f)}}scene.add(obj);if(spot){obj.traverse(c=>{if(c.isMesh)c.userData.pick={spot}});if(!spotObj[spot])spotObj[spot]=[obj,2,4]}return obj},
-    sky(obj,x,y,z,spot){obj.position.set(x,y,z);obj.userData.billboard=true;scene.add(obj);if(spot){obj.traverse(c=>{if(c.isMesh)c.userData.pick={spot}});if(!spotObj[spot])spotObj[spot]=[obj,1.5,4]}return obj},
+    sky(obj,x,y,z,spot){if(OD){const d=Math.hypot(x,z);if(d>1&&d<480){const f=520/d;x*=f;z*=f;y*=f;obj.scale.multiplyScalar(f*.6)}}obj.position.set(x,y,z);obj.userData.billboard=true;scene.add(obj);if(spot){obj.traverse(c=>{if(c.isMesh)c.userData.pick={spot}});if(!spotObj[spot])spotObj[spot]=[obj,1.5,4]}return obj},
     start(x,z){startP=[x,z]}};
   S.build(A);
 
@@ -868,7 +927,7 @@ export async function startScene(root,m,api){
   /* ---------- bản đồ thật quanh địa danh ---------- */
   let osm=null;
   if(OD){const near=(x,z,p)=>solids.some(q=>x>q.x0-p&&x<q.x1+p&&z>q.z0-p&&z<q.z1+p);
-    osm=osmWorld(scene,OD,CFG,{season:SEAS,ticks,seed:m*31+3,walk:150,noTree:(x,z)=>{const dx=x-startP[0],dz=z-startP[1];return Math.hypot(dx,dz)<9||(dz>-4&&dz<30&&Math.abs(dx)<12)},clear:(x,z,Rg)=>Math.hypot(x-CFG.off[0],z-CFG.off[1])<CFG.clear||Math.hypot(x-startP[0],z-startP[1])<8||(z-startP[1]>-2&&z-startP[1]<26&&Math.abs(x-startP[0])<11)||near(x,z,2.5)||(Rg&&Rg.some(p=>near(p[0],p[1],1.2)))});
+    osm=osmWorld(scene,OD,CFG,{season:SEAS,ticks,seed:m*31+3,walk:150,noTree:(x,z)=>{const dx=x-startP[0],dz=z-startP[1];return Math.hypot(dx,dz)<9||(dz>-4&&dz<30&&Math.abs(dx)<12)},clear:(x,z,Rg)=>(CFG.clearRect&&CFG.clearRect.some(([x0,x1,z0,z1])=>x>x0&&x<x1&&z>z0&&z<z1))||Math.hypot(x-CFG.off[0],z-CFG.off[1])<CFG.clear||Math.hypot(x-startP[0],z-startP[1])<8||(z-startP[1]>-2&&z-startP[1]<26&&Math.abs(x-startP[0])<11)||near(x,z,2.5)||(Rg&&Rg.some(p=>near(p[0],p[1],1.2)))});
     if(CFG.tower){const tw=tower3();tw.position.set(CFG.off[0],0,CFG.off[1]);scene.add(tw);solids.push({x0:CFG.off[0]-6,x1:CFG.off[0]+6,z0:CFG.off[1]-6,z1:CFG.off[1]+6})}
     if(CFG.skytree){const p=osm.poi.find(q=>/スカイツリー/.test(q.n));if(p){const st=skytree3();st.position.set(p.x,0,p.z);scene.add(st)}}
     wSpots.forEach(([id,obj])=>{const w=osm.nearestWater(startP[0],startP[1]-6);if(w){const a=new THREE.Object3D();a.position.set(w[0],.4,w[1]);scene.add(a);a.traverse(()=>{});spotObj[id]=[a,.4,1.4];
@@ -877,6 +936,14 @@ export async function startScene(root,m,api){
     craft.forEach((c,i)=>{const {obj,o,s0,x,z}=c;if(o.water||!osm.isWater(x,z))return;const e=(craft[i+1]?craft[i+1].s0:solids.length);
       if(o.spot&&!(CFG.keepWet||[]).includes(o.spot)){const L=osm.nearestLand(x,z);if(L){const dx=L[0]-x,dz=L[1]-z;obj.position.x+=dx;obj.position.z+=dz;for(let q=s0;q<e;q++){solids[q].x0+=dx;solids[q].x1+=dx;solids[q].z0+=dz;solids[q].z1+=dz}return}}
       if(!o.spot){scene.remove(obj);for(let q=s0;q<e;q++)solids[q]={x0:1e9,x1:1e9,z0:1e9,z1:1e9};const t=trees.findIndex(t=>t.x===x&&t.z===z);if(t>=0)trees.splice(t,1)}});
+    /* tháng 1: hàng nghìn cổng torii dọc các lối mòn thật lên núi Inari, khách đi lễ đầu năm */
+    if(m===0){const TL=[];osm.footP.forEach(P=>{if(!P.some(p=>p[1]<-50))return;for(let i=0;i+1<P.length;i++){const [ax,az]=P[i],[bx,bz]=P[i+1],L=Math.hypot(bx-ax,bz-az);if(L<.01)continue;const ux=(bx-ax)/L,uz=(bz-az)/L;
+        for(let t=.6;t<L&&TL.length<1800;t+=1.25){const x=ax+ux*t,z=az+uz*t;if(z>-50||Math.hypot(x,z)>190)continue;const id=osm.gi(x,z);if(id>=0&&osm.grid[id]===1)continue;TL.push([x,z,Math.atan2(ux,uz)])}}});
+      toriiTunnel(scene,TL);osm.plantIn((x,z)=>z<-58&&Math.abs(x)<230,2600,260);const sp=osm.poi.find(q=>/千本鳥居/.test(q.n));let best=null;TL.forEach(p=>{const d=sp?Math.hypot(p[0]-sp.x,p[1]-sp.z):Math.hypot(p[0],p[1]+60);if(!best||d<best[0])best=[d,p]});
+      if(best){const [x,z]=best[1];const a=new THREE.Object3D();a.position.set(x,1.4,z);scene.add(a);spotObj.sen=[a,1.4,1.4];const pk=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.2,3,10),new THREE.MeshBasicMaterial({visible:false}));pk.position.set(x,1.5,z);pk.userData.pick={spot:"sen"};scene.add(pk)}
+      const KM=[["#ffe0c7","#2b2321","bun","#d8432f","#2b2540",1],["#ffe3cc","#3b2a26","long","#e9a1b9","#7a2f4a",1],["#f6d2b3","#1f1b24","short","#3a4a6a","#2a2d3a",0],["#ffe6d2","#5a3a2a","bun","#f2bf3a","#c23b2a",1],["#f3cfae","#2a2220","short","#5a6f9a","#2a2d3a",0],["#ffe0c7","#2b2321","long","#7a5ac8","#3a2f5a",1],["#f6d2b3","#3a2a20","cap","#2f9e64","#2a2d3a",0],["#ffe3cc","#2e231f","bun","#f6f4f0","#c23b2a",1]];
+      const vis=KM.slice(0,4).map(([sk,hr,st,tp,bt,fem],i)=>{const c=makeChar({skin:sk,hair:hr,style:st,top:tp,bottom:bt,fem});c.scale.setScalar(1.1);const walk=i<6,x=(i%2?1:-1)*(1.6+(i%3)*.5),z=walk?26-i*6.5:-13.2;c.position.set(walk?x:(i===6?-1.6:1.6),0,z);c.rotation.y=walk?(i%2?0:Math.PI):Math.PI;scene.add(c);return {c,walk,dir:i%2?-1:1,x}});
+      ticks.push(dt=>vis.forEach(v=>{if(v.walk){v.c.position.z+=v.dir*dt*1.6;if(v.c.position.z<-13){v.dir=1}if(v.c.position.z>28){v.dir=-1}v.c.rotation.y=v.dir<0?Math.PI:0}animChar(v.c,dt,v.walk)}))}
     if(osm.blocked(startP[0],startP[1]))for(let r=1;r<60;r++){let ok=null;for(let a=0;a<TAU&&!ok;a+=.3){const x=startP[0]+Math.cos(a)*r,z=startP[1]+Math.sin(a)*r;if(!osm.blocked(x,z))ok=[x,z]}if(ok){startP=ok;break}}}
   const free=(x,z,pad=1)=>!(Math.hypot(x,z)>36||(osm&&(osm.blocked(x,z)||osm.onRoad(x,z)||osm.blocked(x+pad,z)||osm.blocked(x-pad,z)||osm.blocked(x,z+pad)||osm.blocked(x,z-pad)))||solids.some(q=>x>q.x0-pad&&x<q.x1+pad&&z>q.z0-pad&&z<q.z1+pad)||waters.some(([a,b,c,d])=>x>a-pad&&x<c+pad&&z>b-pad&&z<d+pad));
   const camLane=(x,z)=>z>startP[1]-4&&z<startP[1]+26&&Math.abs(x-startP[0])<13;
@@ -903,7 +970,7 @@ export async function startScene(root,m,api){
   if(!night){const cl=[];for(let k=0;k<7;k++){const c=kasumi3();c.position.set((rng()-.5)*120,24+rng()*12,-30-rng()*60);c.scale.setScalar(1+rng()*.8);scene.add(c);cl.push(c)}ticks.push(dt=>cl.forEach((c,i)=>{c.position.x+=dt*(.6+i*.1);if(c.position.x>70)c.position.x=-70}));
     const bd=[];for(let k=0;k<5;k++){const b=bird3();scene.add(b);bd.push(b)}ticks.push(()=>{const t=performance.now()/1000;bd.forEach((b,i)=>{const a=t*.25+i*1.3;b.position.set(FC[0]+Math.cos(a)*(14+i*2),15+i*1.2+Math.sin(t*2+i)*.4,FC[1]+Math.sin(a)*(10+i));b.rotation.y=-a;b.children.forEach((w,j)=>w.rotation.z=(j?1:-1)*(.35+Math.sin(t*9+i)*.4))})})}
   /* điểm nhấn riêng từng cảnh */
-  if(m===0){A.add(shrine3(1.1),0,-38,{solid:[[0,0,6.6,5]]});[-1,1].forEach(sx=>{A.add(kitsune3(),sx*2.6,-1.2,{rot:-sx*.3});addSolid(sx*2.6,-1.2,.9);rocks.push([sx*2.6,-1.2,1.45,"statue"])})}
+  if(m===0&&!osm){[-1,1].forEach(sx=>rocks.push([sx*3.2,-3.6,2.1,"statue"]))}
   if(m===1){const f=new THREE.Mesh(new THREE.PlaneGeometry(10,7),M("#f7f9fc"));f.rotation.x=-Math.PI/2;f.position.set(-17,.05,9);scene.add(f);for(let k=0;k<6;k++)scene.add(box(10,.12,.18,"#d9dfe8",-17,.08,6+k*1.2))}
   if(m===2){const st=stairs3(9,2.6);st.position.set(-6,0,-6.4);scene.add(st);const mt=box(2.6,.05,2,"#e5484d",6,.06,2);scene.add(mt);food.push([6,2])}
   if(m===3){waters.push([-9,-13.6,-1.4,-11]);waters.push([1.4,-13.6,9,-11]);[-5.2,5.2].forEach(x=>A.add(water3(7.6,2.6,"#5fa4d6"),x,-12.3));A.add(box(2.8,.25,3,"#b8b2a6",0,.12,-12.3),0,-12.3);food.push([6,-2])}
@@ -1032,6 +1099,20 @@ function bird3(){const g=new THREE.Group();[-1,1].forEach(s=>{const w=new THREE.
 function bench3(){const g=new THREE.Group();g.add(outline(box(2,.12,.6,"#a0693e",0,.5,0)));g.add(outline(box(2,.5,.1,"#a0693e",0,.82,-.27)));[-.85,.85].forEach(x=>g.add(box(.12,.5,.5,"#5a4a3a",x,.25,0)));return g}
 function bambooFence(len){const g=new THREE.Group();for(let x=-len/2;x<=len/2+.01;x+=.9)g.add(cyl(.05,.05,1.1,"#c9b16a",x,.55,0,6));[.35,.8].forEach(y=>{const r=cyl(.04,.04,len,"#b39a55",0,y,0,6);r.rotation.z=Math.PI/2;g.add(r)});return g}
 function rock3(s=1,c="#9c978d"){const m=outline(new THREE.Mesh(new THREE.DodecahedronGeometry(.6,0),M(c)),1.04);m.scale.set(s*1.3,s*.7,s);m.castShadow=true;m.receiveShadow=true;return m}
+/* cổng lầu 楼門 của Fushimi Inari: hai tầng, cột son, tường trắng, mái đen cong */
+function romon3(){const g=new THREE.Group(),V="#d8432f",Wt="#f6f1e6",D="#2f2b3a";
+  g.add(outline(box(10.6,.6,4.6,"#c9c2b3",0,.3,0)));
+  [-4.6,-1.7,1.7,4.6].forEach(x=>[-1.5,1.5].forEach(z=>g.add(outline(cyl(.24,.26,4.2,V,x,2.7,z,10)))));
+  [-1,1].forEach(sx=>{g.add(outline(box(2.6,3.4,2.8,V,sx*3.15,2.3,0)));g.add(box(2.2,2.6,.06,Wt,sx*3.15,2.4,1.43));g.add(box(2.2,2.6,.06,Wt,sx*3.15,2.4,-1.43))});
+  g.add(outline(box(10.2,.5,4,V,0,4.95,0)));const r1=roofQuad(7.4,1.3,D);r1.position.y=5.9;r1.scale.set(1,1,.62);g.add(r1);
+  g.add(outline(box(7,2.2,3,V,0,7.2,0)));g.add(box(6.2,1.4,.06,Wt,0,7.2,1.52));for(let i=0;i<6;i++)g.add(box(.12,1.4,.08,V,-2.6+i*1.04,7.2,1.55));
+  const r2=roofQuad(6.6,2.2,D);r2.position.y=9.4;r2.scale.set(1,1,.6);g.add(r2);g.add(box(1.4,.7,.08,"#f2bf3a",0,6.25,1.6));
+  [-3.3,3.3].forEach(x=>{const l=new THREE.Mesh(new THREE.SphereGeometry(.32,10,8),new THREE.MeshBasicMaterial({color:0xffe9b0}));l.scale.y=1.3;l.position.set(x,4.2,1.9);g.add(l)});return g}
+/* hàng nghìn cổng torii theo lối đi thật (instanced: 1 lần vẽ cho mỗi bộ phận) */
+function toriiTunnel(scene,list){if(!list.length)return;const o=new THREE.Object3D(),N=list.length,V="#e0482f";
+  const post=new THREE.CylinderGeometry(.11,.13,2.6,6,1,true),beam=new THREE.BoxGeometry(2.3,.18,.24),top=new THREE.BoxGeometry(2.6,.2,.3),base=new THREE.CylinderGeometry(.15,.15,.35,6);
+  const parts=[[post,V,-.95,1.3,0],[post,V,.95,1.3,0],[beam,V,0,2.15,0],[top,"#231f26",0,2.55,0],[base,"#231f26",-.95,.17,0],[base,"#231f26",.95,.17,0]];
+  parts.forEach(([geo,c,dx,dy])=>{const im=new THREE.InstancedMesh(geo,M(c),N);list.forEach((p,i)=>{o.position.set(p[0],0,p[1]);o.rotation.set(0,p[2],0);o.updateMatrix();const m=new THREE.Matrix4().makeTranslation(dx,dy,0);m.premultiply(o.matrix);im.setMatrixAt(i,m)});im.castShadow=false;scene.add(im)})}
 function shrine3(s=1){const g=new THREE.Group();g.add(outline(box(6,.5,4.5,"#c9c2b3",0,.25,0)));g.add(outline(box(4.6,2.4,3.4,"#d24a36",0,1.7,0)));g.add(box(3.6,1.6,.06,"#f5e6ca",0,1.6,1.72));
   const r=roofQuad(4.4,1.8,"#2f2b3a");r.position.y=3.8;r.scale.z=.85;g.add(r);g.add(box(1,.5,.06,"#f2bf3a",0,2.75,1.75));[-1,1].forEach(x=>g.add(cyl(.12,.12,2.4,"#d24a36",x*2.1,1.7,1.6,8)));g.scale.setScalar(s);return g}
 function kitsune3(){const g=new THREE.Group();g.add(outline(box(.7,.5,.7,"#a39e94",0,.25,0)));g.add(outline(sph(.3,"#f6f4f0",0,.75,0,12,10)));g.add(outline(sph(.22,"#f6f4f0",0,1.15,.08,12,10)));
@@ -1145,7 +1226,7 @@ function bicycle(c){const g=new THREE.Group();[-.45,.45].forEach(z=>{const w=new
 function car3(c){const g=new THREE.Group();g.add(outline(box(1.6,.55,3.2,c,0,.55,0),1.02));g.add(outline(box(1.4,.5,1.7,c,0,1.05,-.2),1.02));
   g.add(box(1.42,.36,1.5,"#bfe0f5",0,1.07,-.2));[-.65,.65].forEach(x=>[-1,1].forEach(z=>{const w=cyl(.27,.27,.22,"#2b2540",x*1.12,.27,z*1.05,12);w.rotation.z=Math.PI/2;g.add(w)}));
   [-.5,.5].forEach(x=>{const l=new THREE.Mesh(new THREE.CircleGeometry(.1,10),new THREE.MeshBasicMaterial({color:0xfff4c0}));l.position.set(x,.62,1.61);g.add(l)});return g}
-function enrichCity(scene,solids,ticks,rng){
+function enrichCity(scene,solids,ticks,rng,noOuter){
   const add=(o,x,z,r=0)=>{o.position.set(x,0,z);o.rotation.y=r;scene.add(o);return o};
   const sol=(x,z,w,d)=>solids.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2});
   add(shop3({wall:"#f3e3cc",awn:"#c23b2a",noren:"#2b3a67",nt:"ラーメン",sign:"らーめん",sub:"Quán mì ramen",lantern:1}),-31,-10.6);sol(-31,-10.6,7,5);
@@ -1154,7 +1235,7 @@ function enrichCity(scene,solids,ticks,rng){
   add(shop3({wall:"#fbe8ef",awn:"#e85d8c",sign:"花屋",sub:"Tiệm hoa",w:6}),31,-26,Math.PI/2*0);sol(31,-26,6,5);
   [[-31,-30,"#f6efe4","#5d6f86",0],[-20,-34,"#efe6da","#8a4a3a",0],[8,-34,"#f3ebe0","#3a3f5c",0],[33,30,"#f6efe4","#5d6f86",Math.PI],[10,34,"#efe6da","#8a4a3a",Math.PI],[-32,30,"#f3ebe0","#3a3f5c",Math.PI],[-20,34,"#f6efe4","#6b5a8f",Math.PI],[33,14,"#efe6da","#8a4a3a",Math.PI]].forEach(([x,z,c,r,ry])=>{add(house3b(c,r),x,z,ry);sol(x,z,6,5)});
   /* cao ốc xa */
-  for(let k=0;k<26;k++){const a=k/26*TAU,r=60+rng()*14,h=10+rng()*22,w=5+rng()*5;const b=box(w,h,w,["#9fb0c8","#b3bfd1","#a8b4c4","#c3cad6"][k%4],Math.cos(a)*r,h/2,Math.sin(a)*r);b.castShadow=false;scene.add(b);
+  for(let k=0;k<(noOuter?0:26);k++){const a=k/26*TAU,r=60+rng()*14,h=10+rng()*22,w=5+rng()*5;const b=box(w,h,w,["#9fb0c8","#b3bfd1","#a8b4c4","#c3cad6"][k%4],Math.cos(a)*r,h/2,Math.sin(a)*r);b.castShadow=false;scene.add(b);
     for(let y=2;y<h-1;y+=2.2){const s=box(w+.05,.3,w+.05,"#e3e9f2",Math.cos(a)*r,y,Math.sin(a)*r);s.castShadow=false;scene.add(s)}}
   /* đèn giao thông */
   const TL=[];[[5.6,5.6,0],[-5.6,-5.6,Math.PI],[5.6,-5.6,Math.PI/2],[-5.6,5.6,-Math.PI/2]].forEach(([x,z,r])=>{const t=add(trafficLight(),x,z,r);TL.push(t);sol(x,z,.3,.3)});
@@ -1183,7 +1264,7 @@ function cityTraffic(scene,ticks,getPlayer,opt={}){
     p.scale.setScalar(1.15);const t=Math.random();if(ax==="x")p.position.set(a+(b-a)*t,0,c);else p.position.set(c,0,a+(b-a)*t);scene.add(p);return {p,a,b,c,ax,dir:k%2?1:-1}});
   ticks.push(dt=>{const pl=getPlayer().position;
     cars.forEach(o=>{const g=o.g,ax=o.axis,sp=7*dt*o.dir;const ahead=ax==="x"?{x:g.position.x+o.dir*3.2,z:g.position.z}:{x:g.position.x,z:g.position.z+o.dir*3.2};
-      if(Math.hypot(pl.x-ahead.x,pl.z-ahead.z)<2.6)return;g.position[ax]+=sp;if(g.position[ax]>48)g.position[ax]=-48;if(g.position[ax]<-48)g.position[ax]=48});
+      if(Math.hypot(pl.x-ahead.x,pl.z-ahead.z)<2.6)return;g.position[ax]+=sp;const LM=opt.lim||48;if(g.position[ax]>LM)g.position[ax]=-LM;if(g.position[ax]<-LM)g.position[ax]=LM});
     peds.forEach(o=>{const k=o.ax;const v=o.p.position[k]+o.dir*dt*1.6;if(v>o.b||v<o.a)o.dir*=-1;o.p.position[k]=Math.min(o.b,Math.max(o.a,v));o.p.rotation.y=k==="x"?(o.dir>0?Math.PI/2:-Math.PI/2):(o.dir>0?0:Math.PI);animChar(o.p,dt,true)})});
 }
 
@@ -1466,7 +1547,7 @@ const TH={
    const s=sign("さくら駅","Ga Sakura",{w:6,h:1.4,border:"#3a3f5c"});s.position.set(0,5.9,4.2);g.add(s);g.add(box(6.3,1.6,.12,"#3a3f5c",0,5.9,4.1));const cn=outline(box(16,.25,3,"#3a3f5c",0,3.6,5.6),1.02);g.add(cn);[-7.5,7.5].forEach(x=>g.add(cyl(.12,.12,3.6,"#5a5f6b",x,1.8,6.9,8)));
    C.add(g,0,-27);C.sol(0,-27,18.4,8.4);C.sol(-7.5,-20.1,.4,.4);C.sol(7.5,-20.1,.4,.4);C.feat("駅",s,.4,1.6);
    const pf=outline(box(70,.6,3,"#c9c3b6",0,.3,-32.6),1.005);C.scene.add(pf);[-1,1].forEach(s2=>{const r=box(160,.12,.14,"#8a8f99",0,.1,-34.6+s2*.7);C.scene.add(r)});for(let x=-79;x<80;x+=1.2)C.scene.add(box(.3,.06,2.2,"#6b5a4a",x,.04,-34.6));C.sol(0,-33.5,74,4);
-   const tr=new THREE.Group();for(let k=0;k<3;k++){const c=P3.train();c.rotation.y=Math.PI/2;c.position.x=k*6.3;tr.add(c)}tr.position.set(-60,0,-34.6);C.scene.add(tr);C.ticks.push(dt=>{tr.position.x+=dt*9;if(tr.position.x>70)tr.position.x=-90});
+   const tr=new THREE.Group();for(let k=0;k<3;k++){const c=P3.train();c.rotation.y=Math.PI/2;c.position.x=k*6.3;tr.add(c)}tr.position.set(-60,0,-34.6);tr.userData.keep=1;C.scene.add(tr);C.ticks.push(dt=>{tr.position.x+=dt*9;if(tr.position.x>70)tr.position.x=-90});
    const bs=busStop();C.add(bs,11,6.6,Math.PI);C.sol(12,6.6,3.6,1.4);C.feat("乗り場",bs,1.6,1);
    for(let k=0;k<3;k++){const t=P3.taxi();C.add(t,-13-k*4.2,6.4,Math.PI/2);C.sol(-13-k*4.2,6.4,3.4,1.8);if(!k)C.feat("タクシー",t,.5,1.2)}C.feat("電車",pf,1.2,1.5,1);
    for(let k=0;k<6;k++){C.add(bicycle(["#3d6fd6","#e5484d","#2f9e64","#ffcf4a"][k%4]),24+k*.9,-7.6,Math.PI/2)}C.sol(26.5,-7.6,6,1)},
@@ -1645,7 +1726,7 @@ function genNpcs(Ld,T){
 function genLevel(n,Ld){const T=themeOf(n);const plan=planLesson(Ld,T,n);return {gen:true,T,plan,title:T.jp,sub:`Bài ${n} · ${T.vn}`,words:plan.words,npcs:genNpcs(Ld,T)}}
 
 /* dựng khu vực */
-function buildWorld(scene,T,plan,picks,solids,ticks,rng){
+function buildWorld(scene,T,plan,picks,solids,ticks,rng,wopt={}){
   const pw=T.pw||(T.path==="road"?8:6),H=pw/2;
   const add=(o,x,z,r=0,y=0)=>{o.position.set(x,y,z);o.rotation.y=r;scene.add(o);return o};
   const sol=(x,z,w,d)=>solids.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2});
@@ -1662,9 +1743,9 @@ function buildWorld(scene,T,plan,picks,solids,ticks,rng){
     water(w,d,x,z,c){const m=water3(w,d,c);m.position.set(x,.07,z);scene.add(m);return m},
     scatter(make,n,[x0,x1,z0,z1],pad=.6,sz=1,tree=false,fp){let k=0,tries=0;while(k<n&&tries<n*40){tries++;const x=x0+rng()*(x1-x0),z=z0+rng()*(z1-z0);const fw=fp?fp[0]:tree?Math.max(sz,3.2):sz,fd=fp?fp[1]:tree?Math.max(sz,3.2):sz;if(!free(x,z,pad,fw,fd))continue;
       const o=make();add(o,x,z,fp?(z>0?Math.PI:0):rng()*TAU);if(sz>0||fp)sol(x,z,tree?.7:(fp?fp[0]:sz),tree?.7:(fp?fp[1]:sz));k++}},
-    ring(kinds,n,arc,s0){for(let k=0;k<n;k++){const a=arc?arc[0]+rng()*(arc[1]-arc[0]):rng()*TAU,r=42+rng()*26;const t=tree3(kinds[k%kinds.length],(s0||1.2)+rng()*.8);t.position.set(Math.cos(a)*r,0,Math.sin(a)*r);scene.add(t)}},
-    hills(c,n){for(let k=0;k<n;k++){const a=k/n*TAU+rng()*.3,r=62+rng()*30;const m=mound(10+rng()*14,5+rng()*8,c);m.position.set(Math.cos(a)*r,0,Math.sin(a)*r);scene.add(m)}},
-    skyline(n,hk=1,lit=0){for(let k=0;k<n;k++){const a=k/n*TAU,r=56+rng()*16,h=(10+rng()*22)*hk,w=5+rng()*5;const t=tower(h,w,lit?["#2b2540","#3a2f5a","#1f2a44"][k%3]:["#9fb0c8","#b3bfd1","#a8b4c4","#c3cad6"][k%4],lit);t.position.set(Math.cos(a)*r,0,Math.sin(a)*r);t.lookAt(0,0,0);t.traverse(o=>o.castShadow=false);scene.add(t)}},
+    ring(kinds,n,arc,s0){if(wopt.noOuter)return;for(let k=0;k<n;k++){const a=arc?arc[0]+rng()*(arc[1]-arc[0]):rng()*TAU,r=42+rng()*26;const t=tree3(kinds[k%kinds.length],(s0||1.2)+rng()*.8);t.position.set(Math.cos(a)*r,0,Math.sin(a)*r);scene.add(t)}},
+    hills(c,n){if(wopt.noOuter)return;for(let k=0;k<n;k++){const a=k/n*TAU+rng()*.3,r=62+rng()*30;const m=mound(10+rng()*14,5+rng()*8,c);m.position.set(Math.cos(a)*r,0,Math.sin(a)*r);scene.add(m)}},
+    skyline(n,hk=1,lit=0){if(wopt.noOuter)return;for(let k=0;k<n;k++){const a=k/n*TAU,r=56+rng()*16,h=(10+rng()*22)*hk,w=5+rng()*5;const t=tower(h,w,lit?["#2b2540","#3a2f5a","#1f2a44"][k%3]:["#9fb0c8","#b3bfd1","#a8b4c4","#c3cad6"][k%4],lit);t.position.set(Math.cos(a)*r,0,Math.sin(a)*r);t.lookAt(0,0,0);t.traverse(o=>o.castShadow=false);scene.add(t)}},
     houses(n,walls){const HC=[["#f6efe4","#5d6f86"],["#efe6da","#8a4a3a"],["#f3ebe0","#3a3f5c"],["#f6efe4","#6b5a8f"],["#fbe8ef","#c23b2a"]];C.scatter(()=>{const [c,r]=HC[(rng()*HC.length)|0];const h=house3b(c,r);if(walls){const w=blockWall(6);w.position.z=3.6;h.add(w)}return h},n,[-37,37,-37,37],.6,6,false,[6,walls?7.4:5])},
     bushes(n,c){const P=["#3f9d62","#5cb87c","#4f8f4a"];C.scatter(()=>{const g=new THREE.Group();const k=2+((rng()*3)|0);for(let i=0;i<k;i++)g.add(outline(sph(.45+rng()*.35,c||P[i%3],(i-k/2)*.5,.35,(rng()-.5)*.5,10,8),1.04));return g},n,[-37,37,-37,37],.3,1.6)},
     tufts(n,c="#6fae5a"){const pts=[];for(let i=0;i<n;i++){const x=(rng()-.5)*76,z=(rng()-.5)*76;if(onPath(x,z,.3)||solids.some(q=>x>q.x0&&x<q.x1&&z>q.z0&&z<q.z1))continue;pts.push([x,0,z,rng()*TAU,.6+rng()*.8])}const geo=new THREE.ConeGeometry(.08,.45,4);geo.translate(0,.22,0);instScatter(scene,geo,M(c),pts,1)},
