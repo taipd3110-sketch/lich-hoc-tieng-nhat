@@ -364,7 +364,7 @@ const makePlayer=av=>{const p=av.model!==false&&TAI_GLB?makeTai():makeChar(av);p
    Dữ liệu © OpenStreetMap contributors (ODbL), tải sẵn vào scenes/osm-N.json
    ===================================================================== */
 let OD_K=0;const OSM_K=.3,OSM_V="1",FUJI=[35.3606,138.7274];
-const LMAPS=new Set([]),LCFG={12:{water:"-z"},13:{water:"-z"}};
+const LMAPS=new Set([1,2,3,4,5]),LCFG={12:{water:"-z"},13:{water:"-z"}};
 /* cấu hình ghép bản đồ với phần địa danh làm tay: off = vị trí (trong cảnh) đặt tâm bản đồ; rot = xoay;
    view = toạ độ cần nằm phía trước (-z); water = hướng từ tâm tới mặt nước gần nhất ("-z" hoặc "+z"); clear = bán kính dọn nhà thật quanh địa danh */
 const REAL={0:{k:.6,off:[0,-46],rot:-90,clear:0,clearRect:[[-13,13,-58,38]]},1:{k:.6,off:[0,-20],rot:0,clear:7,roof:"gassho",clearRect:[[-6,6,-14,16]]},2:{k:.6,off:[-6,-16],view:FUJI,clear:10,poi:/忠霊塔/,clearRect:[[-16,10,-28,16]]},3:{k:.6,off:[0,-22],rot:0,clear:15,poi:/^姫路城$/,clearRect:[[-15,15,-38,-6]]},
@@ -592,14 +592,19 @@ export async function start(root,n,api){
       if(bb.max.x>CORE+1||bb.min.x<-CORE-1||bb.max.z>CORE+1||bb.min.z<-CORE-1)o.traverse(m=>{if(m.isMesh&&!m.isInstancedMesh&&m.material&&!Array.isArray(m.material))m.material=clipBox(m.material,CORE,true)})});
     const SE=T?(T.ps==="snow"?"winter":T.ps==="petal"?"spring":T.ps==="maple"||T.ps==="leaf"?"autumn":T.night?"night":"summer"):"spring";
     const inC=(x,z,p=0)=>Math.abs(x)<CORE+p&&Math.abs(z)<CORE+p;
-    osmL=osmWorld(scene,LD,{off:[0,0],rot:0,clear:0,...(LCFG[n]||{})},{season:SE,ticks,seed:n*17+1,walk:150,core:CORE,base:T&&T.ground?T.ground:(SE==="winter"?"#eef3f9":"#a9cf95"),
-      noTree:(x,z)=>inC(x,z,2),clear:(x,z,Rg)=>inC(x,z,3)||(Rg&&Rg.some(p=>inC(p[0],p[1],1)))})}
+    osmL=osmWorld(scene,LD,{off:[0,0],rot:0,clear:0,k:.6,...(LCFG[n]||{})},{season:SE,ticks,seed:n*17+1,walk:150,core:CORE,base:T&&T.ground?T.ground:(SE==="winter"?"#eef3f9":"#a9cf95"),
+      noTree:(x,z)=>inC(x,z,9),clear:(x,z,Rg)=>inC(x,z,9)||(Rg&&Rg.some(p=>inC(p[0],p[1],7)))});
+    /* đường vành đai quanh khu bài học, nối đường trong khu với phố thật bên ngoài */
+    if(!T||T.key!=="indoor"){const RW=5,O=CORE+RW/2+.5,L=2*(O+RW/2),rm=M("#50555f"),lm=M("#f4f1e8");
+      [[0,-O,L,RW],[0,O,L,RW],[-O,0,RW,L],[O,0,RW,L]].forEach(([x,z,w,d])=>{const r=new THREE.Mesh(new THREE.PlaneGeometry(w,d),rm);r.rotation.x=-Math.PI/2;r.position.set(x,.083,z);r.receiveShadow=true;r.userData.ground=true;scene.add(r);
+        const ln=new THREE.Mesh(new THREE.PlaneGeometry(w>d?w-RW*2:.14,w>d?.14:d-RW*2),lm);ln.rotation.x=-Math.PI/2;ln.position.set(x,.09,z);scene.add(ln)});
+      for(let x=-O-RW/2;x<=O+RW/2;x+=.5)for(let z=-O-RW/2;z<=O+RW/2;z+=.5){if(Math.abs(x)<CORE+.5&&Math.abs(z)<CORE+.5)continue;const id=osmL.gi(x,z);if(id>=0)osmL.grid[id]=2}}}
   const BK=location.search.includes("g3nobake")?null:bakeStatic(scene,ticks);if(BK)picks.forEach(o=>{if(!o.isMesh&&!o.userData.legL)bakeRig(o)});
   const isSolid=(x,z,p=.4)=>solids.some(s=>x>s.x0-p&&x<s.x1+p&&z>s.z0-p&&z<s.z1+p);
   if(L.gen)L.npcs.forEach(d=>{if(!isSolid(d.pos[0],d.pos[1],.8))return;for(let r=1;r<14;r+=.7)for(let a=0;a<TAU;a+=.5){const x=d.pos[0]+Math.cos(a)*r,z=d.pos[1]+Math.sin(a)*r;if(Math.abs(x)<36&&Math.abs(z)<36&&!isSolid(x,z,.8)){d.pos=[x,z];return}}});
   /* nhân vật */
   await loadTai();let player=makePlayer(av);player.position.set(2,0,3.5);scene.add(player);cityTraffic(scene,ticks,()=>player,!L.gen&&LD?{lim:CORE-1}:L.gen?{lim:LD?CORE-1:48,cars:!!T.traffic,noZ:T.key==='station',lane:T.path==='road'?7.4:T.path==='floor'?2.4:1.7,ok:(x,z)=>!isSolid(x,z,.9)}:{});
-  if(T&&T.ps){const pts=particles(T.ps,T.ps==="snow"?520:300);scene.add(pts);ticks.push(dt=>pts.userData.tick(dt,player.position.x,player.position.z))}
+  if(T&&T.ps){const pts=particles(T.ps,T.ps==="snow"?520:300);scene.add(pts);pts.userData.isCloud=true;ticks.push(dt=>pts.userData.tick(dt,player.position.x,player.position.z))}
   const npcs=L.npcs.map(d=>{const c=makeChar(d.look.style?{...d.look,kid:d.kid}:d.look);c.position.set(d.pos[0],0,d.pos[1]);c.rotation.y=Math.atan2(-d.pos[0],-d.pos[1])*.5;scene.add(c);
     const b=badge(prog.npc.includes(d.id)?"done":"talk");b.position.y=2.3;c.add(b);c.userData.badge=b;c.traverse(o=>{if(o.isMesh)o.userData.pick={npc:d.id}});picks.push(c);solids.push({x0:d.pos[0]-.4,x1:d.pos[0]+.4,z0:d.pos[1]-.4,z1:d.pos[1]+.4,npc:d.id});return {d,c}});
   const extra=makeChar({skin:"#f3cfae",hair:"#5a4038",style:"bun",top:"#9cc9b4",bottom:"#3d6f8f",acc:"coat",fem:1});extra.position.set(21.5,0,-12.2);if(!L.gen)scene.add(extra);
@@ -610,23 +615,28 @@ export async function start(root,n,api){
       <div class="g3-title"><b lang="ja">${esc(L.title)}</b><span>${esc(L.sub)}</span></div>
       <button class="g3-btn" id="g3Me" type="button" aria-label="Đổi nhân vật">Nhân vật</button><button class="g3-btn" id="g3Book" type="button">Sổ từ <b id="g3Wc"></b></button></div>
     <div class="g3-stats"><span>Đã gặp <b id="g3Nc"></b></span></div>${LD?'<div class="g3-osm">Bản đồ thật: © OpenStreetMap contributors</div>':''}
-    <div class="g3-zoom"><button type="button" id="g3Zin" aria-label="Phóng to">+</button><button type="button" id="g3Zout" aria-label="Thu nhỏ">−</button></div>
+    <div class="g3-zoom"><button type="button" id="g3Zin" aria-label="Phóng to">+</button><button type="button" id="g3Zout" aria-label="Thu nhỏ">−</button><button type="button" id="g3Pano" class="g3-pano" aria-pressed="false" aria-label="Xem toàn cảnh từ trên cao" title="Toàn cảnh"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 19l6-9 4 6 3-4 5 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="17" cy="6" r="2" fill="currentColor"/></svg></button></div>
     <div class="g3-hint" id="g3Hint">${mobile?"Chạm vào đường để đi · chạm người có dấu ! để nói chuyện · chạm chỗ có dấu あ để học từ mới · kéo để xoay, chụm 2 ngón để thu phóng":"Bấm vào đường hoặc W A S D để đi · bấm người có dấu ! để nói chuyện · bấm chỗ có dấu あ để học từ mới · kéo chuột để xoay, lăn chuột để thu phóng"}</div>
     <button class="g3-talk" id="g3Talk" type="button" hidden></button>
     <div id="g3Panel"></div>`);
   const $=id=>root.querySelector("#"+id);
-  scene.updateMatrixWorld(true);const WM=wordMarkers(scene,wt,k=>prog.words.includes(k),k=>({w:k}));ticks.push(()=>WM.tick(performance.now(),Math.max(1,dist/17)));
+  scene.updateMatrixWorld(true);const WM=wordMarkers(scene,wt,k=>prog.words.includes(k),k=>({w:k}));ticks.push(()=>WM.tick(performance.now(),pano?2.6:Math.max(1,dist/17)));
   const hud=()=>{WM&&WM.refresh();$("g3Wc").textContent=`${prog.words.length}/${tot}`;$("g3Nc").textContent=`${prog.npc.length}/${L.npcs.length}`};hud();
   $("g3Load").remove();
   /* camera */
   let yaw=.62,dist=mobile?15:17,pitch=.78,lookOff=0;const camT=new THREE.Vector3();
-  let shR=22;
-  function placeCam(snap){const p=player.position,zf=Math.min(1,Math.max(0,(dist-18)/40)),pe=pitch+zf*(1.2-pitch)*.8;camT.set(p.x+Math.sin(yaw)*dist*Math.cos(pe),p.y+dist*Math.sin(pe),p.z+Math.cos(yaw)*dist*Math.cos(pe));if(snap)camera.position.copy(camT);else camera.position.lerp(camT,.12);camera.lookAt(p.x,p.y+1.1-lookOff,p.z);
-    const want=Math.max(22,dist*1.2);if(Math.abs(want-shR)>2){shR=want;Object.assign(sun.shadow.camera,{left:-shR,right:shR,top:shR,bottom:-shR,far:60+shR*2});sun.shadow.camera.updateProjectionMatrix()}
+  let shR=22,pano=false,panoSave=null;const pT=new THREE.Vector3(0,0,0),DMAX=()=>pano?(LD?400:110):58,DMIN=()=>pano?(LD?50:30):6;
+  function placeCam(snap){const p=pano?pT:player.position,zf=pano?1:Math.min(1,Math.max(0,(dist-18)/40)),pe=pano?pitch:pitch+zf*(1.2-pitch)*.8;camT.set(p.x+Math.sin(yaw)*dist*Math.cos(pe),p.y+dist*Math.sin(pe),p.z+Math.cos(yaw)*dist*Math.cos(pe));if(snap)camera.position.copy(camT);else camera.position.lerp(camT,.12);camera.lookAt(p.x,p.y+(pano?0:1.1-lookOff),p.z);
+    const nn=pano?Math.max(2,dist*.04):Math.max(.1,dist*.012);if(Math.abs(camera.near-nn)>.03){camera.near=nn;camera.updateProjectionMatrix()}
+    const want=Math.round(Math.min(pano?150:90,Math.max(22,dist*1.2))/8)*8;if(want!==shR){shR=want;Object.assign(sun.shadow.camera,{left:-shR,right:shR,top:shR,bottom:-shR,far:60+shR*2});sun.shadow.normalBias=shR*.0012;sun.shadow.camera.updateProjectionMatrix()}
     sun.position.set(p.x+18,30+shR*.3,p.z+14);sun.target.position.set(p.x,0,p.z)}
   function resize(){const w=root.clientWidth,h=root.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
   resize();placeCam(true);addEventListener("resize",resize);
-  $("g3Zin").onclick=()=>dist=Math.max(6,dist/1.3);$("g3Zout").onclick=()=>dist=Math.min(58,dist*1.3);
+  $("g3Zin").onclick=()=>dist=Math.max(DMIN(),dist/1.3);$("g3Zout").onclick=()=>dist=Math.min(DMAX(),dist*1.3);
+  const setPano=on=>{if(on===pano)return;pano=on;const b=$("g3Pano");b.setAttribute("aria-pressed",String(on));b.classList.toggle("on",on);
+    if(on){panoSave={dist,pitch};dist=LD?190:80;pitch=.95;if(scene.fog)scene.fog.far*=2.2;try{hintOff()}catch(e){}}else{if(panoSave){dist=panoSave.dist;pitch=panoSave.pitch}if(scene.fog)scene.fog.far/=2.2}
+    scene.children.forEach(o=>{if(o.userData.isCloud)o.visible=!on})};
+  $("g3Pano").onclick=()=>setPano(!pano);
   /* di chuyển */
   let target=null,goal=null,panelOpen=false;const keys=new Set();
   const blocked=(x,z)=>((Math.abs(x)>37||Math.abs(z)>37)?(osmL?osmL.blocked(x,z):true):false)||solids.some(s=>x>s.x0-.35&&x<s.x1+.35&&z>s.z0-.35&&z<s.z1+.35);
@@ -638,13 +648,14 @@ export async function start(root,n,api){
   const pts=new Map();let pinch=null;
   renderer.domElement.addEventListener("pointerdown",e=>{pts.set(e.pointerId,[e.clientX,e.clientY]);if(pts.size===2){const [a,b]=[...pts.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),dist};down=null;dragging=true;return}down={x:e.clientX,y:e.clientY,yaw,pitch};dragging=false;renderer.domElement.setPointerCapture(e.pointerId)});
   renderer.domElement.addEventListener("pointercancel",e=>{pts.delete(e.pointerId);if(pts.size<2)pinch=null});
-  renderer.domElement.addEventListener("pointermove",e=>{if(pts.has(e.pointerId))pts.set(e.pointerId,[e.clientX,e.clientY]);if(pinch&&pts.size===2){const [a,b]=[...pts.values()];dist=Math.min(58,Math.max(6,pinch.dist*pinch.d/Math.max(20,Math.hypot(a[0]-b[0],a[1]-b[1]))));return}if(!down)return;const dx=e.clientX-down.x,dy=e.clientY-down.y;if(!dragging&&Math.hypot(dx,dy)>10)dragging=true;if(dragging){yaw=down.yaw-dx*.006;pitch=Math.min(1.25,Math.max(.35,down.pitch+dy*.004))}});
+  renderer.domElement.addEventListener("pointermove",e=>{if(pts.has(e.pointerId))pts.set(e.pointerId,[e.clientX,e.clientY]);if(pinch&&pts.size===2){const [a,b]=[...pts.values()];dist=Math.min(DMAX(),Math.max(DMIN(),pinch.dist*pinch.d/Math.max(20,Math.hypot(a[0]-b[0],a[1]-b[1]))));return}if(!down)return;const dx=e.clientX-down.x,dy=e.clientY-down.y;if(!dragging&&Math.hypot(dx,dy)>10)dragging=true;if(dragging){yaw=down.yaw-dx*.006;pitch=Math.min(pano?1.45:1.25,Math.max(.35,down.pitch+dy*.004))}});
   renderer.domElement.addEventListener("pointerup",e=>{pts.delete(e.pointerId);if(pinch){if(pts.size<2)pinch=null;down=null;dragging=false;return}const was=dragging;down=null;dragging=false;if(was||panelOpen)return;const h=hit(e);if(!h)return;
     if(h.pick&&h.pick.far&&h.pick.w){wordCard(h.pick.w);hintOff();return}
+    if(pano){if(h.pick&&h.pick.w)wordCard(h.pick.w);else if(h.pick&&h.pick.npc)talk(h.pick.npc);return}
     if(h.pick){goal=h.pick;const p=h.pick.npc?npcs.find(o=>o.d.id===h.pick.npc).c.position:h.point;target=new THREE.Vector3(p.x,0,p.z);hintOff()}
     else{goal=null;target=new THREE.Vector3(h.point.x,0,h.point.z);hintOff()}});
-  renderer.domElement.addEventListener("wheel",e=>{e.preventDefault();dist=Math.min(58,Math.max(6,dist*(1+e.deltaY*.0012)))},{passive:false});
-  const kd=e=>{if(e.key==="Escape"){if(panelOpen)closePanel();return}if(panelOpen)return;const k=e.key.toLowerCase();if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){keys.add(k);target=null;goal=null;hintOff();e.preventDefault()}
+  renderer.domElement.addEventListener("wheel",e=>{e.preventDefault();dist=Math.min(DMAX(),Math.max(DMIN(),dist*(1+e.deltaY*.0012)))},{passive:false});
+  const kd=e=>{if(e.key==="Escape"){if(panelOpen)closePanel();return}if(panelOpen)return;const k=e.key.toLowerCase();if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){keys.add(k);target=null;goal=null;hintOff();e.preventDefault();if(pano)setPano(false)}
     if((k==="e"||k==="enter")&&near&&e.target===renderer.domElement){talk(near.d.id);e.preventDefault()}};
   const ku=e=>keys.delete(e.key.toLowerCase());
   addEventListener("keydown",kd);addEventListener("keyup",ku);
@@ -738,7 +749,8 @@ export async function start(root,n,api){
     let nn=null,best=2.6;npcs.forEach(o=>{const d=o.c.position.distanceTo(p);if(d<best){best=d;nn=o}});
     if(nn!==near){near=nn;const b=$("g3Talk");if(near&&!panelOpen){b.hidden=false;b.textContent=`Nói chuyện với ${near.d.vn}`}else b.hidden=true}
     else if(near&&!panelOpen&&$("g3Talk").hidden)$("g3Talk").hidden=false;
-    placeCam(false);occ();renderer.render(scene,camera)}
+    if(pano&&!dragging&&!down&&!window.__g3still)yaw+=dt*.05;
+    placeCam(false);if(!pano)occ();else occ.clear&&occ.clear();renderer.render(scene,camera)}
   function arrive(){const g=goal;goal=null;if(!g)return;if(g.npc)talk(g.npc);else if(g.w)wordCard(g.w)}
   const vis=()=>{if(document.hidden){cancelAnimationFrame(raf)}else if(alive){last=performance.now();raf=requestAnimationFrame(loop)}};
   document.addEventListener("visibilitychange",vis);
@@ -1376,7 +1388,7 @@ function enrichCity(scene,solids,ticks,rng,noOuter){
   [[-14,1.8],[16,-1.6],[1.6,-16],[-1.8,22]].forEach(([x,z])=>{const m=new THREE.Mesh(new THREE.CircleGeometry(.5,16),M("#6b6e78"));m.rotation.x=-Math.PI/2;m.position.set(x,.04,z);scene.add(m)});
   [[-26,5.7],[-12,-5.7],[20,5.7],[5.7,26],[-5.7,30],[5.7,-20]].forEach(([x,z])=>{add(sakura(0,0,.8),x,z);sol(x,z,.6,.6)});
   /* mây, chim */
-  const cl=[];for(let k=0;k<6;k++){const c=kasumi3();c.position.set((rng()-.5)*120,30+rng()*10,-40-rng()*50);c.scale.setScalar(1.2+rng()*.8);scene.add(c);cl.push(c)}
+  const cl=[];for(let k=0;k<6;k++){const c=kasumi3();c.position.set((rng()-.5)*120,30+rng()*10,-40-rng()*50);c.scale.setScalar(1.2+rng()*.8);c.userData.isCloud=true;scene.add(c);cl.push(c)}
   const bd=[];for(let k=0;k<5;k++){const b=bird3();scene.add(b);bd.push(b)}
   ticks.push(dt=>{cl.forEach((c,i)=>{c.position.x+=dt*(.6+i*.1);if(c.position.x>70)c.position.x=-70});const t=performance.now()/1000;bd.forEach((b,i)=>{const a=t*.25+i*1.3;b.position.set(Math.cos(a)*(18+i*2),18+i,Math.sin(a)*(14+i));b.rotation.y=-a;b.children.forEach((w,j)=>w.rotation.z=(j?1:-1)*(.35+Math.sin(t*9+i)*.4))})});
   return {TL};
@@ -1913,7 +1925,7 @@ function buildWorld(scene,T,plan,picks,solids,ticks,rng,wopt={}){
   /* làm đầy */
   if(T.decor)T.decor(C);
   if(T.path!=="road"&&!["indoor","onsen"].includes(T.key))C.tufts(T.key==="beach"?260:800,T.key==="beach"?"#7fae5a":"#5f9f4e");
-  if(T.key!=="indoor"){const cl=[];for(let k=0;k<6;k++){const c=kasumi3();c.position.set((rng()-.5)*120,30+rng()*10,-40-rng()*50);c.scale.setScalar(1.2+rng()*.8);if(T.night)c.visible=false;scene.add(c);cl.push(c)}
+  if(T.key!=="indoor"){const cl=[];for(let k=0;k<6;k++){const c=kasumi3();c.position.set((rng()-.5)*120,30+rng()*10,-40-rng()*50);c.scale.setScalar(1.2+rng()*.8);c.userData.isCloud=true;if(T.night)c.visible=false;scene.add(c);cl.push(c)}
     const bd=[];if(!T.night)for(let k=0;k<5;k++){const b=bird3();scene.add(b);bd.push(b)}
     ticks.push(dt=>{cl.forEach((c,i)=>{c.position.x+=dt*(.6+i*.1);if(c.position.x>70)c.position.x=-70});const t=performance.now()/1000;bd.forEach((b,i)=>{const a=t*.25+i*1.3;b.position.set(Math.cos(a)*(18+i*2),18+i,Math.sin(a)*(14+i));b.rotation.y=-a;b.children.forEach((w,j)=>w.rotation.z=(j?1:-1)*(.35+Math.sin(t*9+i)*.4))})})}
   return {targets,free}}
