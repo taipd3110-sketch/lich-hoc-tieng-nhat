@@ -1,0 +1,2 @@
+# id tên lat lon vùng-geofabrik bán-kính
+1 伏見稲荷大社本殿 34.96717 135.77335 kansai 1000

@@ -1,0 +1,27 @@
+name: Dựng bản đồ từ gói Geofabrik
+on:
+  push:
+    paths: ["scripts/osm/pbf-todo.txt", "scripts/osm/fetch_pbf.py", ".github/workflows/osm-pbf.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: osm-pbf
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool && pip install shapely==2.0.6
+      - name: Dựng từng cảnh trong danh sách
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+          grep -v '^#' scripts/osm/pbf-todo.txt | while read -r id name lat lon region r; do
+            [ -z "$id" ] && continue
+            echo "[$id] $name" | tee -a scenes/pbf-log.txt
+            python -u scripts/osm/fetch_pbf.py "$id" "$name" "$lat" "$lon" "$region" "${r:-1000}" 2>&1 | tee -a scenes/pbf-log.txt || echo "lỗi $id" | tee -a scenes/pbf-log.txt
+            git add -f scenes && (git diff --cached --quiet || git commit -q -m "Bản đồ $id từ Geofabrik (© OpenStreetMap contributors, ODbL)") && git pull -q --rebase origin main && git push -q origin HEAD:main || true
+          done
