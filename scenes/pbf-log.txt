@@ -1,0 +1,10 @@
+[1] 伏見稲荷大社本殿
+PBF error: invalid BlobHeader size (> max_blob_header_size)
+Traceback (most recent call last):
+  File "/home/runner/work/lich-hoc-tieng-nhat/lich-hoc-tieng-nhat/scripts/osm/fetch_pbf.py", line 91, in <module>
+    main(*sys.argv[1:])
+  File "/home/runner/work/lich-hoc-tieng-nhat/lich-hoc-tieng-nhat/scripts/osm/fetch_pbf.py", line 16, in main
+    subprocess.run(["osmium", "extract", "-b", f"{lon-dlo},{lat-dla},{lon+dlo},{lat+dla}", pbf, "-o", "/tmp/area.pbf", "--overwrite", "-s", "smart"], check=True)
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['osmium', 'extract', '-b', '135.75581086676556,34.95269560159219,135.79088913323443,34.981644398407816', '/tmp/kansai.osm.pbf', '-o', '/tmp/area.pbf', '--overwrite', '-s', 'smart']' returned non-zero exit status 1.
