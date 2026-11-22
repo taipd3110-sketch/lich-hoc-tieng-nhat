@@ -91,3 +91,14 @@
   overpass retry https://overpass-api.de/api/interpreter HTTP Error 502: Bad Gateway
   overpass retry https://maps.mail.ru/osm/tools/overpass/api/interpreter HTTP Error 504: Gateway Time-out
   overpass retry https://overpass.private.coffee/api/interpreter HTTP Error 504: Gateway Timeout
+[9] 姨捨の棚田
+  geocode 姨捨の棚田: 36.50387,138.09793 (lệch 307 m)
+  phần tử: 4149
+  sea: 0
+  water: 6
+  river: 130
+  land: 1099
+  road: 613
+  rail: 13
+  b: 933
+  kích thước: 278 KB
