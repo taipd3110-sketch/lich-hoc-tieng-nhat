@@ -24,8 +24,8 @@ SC = [
 EP = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
 UA = {"User-Agent": "lich-hoc-tieng-nhat/1.0 (study site; github.com/taipd3110-sketch)"}
 
-def overpass(q):
-    for k in range(8):
+def overpass(q, tries=8):
+    for k in range(tries):
         url = EP[k % len(EP)]
         try:
             req = urllib.request.Request(url, data=urllib.parse.urlencode({"data": q}).encode(), headers=UA)
@@ -115,7 +115,7 @@ nwr["name"]["bridge"="yes"]["highway"]{A};node["natural"="peak"]["name"]{A};
         return make_valid(po)
     pois = []
     try:
-        dp = overpass(qp)
+        dp = overpass(qp, 2)
         seen = set()
         for e in dp["elements"]:
             t = e.get("tags", {}); nm = t.get("name");
