@@ -368,8 +368,9 @@ const LMAPS=new Set([]),LCFG={12:{water:"-z"},13:{water:"-z"}};
 /* cấu hình ghép bản đồ với phần địa danh làm tay: off = vị trí (trong cảnh) đặt tâm bản đồ; rot = xoay;
    view = toạ độ cần nằm phía trước (-z); water = hướng từ tâm tới mặt nước gần nhất ("-z" hoặc "+z"); clear = bán kính dọn nhà thật quanh địa danh */
 const REAL={0:{k:.6,off:[0,-46],rot:-90,clear:0,clearRect:[[-13,13,-58,38]]},1:{k:.6,off:[0,-20],rot:0,clear:7,roof:"gassho",clearRect:[[-6,6,-14,16]]},2:{k:.6,off:[-6,-16],view:FUJI,clear:10,poi:/忠霊塔/,clearRect:[[-16,10,-28,16]]},3:{k:.6,off:[0,-22],rot:0,clear:15,poi:/^姫路城$/,clearRect:[[-15,15,-38,-6]]},
-  4:{k:.6,off:[0,-50],view:FUJI,clear:14,tower:2.4,poi:/東京タワー/,clearRect:[[-22,22,-66,-30]]},5:{k:.6,off:[0,0],rot:0,clear:5,poi:/^明月院$/,clearRect:[[-28,-8,-3,16],[6,16,-20,-9]]},6:{k:.6,off:[0,0],rot:0,clear:3,dropWater:1,poi:/大鳥居/,keepWet:["torii"]},7:{off:[0,-6],water:"-z",clear:10,dropWater:1,skytree:1},
-  8:{off:[0,-12],rot:0,clear:12},9:{off:[0,-25],water:"+z",clear:9,dropWater:1,poi:/金閣|舎利殿|鹿苑寺/},10:{off:[0,-4],view:FUJI,clear:8,dropWater:1},11:{off:[0,-18],rot:0,clear:12,poi:/時計台/}};
+  4:{k:.6,off:[0,-50],view:FUJI,clear:14,tower:2.4,poi:/東京タワー/,clearRect:[[-22,22,-66,-30]]},5:{k:.6,off:[0,0],rot:0,clear:5,poi:/^明月院$/,clearRect:[[-28,-8,-3,16],[6,16,-20,-9]]},6:{k:.6,off:[0,0],rot:0,clear:3,dropWater:1,poi:/大鳥居/,keepWet:["torii"]},7:{k:.6,off:[0,0],c0:[130,40],water:"-z",clear:14,dropWater:1,sky:[35.71006,139.8107]},
+  8:{k:.6,off:[0,0],dir:[1,1],clear:9,terrace:1,poi:/^姨捨の棚田$/},9:{k:.6,off:[0,-22],rot:0,clear:4,dropWater:1,poi:/^金閣$/,keepWet:["kinkaku"],clearRect:[[-7,7,-29,-15]]},10:{k:.6,off:[0,0],view:FUJI,clear:8,dropWater:1,c0:[20,100]},
+  11:{k:.6,off:[0,0],c0:[560,-95],dir:[155,-22],clear:12,dropB:/さっぽろテレビ塔|札幌市時計台$/}};
 /* cắt vật liệu theo hình vuông trung tâm: keepInside=true chỉ vẽ phần trong, false chỉ vẽ phần ngoài */
 function clipBox(mat,half,keepInside){const m=mat.clone();m.onBeforeCompile=sh=>{sh.uniforms.uClipH={value:half};
   sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;").replace("#include <project_vertex>","#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;");
@@ -388,8 +389,8 @@ function osmWorld(scene,D,cfg,opt){
   const k=cfg.k||OSM_K,season=opt.season,rng=rngOf(opt.seed||7),CM=m=>opt.core?clipBox(m,opt.core,false):m;
   if(opt.base){const bg=new THREE.Mesh(new THREE.CircleGeometry(720,64),M(opt.base));bg.rotation.x=-Math.PI/2;bg.position.y=-.03;bg.receiveShadow=true;bg.userData.ground=true;scene.add(bg)}
   /* xoay */
-  let C0=[0,0];if(cfg.poi&&D.poi){const hit=D.poi.filter(q=>cfg.poi.test(q[0])&&Math.hypot(q[2],q[3])<900).sort((a,b)=>Math.hypot(a[2],a[3])-Math.hypot(b[2],b[3]))[0];if(hit)C0=[hit[2],hit[3]]}
-  let rot=(cfg.rot||0)*Math.PI/180;
+  let C0=[0,0];if(cfg.poi&&D.poi){const hit=D.poi.filter(q=>cfg.poi.test(q[0])&&Math.hypot(q[2],q[3])<900).sort((a,b)=>Math.hypot(a[2],a[3])-Math.hypot(b[2],b[3]))[0];if(hit)C0=[hit[2],hit[3]]}if(cfg.c0)C0=cfg.c0;
+  let rot=(cfg.rot||0)*Math.PI/180;if(cfg.dir)rot=-Math.PI/2-Math.atan2(cfg.dir[1],cfg.dir[0]);
   if(cfg.view){const lat=D.c[0],lon=D.c[1];const vx=(cfg.view[1]-lon)*111320*Math.cos(lat*Math.PI/180)-C0[0],vz=-(cfg.view[0]-lat)*110540-C0[1];rot=-Math.PI/2-Math.atan2(vz,vx)}
   if(cfg.water){let best=null;const consider=(x0,z0)=>{const x=x0-C0[0],z=z0-C0[1],d=Math.hypot(x,z);if(d>1&&(!best||d<best[0]))best=[d,x,z]};
     [...D.sea,...D.water].forEach(pg=>pg[0].forEach(p=>consider(p[0],p[1])));D.river.forEach(r=>r[1].forEach(p=>consider(p[0],p[1])));
@@ -408,6 +409,14 @@ function osmWorld(scene,D,cfg,opt){
   const LC={forest:W?"#e9eef5":season==="autumn"?"#a98a45":"#5e9a58",park:W?"#f1f4f9":season==="autumn"?"#c3a65a":"#86c46f",farm:W?"#eef2f7":season==="autumn"?"#d9b45a":season==="spring"?"#9cc8d8":"#8cc56c",cem:W?"#e6eaf0":"#b9b7aa",sand:"#e8d6a4",rock:"#a8a49a"};
   const LY={farm:.01,park:.016,cem:.022,forest:.028,sand:.034,rock:.04};
   const layers={};D.land.forEach(([cls,rings])=>{const R=rings.map(TR);(layers[cls]=layers[cls]||[]).push(R)});
+  if(cfg.terrace&&layers.farm){/* ruộng bậc thang: mỗi thửa là một bậc đất có bờ, mặt lúa chín; lối đi giữa các thửa vẫn đi được */
+    const top=[],side=[],H=.42;const tuft=[];layers.farm.forEach(R=>{const r0=R[0];let mx=1e9;r0.forEach(p=>mx=Math.min(mx,Math.hypot(p[0],p[1])));if(mx>LIM+40)return;flatTris(R,H,top);
+      for(let i=0;i<r0.length;i++){const a=r0[i],b=r0[(i+1)%r0.length];side.push(a[0],0,a[1],b[0],0,b[1],b[0],H,b[1],a[0],0,a[1],b[0],H,b[1],a[0],H,a[1])}
+      fillPoly(R,1);let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;r0.forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);z0=Math.min(z0,p[1]);z1=Math.max(z1,p[1])});
+      const n=Math.min(40,Math.ceil((x1-x0)*(z1-z0)/5));for(let k=0;k<n&&tuft.length<9000;k++){const x=x0+rng()*(x1-x0),z=z0+rng()*(z1-z0);if(Math.hypot(x,z)<LIM&&ptIn(r0,x,z))tuft.push([x,z])}});
+    [[top,LC.farm],[side,"#7d6a48"]].forEach(([a,c])=>{if(!a.length)return;const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(a),3));g.computeVertexNormals();const m=new THREE.Mesh(g,CM(M(c,{side:THREE.DoubleSide})));m.receiveShadow=true;m.userData.ground=true;scene.add(m)});
+    if(tuft.length){const tg=new THREE.ConeGeometry(.16,.55,4);tg.translate(0,H+.25,0);const im=new THREE.InstancedMesh(tg,M("#e2b649"),tuft.length),o3=new THREE.Object3D();tuft.forEach(([x,z],i)=>{o3.position.set(x,0,z);o3.rotation.set((rng()-.5)*.4,rng()*3,(rng()-.5)*.4);o3.scale.setScalar(.8+rng()*.5);o3.updateMatrix();im.setMatrixAt(i,o3.matrix)});im.userData.ground=true;scene.add(im)}
+    delete layers.farm}
   Object.entries(layers).forEach(([cls,list])=>{const arr=[];list.forEach(R=>flatTris(R,LY[cls]||.015,arr));if(!arr.length)return;const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(arr),3));g.computeVertexNormals();
     const m=new THREE.Mesh(g,CM(M(LC[cls]||"#8fc47a")));m.receiveShadow=true;m.userData.ground=true;scene.add(m)});
   /* nước & biển */
@@ -441,7 +450,7 @@ function osmWorld(scene,D,cfg,opt){
   const push=(key,pos,cr,uv)=>{let ch=chunks.get(key);if(!ch)chunks.set(key,ch={p:[],c:[],u:[]});for(let i=0,j=0;i<pos.length;i+=3,j+=2){ch.p.push(pos[i],pos[i+1],pos[i+2]);ch.c.push(cr.r,cr.g,cr.b);ch.u.push(uv?uv[j]:.03,uv?uv[j+1]:.03)}};
   const FLH=3.2*k*1.25,quadUV=(len,h,out)=>{const U=Math.max(1,Math.round(len/(2.6*k/.3*.55))),V=h/FLH;out.push(0,0,U,0,U,V,0,0,U,V,0,V)};
   const clr=opt.clear||(()=>false);let nB=0;
-  D.b.forEach(([h,kind,ring])=>{const R=TR(ring);let cx=0,cz=0;R.forEach(p=>{cx+=p[0];cz+=p[1]});cx/=R.length;cz/=R.length;if(clr(cx,cz,R))return;nB++;
+  D.b.forEach(([h,kind,ring,bn])=>{if(cfg.dropB&&bn&&cfg.dropB.test(bn))return;const R=TR(ring);let cx=0,cz=0;R.forEach(p=>{cx+=p[0];cz+=p[1]});cx/=R.length;cz/=R.length;if(clr(cx,cz,R))return;nB++;
     let area=0;for(let i=0,j=R.length-1;i<R.length;j=i++)area+=(R[j][0]+R[i][0])*(R[j][1]-R[i][1]);area=Math.abs(area/2);
     const hh=Math.max(1.6,h*k*HX),[wc,rc]=pal[kind]||pal.o,key=Math.floor(cx/(48*k/.3))+","+Math.floor(cz/(48*k/.3)),wall=[],roof=[],wuv=[];
     const pitched=(kind==="h"||kind==="s"||kind==="t"||cfg.roof==="gassho")&&area<(cfg.roof==="gassho"?900:260)&&h<14;
@@ -786,6 +795,14 @@ function deer3(){const g=new THREE.Group();g.userData.noBake=true;const C="#b079
   const h=outline(new THREE.Mesh(new THREE.CapsuleGeometry(.15,.22,5,10),M(C)));h.rotation.z=Math.PI/2+.25;h.position.set(.78,1.68,0);g.add(h);g.add(sph(.06,"#2b2540",.98,1.62,0,6,5));
   [-1,1].forEach(s=>{const e=new THREE.Mesh(new THREE.ConeGeometry(.07,.22,5),M(C));e.position.set(.7,1.85,s*.13);e.rotation.x=s*.6;g.add(e);g.add(sph(.035,"#1f1b24",.86,1.75,s*.09,6,5))});
   g.add(sph(.12,L,-.72,1.08,0,8,6));[[-.1,.2],[.15,.24],[.3,.18],[-.25,.26]].forEach(([x,y])=>{g.add(sph(.05,L,x,1.05+y,.26,6,4));g.add(sph(.05,L,x,1.05+y,-.26,6,4))});return g}
+/* tháp truyền hình Sapporo: khung thép đỏ cam, đài quan sát, bảng đồng hồ số */
+function tvtower3(){const g=new THREE.Group(),C="#e2552d",up=new THREE.Vector3(0,1,0);const beam=(a,b,t=.32,c=C)=>{const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=B.clone().sub(A),L=d.length();const m=new THREE.Mesh(new THREE.BoxGeometry(t,L,t),M(c));m.position.copy(A).add(B).multiplyScalar(.5);m.quaternion.setFromUnitVectors(up,d.normalize());g.add(m)};
+  const lv=y=>4.2-(y/20)*2.6;[[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([sx,sz])=>beam([sx*4.2,0,sz*4.2],[sx*1.6,20,sz*1.6],.45));
+  [3,7,11,15,19].forEach(y=>{const r=lv(y);[[[-r,y,-r],[r,y,-r]],[[r,y,-r],[r,y,r]],[[r,y,r],[-r,y,r]],[[-r,y,r],[-r,y,-r]]].forEach(([a,b])=>beam(a,b,.22))});
+  [[0,3,7],[0,7,11],[0,11,15],[0,15,19]].forEach(([_,y0,y1])=>{const r0=lv(y0),r1=lv(y1);[[-1,1],[1,-1]].forEach(([s1,s2])=>{beam([s1*r0,y0,-r0],[s2*r1,y1,-r1],.16);beam([s1*r0,y0,r0],[s2*r1,y1,r1],.16);beam([-r0,y0,s1*r0],[-r1,y1,s2*r1],.16);beam([r0,y0,s1*r0],[r1,y1,s2*r1],.16)})});
+  g.add(outline(box(4.6,2.2,4.6,"#e9eef5",0,21.2,0)));g.add(box(4.7,.7,4.7,"#5a8fd6",0,21.4,0));const ck=canvasTex(256,96,(c)=>{c.fillStyle="#1d1b29";c.fillRect(0,0,256,96);c.fillStyle="#ffd84a";c.font="bold 64px monospace";c.textAlign="center";c.textBaseline="middle";c.fillText("12:00",128,52)});
+  const cp=new THREE.Mesh(new THREE.PlaneGeometry(3.4,1.25),new THREE.MeshBasicMaterial({map:ck}));cp.position.set(0,18.6,1.75);g.add(cp);g.add(box(3.6,1.45,.25,"#2b2540",0,18.6,1.6));
+  g.add(outline(cyl(.5,1.1,7,C,0,25.8,0,4)));g.add(cyl(.12,.2,4,"#d9dde3",0,31,0,6));return g}
 function kayamon3(){const g=new THREE.Group(),W="#7a5a40";[-1.9,1.9].forEach(x=>{g.add(outline(cyl(.22,.24,3.4,W,x,1.7,0,10)))});g.add(outline(box(4.6,.3,.35,W,0,3.1,0)));g.add(outline(box(4.2,.22,.3,W,0,2.4,0)));
   const r=new THREE.Mesh(new THREE.CylinderGeometry(.01,1.9,1.3,4,1),M("#6b5a45"));r.rotation.y=Math.PI/4;r.scale.set(1.75,1,.75);r.position.y=3.9;g.add(outline(r));
   const dr=box(1.8,2.2,.08,"#5a4030",-.95,1.2,-.05);dr.rotation.y=-.9;dr.position.x=-1.55;g.add(dr);const d2=box(1.8,2.2,.08,"#5a4030",.95,1.2,-.05);d2.rotation.y=.9;d2.position.x=1.55;g.add(d2);return g}
@@ -823,14 +840,14 @@ function particles(kind,n=420){const pos=new Float32Array(n*3),vel=[];for(let i=
     if(kind!=="drop"){a[i*3]+=Math.sin(performance.now()/900+v*9)*dt*.6}
     if(a[i*3+1]<0){a[i*3+1]=22+Math.random()*4;a[i*3]=cx+(Math.random()-.5)*70;a[i*3+2]=cz+(Math.random()-.5)*70}}geo.attributes.position.needsUpdate=true};
   return pts}
-function fireworks(scene){const pool=[];
-  function burst(){const n=90,pos=new Float32Array(n*3),v=[];const cx=(Math.random()-.5)*36,cy=16+Math.random()*8,cz=-34-Math.random()*12;
-    for(let i=0;i<n;i++){pos[i*3]=cx;pos[i*3+1]=cy;pos[i*3+2]=cz;const t=Math.acos(2*Math.random()-1),p=Math.random()*TAU,s=6+Math.random()*2;v.push([Math.sin(t)*Math.cos(p)*s,Math.cos(t)*s,Math.sin(t)*Math.sin(p)*s])}
+function fireworks(scene,o={}){const pool=[],S=o.s||1;
+  function burst(){const n=Math.round(90*Math.min(2,S)),pos=new Float32Array(n*3),v=[];const cx=(o.x||0)+(Math.random()-.5)*36*S,cy=(16+Math.random()*8)*S,cz=(o.z==null?-34:o.z)-Math.random()*12*S;
+    for(let i=0;i<n;i++){pos[i*3]=cx;pos[i*3+1]=cy;pos[i*3+2]=cz;const t=Math.acos(2*Math.random()-1),p=Math.random()*TAU,s=(6+Math.random()*2)*S;v.push([Math.sin(t)*Math.cos(p)*s,Math.cos(t)*s,Math.sin(t)*Math.sin(p)*s])}
     const geo=new THREE.BufferGeometry();geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
     const c=["#ff6b9a","#ffd43b","#6cc4ff","#7fe0a0","#c49bff"][Math.floor(Math.random()*5)];
-    const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:c,size:1.6,transparent:true,depthWrite:false,fog:false}));pts.userData={v,t:0};scene.add(pts);pool.push(pts)}
+    const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:c,size:1.6*S,transparent:true,depthWrite:false,fog:false}));pts.userData={v,t:0};scene.add(pts);pool.push(pts)}
   let next=0;burst();return dt=>{next-=dt;if(next<=0){burst();next=.9+Math.random()*.9}
-    for(let k=pool.length-1;k>=0;k--){const p=pool[k],u=p.userData;u.t+=dt;const a=p.geometry.attributes.position.array;for(let i=0;i<u.v.length;i++){a[i*3]+=u.v[i][0]*dt;a[i*3+1]+=(u.v[i][1]-u.t*4)*dt;a[i*3+2]+=u.v[i][2]*dt}
+    for(let k=pool.length-1;k>=0;k--){const p=pool[k],u=p.userData;u.t+=dt;const a=p.geometry.attributes.position.array;for(let i=0;i<u.v.length;i++){a[i*3]+=u.v[i][0]*dt;a[i*3+1]+=(u.v[i][1]-u.t*4*S)*dt;a[i*3+2]+=u.v[i][2]*dt}
       p.geometry.attributes.position.needsUpdate=true;p.material.opacity=Math.max(0,1-u.t/1.8);if(u.t>1.8){scene.remove(p);p.geometry.dispose();p.material.dispose();pool.splice(k,1)}}}}
 
 /* dữ liệu 12 cảnh: bầu trời, mặt đất, công trình, 3 từ học tại chỗ */
@@ -902,21 +919,37 @@ const SC=[
      A.sky(new THREE.Mesh(new THREE.SphereGeometry(1.6,10,8),new THREE.MeshBasicMaterial({color:0xffd43b,fog:false})),-10,28,-45,"hanabi");A.start(0,9)}},
  {focus:[0,-10],name:"お月見",vn:"Ngắm trăng Tsukimi trên đồng lúa",sky:["#2a3466","#e9c7a8"],ground:"#b6d6a4",ps:"leaf",dusk:true,spots:[
    ["tsuki","月{つき}","mặt trăng","Đêm trăng rằm tháng 8 âm lịch gọi là 十五夜{じゅうごや}"],["dango","団子{だんご}","bánh dày dango","Bày 月見団子 để cúng trăng"],["ta","田{た}んぼ","ruộng lúa","Mùa thu lúa chín vàng"]],
-   build(A){A.sky(moon3(),0,24,-80,"tsuki");A.add(rice3(40,16),0,-18,{spot:"ta"});A.add(dango3(),2,-2,{spot:"dango",solid:[[0,0,1.6,1.2]]});
+   build(A){if(OD_K>.4){/* ruộng bậc thang Obasute thật trải xuống phía đông nam (hướng nhìn), chỗ ngắm trăng nhỏ giữa các thửa */
+       A.sky(moon3(),0,24,-80,"tsuki");A.add(dango3(),2,-2,{spot:"dango",solid:[[0,0,1.6,1.2]]});[[-4,-1],[5,0],[-6,-4],[6,-5],[-3,3],[4,4]].forEach(([x,z])=>A.add(susuki3(),x,z));
+       const deck=new THREE.Group();deck.add(outline(box(3.4,.35,1.6,"#8a5a3c",0,.45,0)));[[-1.5,-.7],[1.5,-.7],[-1.5,.7],[1.5,.7]].forEach(([x,z])=>deck.add(box(.15,.45,.15,"#5a3a2a",x,.22,z)));deck.add(box(3.2,.05,1.4,"#c8342b",0,.65,0));A.add(deck,-1,2.6,{solid:[[0,0,3.4,1.6]]});
+       A.start(0,6);return}
+     A.sky(moon3(),0,24,-80,"tsuki");A.add(rice3(40,16),0,-18,{spot:"ta"});A.add(dango3(),2,-2,{spot:"dango",solid:[[0,0,1.6,1.2]]});
      [[-4,-1],[5,0],[-8,-4],[8,-4],[-12,0],[12,1]].forEach(([x,z])=>A.add(susuki3(),x,z));A.add(house3("#fff3e0","#6b5a8f",1.3),-14,-30,{solid:[[0,0,4.4,3.6]]});
      [[-20,-8],[20,-8],[-18,6],[18,6]].forEach(([x,z])=>A.add(tree3("amber",1),x,z,{solid:[[0,0,1,1]]}));A.start(0,8)}},
  {focus:[0,-14],name:"金閣寺",vn:"Chùa Vàng Kinkaku-ji mùa thu",sky:["#7aa6d6","#ffe3bd"],ground:"#c9b067",ps:"maple",spots:[
    ["kinkaku","金閣寺{きんかくじ}","chùa Vàng","Ngôi chùa phủ vàng lá ở Kyoto"],["ike","池{いけ}","cái ao","Chùa soi bóng xuống ao Kyōko-chi"],["momiji","紅葉{もみじ}","lá phong đỏ","Mùa lá đỏ ở Kyoto khoảng tháng 11"]],
-   build(A){A.add(water3(30,14,"#4fa9e0"),0,-14,{water:[-15,-21,15,-7],spot:"ike"});A.add(kinkaku3(1.2),0,-25,{solid:[[0,0,8,6]],spot:"kinkaku"});
+   build(A){if(OD_K>.4){/* bản đồ thật: 舎利殿 (金閣) ở bờ bắc ao 鏡湖池, đứng ngắm từ bờ nam như du khách */
+       A.add(water3(20,10,"#4fa9e0"),0,0,{water:[-10,-5,10,5],spot:"ike"});A.add(kinkaku3(1.45),0,-22,{solid:[[0,0,9,7]],spot:"kinkaku"});
+       A.add(tree3("momiji",1.35),7,31,{solid:[[0,0,1.2,1.2]],spot:"momiji"});[[-6,32,"amber"],[12,36,"momiji"],[-10,38,"pine"]].forEach(([x,z,k])=>A.add(tree3(k,1.25),x,z,{solid:[[0,0,1.2,1.2]]}));A.start(2,34);return}
+     A.add(water3(30,14,"#4fa9e0"),0,-14,{water:[-15,-21,15,-7],spot:"ike"});A.add(kinkaku3(1.2),0,-25,{solid:[[0,0,8,6]],spot:"kinkaku"});
      [[-12,-12],[12,-12],[-17,-4],[17,-4],[-9,2],[9,2],[-18,-22],[18,-22]].forEach(([x,z],i)=>A.add(tree3(i%2?"momiji":"amber",1.1),x,z,{solid:[[0,0,1,1]],spot:i===4?"momiji":null}));
      [[-6,-32],[6,-32],[-20,-30],[20,-30]].forEach(([x,z])=>A.add(tree3("pine",1.2),x,z,{solid:[[0,0,1,1]]}));A.start(0,9)}},
  {focus:[0,-14],name:"河口湖",vn:"Núi Phú Sĩ & hồ Kawaguchi lá đỏ",sky:["#7a9ed6","#ffdcc7"],ground:"#b3d98f",ps:"maple",spots:[
    ["fuji","富士山{ふじさん}","núi Phú Sĩ","Nhìn từ hồ Kawaguchi, núi soi bóng xuống mặt nước"],["mizuumi","湖{みずうみ}","hồ","Hồ Kawaguchi là một trong Ngũ hồ Phú Sĩ"],["kouyou","紅葉{こうよう}","lá đổi màu mùa thu","Đọc こうよう khi nói về mùa lá đỏ nói chung"]],
-   build(A){A.add(water3(140,60,"#62b9e6"),0,-44,{water:[-70,-74,70,-14],spot:"mizuumi"});A.far(fuji3(0,-118,44,46),"fuji");
+   build(A){if(OD_K>.4){/* bờ bắc hồ Kawaguchi gần もみじ回廊, nhìn qua mặt hồ về phía Phú Sĩ */
+       A.add(water3(20,10,"#62b9e6"),0,-30,{water:[-10,-35,10,-25],spot:"mizuumi"});A.far(fuji3(0,-118,44,46),"fuji");
+       [[-7,-4],[-4,-7],[5,-6],[8,-3],[-9,3],[10,4],[-6,9],[7,10]].forEach(([x,z],i)=>A.add(tree3(i%3?"momiji":"amber",1.3),x,z,{solid:[[0,0,1.2,1.2]],spot:i===2?"kouyou":null}));A.add(bench3(),0,-3,{solid:[[0,0,2,.8]]});A.start(0,4);return}
+     A.add(water3(140,60,"#62b9e6"),0,-44,{water:[-70,-74,70,-14],spot:"mizuumi"});A.far(fuji3(0,-118,44,46),"fuji");
      [[-14,-8],[-8,-10],[8,-10],[14,-8],[-18,-2],[18,-2],[-10,4],[11,5]].forEach(([x,z],i)=>A.add(tree3(i%2?"amber":"momiji",1.15),x,z,{solid:[[0,0,1,1]],spot:i===2?"kouyou":null}));A.start(0,8)}},
  {focus:[0,-18],name:"さっぽろ雪まつり",vn:"Lễ hội tuyết Sapporo",sky:["#7da3d4","#e4f0fc"],ground:"#f4f7fb",ps:"snow",spots:[
    ["tokei","時計台{とけいだい}","tháp đồng hồ","Tháp đồng hồ Sapporo, biểu tượng của thành phố"],["yukimatsuri","雪祭{ゆきまつ}り","lễ hội tuyết","Diễn ra vào tháng 2 với các tượng tuyết khổng lồ"],["yuki","雪{ゆき}だるま","người tuyết","雪 (tuyết) + だるま (búp bê Daruma)"]],
-   build(A){A.add(clock3(1.3),0,-18,{solid:[[0,0,8,5.4]],spot:"tokei"});
+   build(A){if(OD_K>.4){/* công viên Odori thật: tượng tuyết lớn dọc công viên, tháp truyền hình ở cuối phía đông, tháp đồng hồ cách một khối nhà */
+       const castle=new THREE.Group();castle.add(outline(box(9,5,5,"#ffffff",0,2.5,0)));const t1=roofQuad(5.5,3.2,"#eef4fc");t1.position.y=6.6;castle.add(t1);[-5,5].forEach(x=>{castle.add(outline(box(2.4,8,2.4,"#ffffff",x,4,0)));const tt=roofQuad(1.7,2.4,"#e4eefa");tt.position.set(x,9,0);castle.add(tt)});
+       castle.add(outline(box(13,1,8,"#f1f5fb",0,.5,1)));for(let k=-3;k<=3;k++)castle.add(box(.7,1.5,.1,"#cfe0f5",k*1.3,3.2,2.52));A.add(castle,-11,-26,{rot:.25,solid:[[0,0,13,8]],spot:"yukimatsuri"});
+       const dm=new THREE.Group();dm.add(outline(sph(3.2,"#ffffff",0,3,0,20,16)));dm.add(outline(sph(2.3,"#ffffff",0,7,0,20,16)));dm.add(sph(.32,"#2b2540",-.8,7.5,2.05,8,6));dm.add(sph(.32,"#2b2540",.8,7.5,2.05,8,6));dm.add(box(1.6,.25,.3,"#e5484d",0,6.6,2.15));
+       A.add(dm,12,-30,{solid:[[0,0,6,6]]});A.add(snowman3(),-4,3,{spot:"yuki",solid:[[0,0,1.4,1.4]]});
+       [[-17,-6],[17,-8],[-17,12],[17,12]].forEach(([x,z])=>A.add(tree3("pinesnow",1.2),x,z,{solid:[[0,0,1.2,1.2]]}));A.start(0,10);return}
+     A.add(clock3(1.3),0,-18,{solid:[[0,0,8,5.4]],spot:"tokei"});
      const sc=new THREE.Group();sc.add(outline(box(5,3,3,"#ffffff",0,1.5,0)));const t=roofQuad(3,2,"#eef4fc");t.position.y=4;sc.add(t);sc.add(outline(box(1.4,4,1.4,"#ffffff",-2.4,2,0)));sc.add(outline(box(1.4,4,1.4,"#ffffff",2.4,2,0)));
      A.add(sc,-12,-10,{rot:.4,solid:[[0,0,6,4]],spot:"yukimatsuri"});A.add(snowman3(),5,-2,{spot:"yuki",solid:[[0,0,1.4,1.4]]});
      A.add(house3("#fff3e0","#e5484d",1.2,true),12,-10,{solid:[[0,0,4,3.4]]});[[-18,0],[18,2],[-6,8],[8,10],[-16,-22],[16,-24]].forEach(([x,z])=>A.add(tree3("pinesnow",1),x,z,{solid:[[0,0,1,1]]}));A.start(0,9)}}
@@ -960,6 +993,7 @@ export async function startScene(root,m,api){
   if(OD){const near=(x,z,p)=>solids.some(q=>x>q.x0-p&&x<q.x1+p&&z>q.z0-p&&z<q.z1+p);
     osm=osmWorld(scene,OD,CFG,{season:SEAS,ticks,seed:m*31+3,walk:150,noTree:(x,z)=>{const dx=x-startP[0],dz=z-startP[1];return Math.hypot(dx,dz)<9||(dz>-4&&dz<30&&Math.abs(dx)<12)},clear:(x,z,Rg)=>(CFG.clearRect&&CFG.clearRect.some(([x0,x1,z0,z1])=>x>x0&&x<x1&&z>z0&&z<z1))||Math.hypot(x-CFG.off[0],z-CFG.off[1])<CFG.clear||Math.hypot(x-startP[0],z-startP[1])<8||(z-startP[1]>-2&&z-startP[1]<26&&Math.abs(x-startP[0])<11)||near(x,z,2.5)||(Rg&&Rg.some(p=>near(p[0],p[1],1.2)))});
     if(CFG.tower){const ts=CFG.tower===1?1:CFG.tower,tw=tower3();tw.scale.setScalar(ts);tw.position.set(CFG.off[0],0,CFG.off[1]);scene.add(tw);const h=6*ts;solids.push({x0:CFG.off[0]-h,x1:CFG.off[0]+h,z0:CFG.off[1]-h,z1:CFG.off[1]+h})}
+    if(CFG.sky){const lat=OD.c[0],lon=OD.c[1],q=osm.T([(CFG.sky[1]-lon)*111320*Math.cos(lat*Math.PI/180),-(CFG.sky[0]-lat)*110540]);const st=skytree3();st.scale.setScalar(3.4);st.position.set(q[0],0,q[1]);st.traverse(o=>{if(o.isMesh){o.material=S.night?new THREE.MeshBasicMaterial({color:o.userData.isOutline?"#2a2f5a":"#a9c8ff",fog:false,side:o.material.side}):o.material.clone();o.material.fog=false}});st.userData.noFade=true;scene.add(st)}
     if(CFG.skytree){const p=osm.poi.find(q=>/スカイツリー/.test(q.n));if(p){const st=skytree3();st.position.set(p.x,0,p.z);scene.add(st)}}
     wSpots.forEach(([id,obj])=>{const w=osm.nearestWater(startP[0],startP[1]-6);if(w){const a=new THREE.Object3D();a.position.set(w[0],.4,w[1]);scene.add(a);a.traverse(()=>{});spotObj[id]=[a,.4,1.4];
       const pk=new THREE.Mesh(new THREE.CylinderGeometry(3,3,.2,12),new THREE.MeshBasicMaterial({visible:false}));pk.position.set(w[0],.1,w[1]);pk.userData.pick={spot:id};scene.add(pk)}});
@@ -968,6 +1002,26 @@ export async function startScene(root,m,api){
       if(o.spot&&!(CFG.keepWet||[]).includes(o.spot)){const L=osm.nearestLand(x,z);if(L){const dx=L[0]-x,dz=L[1]-z;obj.position.x+=dx;obj.position.z+=dz;for(let q=s0;q<e;q++){solids[q].x0+=dx;solids[q].x1+=dx;solids[q].z0+=dz;solids[q].z1+=dz}return}}
       if(!o.spot){scene.remove(obj);for(let q=s0;q<e;q++)solids[q]={x0:1e9,x1:1e9,z0:1e9,z1:1e9};const t=trees.findIndex(t=>t.x===x&&t.z===z);if(t>=0)trees.splice(t,1)}});
     /* tháng 1: hàng nghìn cổng torii dọc các lối mòn thật lên núi Inari, khách đi lễ đầu năm */
+    if(m===7){/* pháo hoa trên sông Sumida, bạt xanh ngồi ngắm dọc bờ, cây công viên */
+      const w=osm.nearestWater(startP[0],startP[1]-14)||[0,-60];A.fwOpt={x:w[0],z:w[1]-30,s:2.4};
+      const TP=[];for(let k=0;k<160&&TP.length<9;k++){const a=k*2.4,r=4+k*.12,x=w[0]+Math.cos(a)*r,z=w[1]+Math.abs(Math.sin(a))*r+3;if(osm.blocked(x,z)||osm.onRoad(x,z)||osm.isWater(x,z)||!osm.openAt(x,z,2.2))continue;if(TP.some(p=>Math.hypot(p[0]-x,p[1]-z)<3.6))continue;TP.push([x,z])}
+      const face=(x,z)=>Math.atan2(w[0]-x,w[1]-z),CL=[["#ffe0c7","#2b2321","bun","#e85d8c","#2b2540",1],["#f6d2b3","#1f1b24","short","#3a6fd6","#2a2d3a",0],["#ffe3cc","#3b2a26","long","#f5a043","#7a2f4a",1],["#f3cfae","#2a2220","cap","#2f9e64","#2a2d3a",0]];
+      TP.forEach(([x,z],i)=>{const t=box(2.8,.05,2.2,"#3d7fe0",x,.1,z);t.rotation.y=face(x,z);scene.add(t);if(i<6){const [sk,hr,st,tp,bt,fem]=CL[i%4];const c=makeChar({skin:sk,hair:hr,style:st,top:tp,bottom:bt,fem});c.scale.setScalar(1.05);c.position.set(x+(i%2?.5:-.5),.1,z);c.rotation.y=face(x,z);scene.add(c)}});
+      osm.plantIn((x,z)=>osm.openAt(x,z,4)&&!osm.onRoad(x,z),1400,160)}
+    if(m===8){/* 田毎の月: mốc học từ ruộng ở thửa gần nhất phía trước; cây mùa thu ở bờ ruộng */
+      let a=null;for(let d=4;d<60&&!a;d+=1)for(const dx of [0,-3,3,-6,6]){const x=startP[0]+dx,z=startP[1]-d,id=osm.gi(x,z);if(id>=0&&osm.grid[id]===1){a=[x,z];break}}
+      if(a){const o=new THREE.Object3D();o.position.set(a[0],1,a[1]);scene.add(o);spotObj.ta=[o,1,1.4];const pk=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,2,10),new THREE.MeshBasicMaterial({visible:false}));pk.position.set(a[0],1,a[1]);pk.userData.pick={spot:"ta"};scene.add(pk)}
+      osm.plantIn((x,z)=>osm.openAt(x,z,3)&&!osm.onRoad(x,z),1600,160)}
+    if(m===9){/* bóng 金閣 soi xuống ao, rừng phong và thông quanh ao */
+      const kk=spotObj.kinkaku&&spotObj.kinkaku[0];if(kk){const rf=kk.clone(true);rf.scale.y*=-1;rf.position.y=.05;rf.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.transparent=true;o.material.opacity=.32;o.material.depthWrite=false;o.userData.pick=null;o.castShadow=false}if(o.userData)o.userData.noBake=true});rf.userData.noBake=true;scene.add(rf)}
+      osm.plantIn((x,z)=>osm.openAt(x,z,3)&&!osm.onRoad(x,z),2600,150)}
+    if(m===10){/* もみじ回廊: phong dày ven đường gần hồ, thuyền trên hồ */
+      osm.plantIn((x,z)=>Math.hypot(x,z)<70&&osm.openAt(x,z,2.5)&&!osm.onRoad(x,z),1400,70);osm.plantIn((x,z)=>osm.openAt(x,z,4)&&!osm.onRoad(x,z),1600,170);
+      [[-14,-34,.3],[18,-46,-.5],[-30,-60,1]].forEach(([x,z,r])=>{const w=osm.nearestWater(x,z);if(!w)return;const b=boat3();b.scale.setScalar(2);b.position.set(w[0],0,w[1]-3);b.rotation.y=r;scene.add(b);ticks.push(()=>{b.position.y=Math.sin(performance.now()/700+x)*.08})})}
+    if(m===11){/* tháp truyền hình và tháp đồng hồ ở đúng vị trí thật */
+      const tv=osm.T([715,-117]),tw=tvtower3();tw.scale.setScalar(2.9);tw.position.set(tv[0],0,tv[1]);tw.rotation.y=Math.atan2(startP[0]-tv[0],startP[1]-tv[1]);scene.add(tw);solids.push({x0:tv[0]-12,x1:tv[0]+12,z0:tv[1]-12,z1:tv[1]+12});
+      const ct=osm.T([497,-284]),ck=clock3(1.6);ck.position.set(ct[0],0,ct[1]);ck.rotation.y=Math.atan2(startP[0]-ct[0],startP[1]-ct[1]);ck.traverse(c=>{if(c.isMesh&&!c.userData.isOutline)c.userData.pick={spot:"tokei"}});scene.add(ck);spotObj.tokei=[ck,1.2,1.6];solids.push({x0:ct[0]-6,x1:ct[0]+6,z0:ct[1]-6,z1:ct[1]+6});
+      osm.plantIn((x,z)=>osm.openAt(x,z,4)&&!osm.onRoad(x,z),1200,150)}
     if(m===5){const HL=[],inP=(x,z)=>x>-46&&x<26&&z>-48&&z<40;osm.footP.forEach(P=>{for(let i=0;i+1<P.length;i++){const [ax,az]=P[i],[bx,bz]=P[i+1],L=Math.hypot(bx-ax,bz-az);if(L<.01)continue;const ux=(bx-ax)/L,uz=(bz-az)/L;
         for(let t=.4;t<L&&HL.length<900;t+=1.15)for(const sd of [-1,1]){const x=ax+ux*t-uz*sd*1.25,z=az+uz*t+ux*sd*1.25;if(!inP(x,z)||osm.onRoad(x,z)||osm.isWater(x,z))continue;const id=osm.gi(x,z);if(id>=0&&osm.grid[id]===1)continue;if(solids.some(b=>x>b.x0-.6&&x<b.x1+.6&&z>b.z0-.6&&z<b.z1+.6))continue;HL.push([x,z,.85+((t*7+i)%5)*.08])}}});
       hydField(scene,HL);osm.plantIn((x,z)=>!inP(x,z)&&osm.openAt(x,z,5)&&!osm.onRoad(x,z),2600,240);osm.plantIn((x,z)=>inP(x,z)&&Math.hypot(x+18,z-6.5)>12&&osm.openAt(x,z,4)&&!osm.onRoad(x,z),160,60);
@@ -1037,11 +1091,11 @@ export async function startScene(root,m,api){
   else if(m===6){[[-10,-16,.4],[12,-20,-.3]].forEach(([x,z,r])=>{const b=boat3();b.position.set(x,0,z);b.rotation.y=r;scene.add(b);ticks.push(()=>{b.position.y=Math.sin(performance.now()/700+x)*.08})})}
   if(m===7){A.add(yagura3(),0,-2,{solid:[[0,0,3.8,3.8]]});food.push([-3,-10],[8,10])}
   if(m===8){const rb=new THREE.Group();rb.add(outline(sph(.35,"#f6f4f0",0,.35,0,12,10)));rb.add(outline(sph(.25,"#f6f4f0",0,.82,.05,12,10)));[-1,1].forEach(s=>{const e=outline(sph(.07,"#f6f4f0",s*.09,1.18,0,8,6));e.scale.y=3;rb.add(e)});A.add(rb,-2.4,-2);addSolid(-2.4,-2,.9);food.push([2,-2])}
-  if(m===9){const zg=zenGarden(9,6);A.add(zg,15,4);solids.push({x0:10.5,x1:19.5,z0:1,z1:7})}
-  if(m===10){[[-8,-18,.3],[10,-22,-.4]].forEach(([x,z,r])=>{const b=boat3();b.position.set(x,0,z);b.rotation.y=r;scene.add(b);ticks.push(()=>{b.position.y=Math.sin(performance.now()/700+x)*.08})});A.add(box(3,.3,6,"#a0693e",0,.15,0),8,-14);solids.push({x0:6.5,x1:9.5,z0:-17,z1:-11})}
+  if(m===9&&!osm){const zg=zenGarden(9,6);A.add(zg,15,4);solids.push({x0:10.5,x1:19.5,z0:1,z1:7})}
+  if(m===10&&!osm){[[-8,-18,.3],[10,-22,-.4]].forEach(([x,z,r])=>{const b=boat3();b.position.set(x,0,z);b.rotation.y=r;scene.add(b);ticks.push(()=>{b.position.y=Math.sin(performance.now()/700+x)*.08})});A.add(box(3,.3,6,"#a0693e",0,.15,0),8,-14);solids.push({x0:6.5,x1:9.5,z0:-17,z1:-11})}
   if(m===11){[[-6,-6],[8,-4],[16,-14]].forEach(([x,z],i)=>{A.add(iceSculpt(["#bfe6ff","#d6f0ff","#c8dcff"][i]),x,z,{solid:[[0,0,2.6,1.8]]})})}
   const ps=particles(S.ps);scene.add(ps);ticks.push(dt=>ps.userData.tick(dt,player.position.x,player.position.z));
-  if(A.fw)ticks.push(fireworks(scene));
+  if(A.fw)ticks.push(fireworks(scene,A.fwOpt||{}));
   if(A.koi)ticks.push(()=>A.koi.userData.carps.forEach((c,i)=>{c.rotation.y=Math.sin(performance.now()/500+i)*.35;c.rotation.z=Math.sin(performance.now()/380+i*2)*.12}));
   await loadTai();let player=makePlayer(av);player.position.set(startP[0],0,startP[1]);player.rotation.y=Math.PI;scene.add(player);
 
