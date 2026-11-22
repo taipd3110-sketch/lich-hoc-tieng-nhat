@@ -231,3 +231,19 @@ overpass failed
   rail: 32
   b: 3501
   kích thước: 449 KB
+[2] 白川郷 荻町 神田家
+  overpass retry https://overpass-api.de/api/interpreter <urlopen error [Errno 101] Network is unreachable>
+  overpass retry https://maps.mail.ru/osm/tools/overpass/api/interpreter HTTP Error 504: Gateway Time-out
+  overpass retry https://overpass-api.de/api/interpreter <urlopen error [Errno 101] Network is unreachable>
+  phần tử: 825
+  overpass retry https://overpass-api.de/api/interpreter <urlopen error [Errno 101] Network is unreachable>
+  overpass retry https://maps.mail.ru/osm/tools/overpass/api/interpreter HTTP Error 504: Gateway Time-out
+  không lấy được POI
+  sea: 0
+  water: 5
+  river: 8
+  land: 96
+  road: 214
+  rail: 0
+  b: 461
+  kích thước: 69 KB
