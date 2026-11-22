@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-concurrency: osm
+concurrency: osm-v2
 jobs:
   fetch:
     runs-on: ubuntu-latest
@@ -17,7 +17,13 @@ jobs:
       - run: pip install shapely==2.0.6
       - name: Tải từng cảnh
         run: |
-          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do timeout 420 python scripts/osm/fetch.py $i || echo "cảnh $i lỗi"; done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+          mkdir -p scenes
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            timeout 600 python -u scripts/osm/fetch.py $i 2>&1 | tee -a scenes/fetch-log.txt || echo "cảnh $i lỗi" | tee -a scenes/fetch-log.txt
+            git add scenes && (git diff --cached --quiet || git commit -q -m "Bản đồ OSM cảnh $i (© OpenStreetMap contributors, ODbL)") && git pull -q --rebase origin main && git push -q origin HEAD:main || true
+          done
       - name: Lưu dữ liệu vào repo
         if: always()
         run: |

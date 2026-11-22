@@ -21,18 +21,18 @@ SC = [
  (11, "河口湖 もみじ回廊", 35.51560, 138.74480),
  (12, "大通公園", 43.06000, 141.35000),
 ]
-EP = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://overpass.private.coffee/api/interpreter"]
+EP = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
 UA = {"User-Agent": "lich-hoc-tieng-nhat/1.0 (study site; github.com/taipd3110-sketch)"}
 
 def overpass(q):
-    for k in range(6):
+    for k in range(5):
         url = EP[k % len(EP)]
         try:
             req = urllib.request.Request(url, data=urllib.parse.urlencode({"data": q}).encode(), headers=UA)
-            with urllib.request.urlopen(req, timeout=240) as r:
+            with urllib.request.urlopen(req, timeout=150) as r:
                 return json.load(r)
         except Exception as e:
-            print("  overpass retry", url, e, flush=True); time.sleep(10 + k * 10)
+            print("  overpass retry", url, e, flush=True); time.sleep(8)
     raise SystemExit("overpass failed")
 
 def geocode(name, lat, lon):
