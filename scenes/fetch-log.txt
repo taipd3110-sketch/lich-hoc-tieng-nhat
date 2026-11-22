@@ -82,3 +82,12 @@
   rail: 0
   b: 1159
   kích thước: 130 KB
+[8] 隅田公園
+  geocode 隅田公園: 35.71551,139.80314 (lệch 390 m)
+  overpass retry https://overpass-api.de/api/interpreter HTTP Error 502: Bad Gateway
+  overpass retry https://maps.mail.ru/osm/tools/overpass/api/interpreter HTTP Error 504: Gateway Timeout
+  overpass retry https://overpass.private.coffee/api/interpreter The read operation timed out
+  phần tử: 30851
+  overpass retry https://overpass-api.de/api/interpreter HTTP Error 502: Bad Gateway
+  overpass retry https://maps.mail.ru/osm/tools/overpass/api/interpreter HTTP Error 504: Gateway Time-out
+  overpass retry https://overpass.private.coffee/api/interpreter HTTP Error 504: Gateway Timeout
