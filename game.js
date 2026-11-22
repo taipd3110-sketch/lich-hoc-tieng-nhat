@@ -368,7 +368,7 @@ const LMAPS=new Set([]),LCFG={12:{water:"-z"},13:{water:"-z"}};
 /* cấu hình ghép bản đồ với phần địa danh làm tay: off = vị trí (trong cảnh) đặt tâm bản đồ; rot = xoay;
    view = toạ độ cần nằm phía trước (-z); water = hướng từ tâm tới mặt nước gần nhất ("-z" hoặc "+z"); clear = bán kính dọn nhà thật quanh địa danh */
 const REAL={0:{k:.6,off:[0,-46],rot:-90,clear:0,clearRect:[[-13,13,-58,38]]},1:{k:.6,off:[0,-20],rot:0,clear:7,roof:"gassho",clearRect:[[-6,6,-14,16]]},2:{k:.6,off:[-6,-16],view:FUJI,clear:10,poi:/忠霊塔/,clearRect:[[-16,10,-28,16]]},3:{k:.6,off:[0,-22],rot:0,clear:15,poi:/^姫路城$/,clearRect:[[-15,15,-38,-6]]},
-  4:{off:[0,-42],view:FUJI,clear:9,tower:1,poi:/東京タワー/},5:{off:[0,-16],rot:0,clear:13,poi:/明月院/},6:{off:[0,-24],water:"-z",clear:6,dropWater:1,poi:/大鳥居/,keepWet:["torii"]},7:{off:[0,-6],water:"-z",clear:10,dropWater:1,skytree:1},
+  4:{k:.6,off:[0,-50],view:FUJI,clear:14,tower:2.4,poi:/東京タワー/,clearRect:[[-22,22,-66,-30]]},5:{off:[0,-16],rot:0,clear:13,poi:/明月院/},6:{off:[0,-24],water:"-z",clear:6,dropWater:1,poi:/大鳥居/,keepWet:["torii"]},7:{off:[0,-6],water:"-z",clear:10,dropWater:1,skytree:1},
   8:{off:[0,-12],rot:0,clear:12},9:{off:[0,-25],water:"+z",clear:9,dropWater:1,poi:/金閣|舎利殿|鹿苑寺/},10:{off:[0,-4],view:FUJI,clear:8,dropWater:1},11:{off:[0,-18],rot:0,clear:12,poi:/時計台/}};
 /* cắt vật liệu theo hình vuông trung tâm: keepInside=true chỉ vẽ phần trong, false chỉ vẽ phần ngoài */
 function clipBox(mat,half,keepInside){const m=mat.clone();m.onBeforeCompile=sh=>{sh.uniforms.uClipH={value:half};
@@ -502,6 +502,13 @@ function osmWorld(scene,D,cfg,opt){
   const plantIn=(fn,n,R0)=>{const P=[];for(let i=0;i<n*6&&P.length<n;i++){const a=rng()*TAU,r=Math.sqrt(rng())*R0,x=Math.cos(a)*r,z=Math.sin(a)*r;if(!fn(x,z))continue;const id=gi(x,z);if(id>=0&&grid[id])continue;if(clr(x,z,null)||(opt.noTree&&opt.noTree(x,z)))continue;P.push([x,z,.8+rng()*.7,TK[(rng()*TK.length)|0]])}plant(P);return P.length};
   return {blocked,onRoad,isWater,nearestLand,poi,T,rot,nB,nearestWater,LIM,footP,gi,grid,plantIn,openAt}}
 /* tháp Tokyo & Skytree đơn giản */
+/* dây cá chép bay ngang (màn 333 con cá chép ở tháp Tokyo) */
+function carpLine(x1,z1,x2,z2,y,n,ticks){const g=new THREE.Group(),C=["#e5484d","#3d6fd6","#2b2540","#f5a043","#2f9e64","#e85d8c"];const L=Math.hypot(x2-x1,z2-z1),ang=Math.atan2(z2-z1,x2-x1);
+  const rope=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,L,4),M("#5a5f6b"));rope.rotation.z=Math.PI/2;rope.rotation.y=-ang;rope.position.set((x1+x2)/2,y,(z1+z2)/2);g.add(rope);
+  const carps=[];for(let i=1;i<n;i++){const t=i/n,cp=new THREE.Group();const b=new THREE.Mesh(new THREE.CylinderGeometry(.32,.12,1.7,8,1,true),M(C[i%C.length],{side:THREE.DoubleSide}));b.rotation.z=Math.PI/2;b.position.x=.85;cp.add(b);
+    const e=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),M("#ffffff"));e.position.set(.12,.12,.2);cp.add(e);const e2=e.clone();e2.position.z=-.2;cp.add(e2);cp.position.set(x1+(x2-x1)*t,y-.4-Math.sin(t*Math.PI)*.8,z1+(z2-z1)*t);cp.rotation.y=-ang+Math.PI/2;g.add(cp);carps.push(cp)}
+  [[x1,z1],[x2,z2]].forEach(([x,z])=>g.add(cyl(.12,.15,y+.4,"#8a8f99",x,(y+.4)/2,z,8)));
+  if(ticks)ticks.push(()=>{const t=performance.now()/600;carps.forEach((c,i)=>{c.rotation.z=Math.sin(t+i*.7)*.25;c.children[0].scale.y=1+Math.sin(t*1.7+i)*.08})});return g}
 function tower3(){const g=new THREE.Group();const H=30;for(let i=0;i<6;i++){const y0=i*H/6,r0=6*(1-i/6.4)+.4,r1=6*(1-(i+1)/6.4)+.4;const c=new THREE.Mesh(new THREE.CylinderGeometry(r1,r0,H/6,4,1,true),M(i%2?"#f6f4f0":"#e8553f",{side:THREE.DoubleSide,wireframe:false}));c.position.y=y0+H/12;c.rotation.y=Math.PI/4;g.add(c)}
   [10,18].forEach((y,i)=>g.add(outline(cyl(i?1.6:3,i?1.6:3,1.4,"#e8553f",0,y,0,12))));g.add(cyl(.25,.45,8,"#e8553f",0,H+4,0,8));g.traverse(o=>{if(o.isMesh)o.castShadow=true});return g}
 function skytree3(){const g=new THREE.Group();g.add(outline(cyl(1.1,3.2,60,"#e9eef5",0,30,0,10)));g.add(outline(cyl(3,3,2.4,"#c9d6e6",0,35,0,16)));g.add(outline(cyl(2.2,2.2,1.6,"#c9d6e6",0,45,0,16)));g.add(cyl(.3,.6,12,"#e9eef5",0,66,0,8));return g}
@@ -855,7 +862,7 @@ const SC=[
  {focus:[-2,-7],name:"鯉のぼり",vn:"Lễ hội cá chép Koinobori",sky:["#5fa8e8","#c9eeff"],ground:"#9fd88f",ps:"leaf",spots:[
    ["koi","鯉{こい}のぼり","cờ cá chép","Treo ngày 5/5 (ngày trẻ em) cầu cho trẻ khỏe mạnh như cá chép vượt thác"],["fuji","富士山{ふじさん}","núi Phú Sĩ","Đẹp nhất khi trời trong vào sáng sớm"],["ie","家{いえ}","ngôi nhà","Nhà có con trai thường treo cá chép trước sân"]],
    build(A){const k=koinobori3();A.add(k,-2,-6,{solid:[[0,0,.5,.5]],spot:"koi"});A.koi=k;A.far(fuji3(18,-75,30,30),"fuji");
-     A.add(house3("#fff3e0","#4a8fd6",1.3),6,-12,{solid:[[0,0,4.4,3.6]],spot:"ie"});A.add(house3("#fff3e0","#e5484d",1.1),12,-6,{rot:-.3,solid:[[0,0,3.8,3.2]]});
+     A.add(house3("#fff3e0","#4a8fd6",1.3),6,-12,{solid:[[0,0,4.4,3.6]],spot:"ie"});
      [[-12,-10],[-16,0],[14,4],[-8,8],[10,10],[0,-20],[-14,-20]].forEach(([x,z])=>A.add(tree3("green",1.05),x,z,{solid:[[0,0,1,1]]}));A.start(0,9)}},
  {focus:[0,-16],name:"明月院",vn:"Chùa Meigetsu-in mùa cẩm tú cầu",sky:["#8fa0c8","#e3e6f5"],ground:"#9fd88f",ps:"drop",spots:[
    ["ajisai","紫陽花{あじさい}","hoa cẩm tú cầu","Nở rộ vào mùa mưa (梅雨, tháng 6)"],["kasa","傘{かさ}","cái ô","Ô giấy truyền thống gọi là 和傘 (wagasa)"],["tera","お寺{てら}","ngôi chùa","Chùa Meigetsu-in nổi tiếng với ô cửa tròn"]],
@@ -933,7 +940,7 @@ export async function startScene(root,m,api){
   let osm=null;
   if(OD){const near=(x,z,p)=>solids.some(q=>x>q.x0-p&&x<q.x1+p&&z>q.z0-p&&z<q.z1+p);
     osm=osmWorld(scene,OD,CFG,{season:SEAS,ticks,seed:m*31+3,walk:150,noTree:(x,z)=>{const dx=x-startP[0],dz=z-startP[1];return Math.hypot(dx,dz)<9||(dz>-4&&dz<30&&Math.abs(dx)<12)},clear:(x,z,Rg)=>(CFG.clearRect&&CFG.clearRect.some(([x0,x1,z0,z1])=>x>x0&&x<x1&&z>z0&&z<z1))||Math.hypot(x-CFG.off[0],z-CFG.off[1])<CFG.clear||Math.hypot(x-startP[0],z-startP[1])<8||(z-startP[1]>-2&&z-startP[1]<26&&Math.abs(x-startP[0])<11)||near(x,z,2.5)||(Rg&&Rg.some(p=>near(p[0],p[1],1.2)))});
-    if(CFG.tower){const tw=tower3();tw.position.set(CFG.off[0],0,CFG.off[1]);scene.add(tw);solids.push({x0:CFG.off[0]-6,x1:CFG.off[0]+6,z0:CFG.off[1]-6,z1:CFG.off[1]+6})}
+    if(CFG.tower){const ts=CFG.tower===1?1:CFG.tower,tw=tower3();tw.scale.setScalar(ts);tw.position.set(CFG.off[0],0,CFG.off[1]);scene.add(tw);const h=6*ts;solids.push({x0:CFG.off[0]-h,x1:CFG.off[0]+h,z0:CFG.off[1]-h,z1:CFG.off[1]+h})}
     if(CFG.skytree){const p=osm.poi.find(q=>/スカイツリー/.test(q.n));if(p){const st=skytree3();st.position.set(p.x,0,p.z);scene.add(st)}}
     wSpots.forEach(([id,obj])=>{const w=osm.nearestWater(startP[0],startP[1]-6);if(w){const a=new THREE.Object3D();a.position.set(w[0],.4,w[1]);scene.add(a);a.traverse(()=>{});spotObj[id]=[a,.4,1.4];
       const pk=new THREE.Mesh(new THREE.CylinderGeometry(3,3,.2,12),new THREE.MeshBasicMaterial({visible:false}));pk.position.set(w[0],.1,w[1]);pk.userData.pick={spot:id};scene.add(pk)}});
@@ -942,6 +949,7 @@ export async function startScene(root,m,api){
       if(o.spot&&!(CFG.keepWet||[]).includes(o.spot)){const L=osm.nearestLand(x,z);if(L){const dx=L[0]-x,dz=L[1]-z;obj.position.x+=dx;obj.position.z+=dz;for(let q=s0;q<e;q++){solids[q].x0+=dx;solids[q].x1+=dx;solids[q].z0+=dz;solids[q].z1+=dz}return}}
       if(!o.spot){scene.remove(obj);for(let q=s0;q<e;q++)solids[q]={x0:1e9,x1:1e9,z0:1e9,z1:1e9};const t=trees.findIndex(t=>t.x===x&&t.z===z);if(t>=0)trees.splice(t,1)}});
     /* tháng 1: hàng nghìn cổng torii dọc các lối mòn thật lên núi Inari, khách đi lễ đầu năm */
+    if(m===4){[[-26,-28,26,-28,11,24],[-30,-20,30,-20,9,26],[-22,-12,22,-12,7.5,20]].forEach(([a,b,c2,d,y,n])=>{const cl=carpLine(a,b,c2,d,y,n,ticks);scene.add(cl);solids.push({x0:a-.3,x1:a+.3,z0:b-.3,z1:b+.3},{x0:c2-.3,x1:c2+.3,z0:d-.3,z1:d+.3})});osm.plantIn((x,z)=>osm.openAt(x,z,6)&&!osm.onRoad(x,z),1200,200)}
     if(m===2){osm.plantIn((x,z)=>Math.hypot(x-CFG.off[0],z-CFG.off[1])>9&&osm.openAt(x,z,7)&&!osm.onRoad(x,z),2400,110);osm.plantIn((x,z)=>osm.openAt(x,z,9)&&!osm.onRoad(x,z),2200,330);
       const dk=new THREE.Group();dk.add(outline(box(9,.4,5,"#a0693e",0,.6,0)));for(let i=0;i<9;i++)dk.add(box(.12,.6,.12,"#7a4a2a",-4.4+i*1.1,1.1,2.45));dk.add(box(9,.08,.1,"#7a4a2a",0,1.4,2.45));[-4.3,4.3].forEach(x=>[-2.3,2.3].forEach(z=>dk.add(box(.2,.6,.2,"#7a4a2a",x,.3,z))));dk.position.set(startP[0],0,startP[1]-4.2);scene.add(dk)}
     if(m===1){osm.plantIn((x,z)=>x>100||x<-275,3000,360);[[240,-200,70,40],[260,60,80,55],[230,280,70,40],[-400,-150,80,50],[-420,180,90,60]].forEach(([x,z,r,h])=>{const md=mound(r,h,"#e9eef5");md.position.set(x,0,z);scene.add(md)})}
