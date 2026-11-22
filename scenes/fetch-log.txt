@@ -187,3 +187,14 @@ overpass failed
   rail: 0
   b: 3500
   kích thước: 423 KB
+[L1] 東京大学 本郷キャンパス
+  geocode 東京大学 本郷キャンパス: 35.71172,139.76375 (lệch 196 m)
+  phần tử: 17259
+  sea: 0
+  water: 27
+  river: 9
+  land: 257
+  road: 3685
+  rail: 125
+  b: 3502
+  kích thước: 594 KB
