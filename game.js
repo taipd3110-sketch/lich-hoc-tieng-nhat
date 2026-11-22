@@ -802,7 +802,9 @@ export async function startScene(root,m,api){
   const usedRock=new Set();const rockFor=pref=>{let best=-1,bd=1e9;rocks.forEach((r,k)=>{if(usedRock.has(k)||(pref&&r[3]!==pref&&pref!=="any"))return;const d=Math.hypot(r[0]-startP[0],r[1]-startP[1]);if(d<bd){bd=d;best=k}});if(best<0&&pref!=="any")return rockFor("any");if(best>=0)usedRock.add(best);return best>=0?rocks[best]:null};
   for(let i=0;i<12;i++){if(i===m)continue;const g=pickZ(zodiac3(i,0),i);let mode="idle",x,z,y=0;
     if(i===4){mode="fly"}
-    else if(i===8&&trees.length){const t=trees.slice().sort((a,b)=>Math.hypot(a.x-startP[0],a.z-startP[1])-Math.hypot(b.x-startP[0],b.z-startP[1]))[Math.min(1,trees.length-1)];x=t.x;z=t.z+.3;y=t.h*.82}
+    else if(i===8&&trees.length){const t=trees.slice().sort((a,b)=>Math.hypot(a.x-startP[0],a.z-startP[1])-Math.hypot(b.x-startP[0],b.z-startP[1]))[Math.min(1,trees.length-1)];const ts=t.h/3.1;
+      /* khỉ ngồi trên ngọn cây, nhìn thấy từ mọi phía, không bị tán lá che */
+      let top=0;scene.traverse(o=>{if(o.userData.tree&&Math.abs(o.position.x-t.x)<.01&&Math.abs(o.position.z-t.z)<.01){const bb=new THREE.Box3().setFromObject(o);top=bb.max.y}});x=t.x;z=t.z;y=(top||3.6*ts)-.35;}
     else if(i===9||i===5){const r=rockFor(i===9?"lantern":"rock");if(r){x=r[0];z=r[1];y=r[2]}mode=i===9?"peck":"idle"}
     else if(i===3&&benches.length){const b=benches[0];x=b[0];z=b[1];y=.56;mode="sleep";g.rotation.y=b[2]}
     else if(i===11&&food.length){const f=food[0];x=f[0]+1.2;z=f[1]+1;}
@@ -886,7 +888,7 @@ export async function startScene(root,m,api){
     placeCam(false);renderer.render(scene,camera)}
   const vis=()=>{if(document.hidden)cancelAnimationFrame(raf);else if(alive){last=performance.now();raf=requestAnimationFrame(loop)}};document.addEventListener("visibilitychange",vis);
   raf=requestAnimationFrame(loop);cv.focus({preventScroll:true});
-  if(location.search.includes("g3debug"))window.__g3s={bake:BKs,info:()=>({...renderer.info.render}),spotCard,setPos:(x,z)=>{player.position.set(x,0,z);placeCam(true)},setYaw:v=>{yaw=v},setPitch:v=>{pitch=v},setDist:v=>{dist=v}};
+  if(location.search.includes("g3debug"))window.__g3s={scene,THREE,bake:BKs,info:()=>({...renderer.info.render}),spotCard,setPos:(x,z)=>{player.position.set(x,0,z);placeCam(true)},setYaw:v=>{yaw=v},setPitch:v=>{pitch=v},setDist:v=>{dist=v}};
   return {stop(){alive=false;cancelAnimationFrame(raf);clearTimeout(hintT);removeEventListener("resize",resize);removeEventListener("keydown",kd);removeEventListener("keyup",ku);document.removeEventListener("visibilitychange",vis);try{speechSynthesis.cancel()}catch(e){}
     scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});renderer.dispose();try{renderer.forceContextLoss()}catch(e){}root.innerHTML="";root.className=""}};
 }
