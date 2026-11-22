@@ -90,6 +90,11 @@ way["water"]{A};way["landuse"~"^(forest|grass|meadow|farmland|orchard|cemetery|v
 relation["landuse"~"^(forest|reservoir)$"]{A};way["leisure"~"^(park|garden|pitch)$"]{A};relation["leisure"="park"]{A};
 way["natural"="coastline"](around:{int(R*3)},{lat},{lon});
 );out geom;"""
+    qp = f"""[out:json][timeout:120];(
+nwr["name"]["tourism"~"^(attraction|viewpoint|museum)$"]{A};nwr["name"]["historic"]{A};nwr["name"]["amenity"="place_of_worship"]{A};
+nwr["name"]["man_made"~"^(tower|torii|lighthouse|bridge)$"]{A};nwr["name"]["building"~"^(shrine|temple|castle|tower)$"]{A};nwr["name"]["leisure"="park"]{A};
+nwr["name"]["bridge"="yes"]["highway"]{A};node["natural"="peak"]["name"]{A};
+);out center tags;"""
     d = overpass(q)
     els = d["elements"]; print("  phần tử:", len(els), flush=True)
     def ring(geom): return [P(g["lat"], g["lon"]) for g in geom]
@@ -106,7 +111,21 @@ way["natural"="coastline"](around:{int(R*3)},{lat},{lon});
             pi = unary_union(list(polygonize(unary_union(inner))))
             if not pi.is_empty: po = po.difference(pi)
         return make_valid(po)
-    out = {"c": [round(lat, 6), round(lon, 6)], "R": R, "name": name, "sea": [], "water": [], "river": [], "land": [], "road": [], "rail": [], "b": []}
+    pois = []
+    try:
+        dp = overpass(qp)
+        seen = set()
+        for e in dp["elements"]:
+            t = e.get("tags", {}); nm = t.get("name");
+            c = e.get("center") or ({"lat": e["lat"], "lon": e["lon"]} if "lat" in e else None)
+            if not nm or not c or nm in seen: continue
+            seen.add(nm); x, z = P(c["lat"], c["lon"])
+            if abs(x) <= R * 1.2 and abs(z) <= R * 1.2:
+                kind = t.get("man_made") or t.get("historic") or t.get("tourism") or t.get("amenity") or t.get("building") or t.get("leisure") or t.get("natural") or "poi"
+                pois.append([nm, kind, round(x, 1), round(z, 1)])
+    except SystemExit:
+        print("  không lấy được POI")
+    out = {"c": [round(lat, 6), round(lon, 6)], "R": R, "name": name, "sea": [], "water": [], "river": [], "land": [], "road": [], "rail": [], "b": [], "poi": pois}
     blds = []; waters = []; coast = []
     for e in els:
         t = e.get("tags", {})
