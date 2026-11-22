@@ -25,14 +25,14 @@ EP = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools
 UA = {"User-Agent": "lich-hoc-tieng-nhat/1.0 (study site; github.com/taipd3110-sketch)"}
 
 def overpass(q):
-    for k in range(5):
+    for k in range(8):
         url = EP[k % len(EP)]
         try:
             req = urllib.request.Request(url, data=urllib.parse.urlencode({"data": q}).encode(), headers=UA)
             with urllib.request.urlopen(req, timeout=150) as r:
                 return json.load(r)
         except Exception as e:
-            print("  overpass retry", url, e, flush=True); time.sleep(8)
+            print("  overpass retry", url, e, flush=True); time.sleep(15 + 5 * k)
     raise SystemExit("overpass failed")
 
 def geocode(name, lat, lon):
@@ -78,6 +78,8 @@ LAND = {"forest": "forest", "wood": "forest", "scrub": "forest", "park": "park",
         "recreation_ground": "park", "pitch": "park", "farmland": "farm", "paddy": "farm", "orchard": "farm", "cemetery": "cem", "beach": "sand", "sand": "sand", "bare_rock": "rock"}
 
 def run(sid, name, lat, lon):
+    global R
+    R = 800 if sid in (8,) else 1000
     print(f"[{sid}] {name}", flush=True)
     lat, lon = geocode(name, lat, lon)
     P = proj(lat, lon); BB = box(-R, -R, R, R); A = f"(around:{int(R*1.45)},{lat},{lon})"

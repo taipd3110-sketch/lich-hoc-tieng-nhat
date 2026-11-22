@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-concurrency: osm-v3
+concurrency: osm-v4
 jobs:
   fetch:
     runs-on: ubuntu-latest
@@ -21,6 +21,8 @@ jobs:
           git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
           mkdir -p scenes
           for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            if [ -f scenes/osm-$i.json ]; then continue; fi
+            sleep 20
             timeout 600 python -u scripts/osm/fetch.py $i 2>&1 | tee -a scenes/fetch-log.txt || echo "cảnh $i lỗi" | tee -a scenes/fetch-log.txt
             git add -f scenes && (git diff --cached --quiet || git commit -q -m "Bản đồ OSM cảnh $i (© OpenStreetMap contributors, ODbL)") && git pull -q --rebase origin main && git push -q origin HEAD:main || true
           done
