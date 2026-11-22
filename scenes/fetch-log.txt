@@ -9,3 +9,14 @@
   rail: 34
   b: 3501
   kích thước: 430 KB
+[2] 白川郷 荻町
+  geocode 白川郷 荻町: 36.26202,136.90687 (lệch 469 m)
+  phần tử: 1096
+  sea: 0
+  water: 5
+  river: 11
+  land: 105
+  road: 252
+  rail: 0
+  b: 553
+  kích thước: 80 KB
