@@ -363,11 +363,11 @@ const makePlayer=av=>{const p=av.model!==false&&TAI_GLB?makeTai():makeChar(av);p
    BẢN ĐỒ THẬT (OpenStreetMap) CHO CẢNH NGẮM CẢNH
    Dữ liệu © OpenStreetMap contributors (ODbL), tải sẵn vào scenes/osm-N.json
    ===================================================================== */
-const OSM_K=.3,OSM_V="1",FUJI=[35.3606,138.7274];
+let OD_K=0;const OSM_K=.3,OSM_V="1",FUJI=[35.3606,138.7274];
 const LMAPS=new Set([]),LCFG={12:{water:"-z"},13:{water:"-z"}};
 /* cấu hình ghép bản đồ với phần địa danh làm tay: off = vị trí (trong cảnh) đặt tâm bản đồ; rot = xoay;
    view = toạ độ cần nằm phía trước (-z); water = hướng từ tâm tới mặt nước gần nhất ("-z" hoặc "+z"); clear = bán kính dọn nhà thật quanh địa danh */
-const REAL={0:{k:.6,off:[0,-46],rot:-90,clear:0,clearRect:[[-13,13,-58,38]]},1:{k:.6,off:[0,-20],rot:0,clear:7,roof:"gassho",clearRect:[[-6,6,-14,16]]},2:{k:.6,off:[-6,-16],view:FUJI,clear:10,poi:/忠霊塔/,clearRect:[[-16,10,-28,16]]},3:{off:[0,-22],rot:0,clear:24,poi:/天守|姫路城/},
+const REAL={0:{k:.6,off:[0,-46],rot:-90,clear:0,clearRect:[[-13,13,-58,38]]},1:{k:.6,off:[0,-20],rot:0,clear:7,roof:"gassho",clearRect:[[-6,6,-14,16]]},2:{k:.6,off:[-6,-16],view:FUJI,clear:10,poi:/忠霊塔/,clearRect:[[-16,10,-28,16]]},3:{k:.6,off:[0,-22],rot:0,clear:15,poi:/^姫路城$/,clearRect:[[-15,15,-38,-6]]},
   4:{off:[0,-42],view:FUJI,clear:9,tower:1,poi:/東京タワー/},5:{off:[0,-16],rot:0,clear:13,poi:/明月院/},6:{off:[0,-24],water:"-z",clear:6,dropWater:1,poi:/大鳥居/,keepWet:["torii"]},7:{off:[0,-6],water:"-z",clear:10,dropWater:1,skytree:1},
   8:{off:[0,-12],rot:0,clear:12},9:{off:[0,-25],water:"+z",clear:9,dropWater:1,poi:/金閣|舎利殿|鹿苑寺/},10:{off:[0,-4],view:FUJI,clear:8,dropWater:1},11:{off:[0,-18],rot:0,clear:12,poi:/時計台/}};
 /* cắt vật liệu theo hình vuông trung tâm: keepInside=true chỉ vẽ phần trong, false chỉ vẽ phần ngoài */
@@ -848,7 +848,7 @@ const SC=[
      [[4,-8],[8,-14],[-14,-6],[12,-4],[-10,4],[10,6],[-18,-16],[16,-22],[0,-26],[-2,8]].forEach(([x,z],i)=>A.add(tree3("sakura",1+(i%3)*.12),x,z,{solid:[[0,0,1,1]],spot:i===0?"sakura":null}));A.start(2,12)}},
  {focus:[0,-22],name:"姫路城",vn:"Lâu đài Himeji mùa hoa anh đào",sky:["#86b2e0","#ffe7f1"],ground:"#a9d69a",ps:"petal",spots:[
    ["shiro","城{しろ}","lâu đài","Himeji còn được gọi là “thành Hạc trắng” vì màu trắng tinh"],["hanami","花見{はなみ}","ngắm hoa","Trải bạt dưới gốc anh đào, ăn uống và ngắm hoa"],["bentou","お弁当{べんとう}","cơm hộp","Món không thể thiếu khi đi 花見"]],
-   build(A){A.add(castle3(1.3),0,-22,{solid:[[0,0,13,13]],spot:"shiro"});
+   build(A){A.add(castle3(OD_K>.4?2:1.3),0,-22,{solid:[[0,0,OD_K>.4?20:13,OD_K>.4?20:13]],spot:"shiro"});
      const mat=box(3,.05,2.2,"#e5484d",0,.06,0);const g=new THREE.Group();g.add(mat);g.add(outline(box(.6,.3,.45,"#2b2540",.4,.25,.2)));g.add(box(.5,.05,.38,"#ffcf4a",.4,.42,.2));A.add(g,6,-2,{spot:"hanami"});
      A.add(dango3(),3.6,-1,{spot:"bentou"});
      [[-10,-8],[10,-8],[-14,-16],[14,-16],[-6,2],[10,2],[-18,-2],[18,-2],[-12,8],[13,9]].forEach(([x,z],i)=>A.add(tree3("sakura",1.05+(i%3)*.1),x,z,{solid:[[0,0,1,1]]}));A.start(0,12)}},
@@ -925,7 +925,7 @@ export async function startScene(root,m,api){
     far(obj,spot){if(OD){const d=Math.hypot(obj.position.x,obj.position.z);if(d>1&&d<420){const f=430/d;obj.position.x*=f;obj.position.z*=f;obj.scale.multiplyScalar(f)}obj.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.fog=false}})}scene.add(obj);if(spot){obj.traverse(c=>{if(c.isMesh)c.userData.pick={spot}});if(!spotObj[spot])spotObj[spot]=[obj,2,4]}return obj},
     sky(obj,x,y,z,spot){if(OD){const d=Math.hypot(x,z);if(d>1&&d<480){const f=520/d;x*=f;z*=f;y*=f;obj.scale.multiplyScalar(f*.6)}}obj.position.set(x,y,z);obj.userData.billboard=true;scene.add(obj);if(spot){obj.traverse(c=>{if(c.isMesh)c.userData.pick={spot}});if(!spotObj[spot])spotObj[spot]=[obj,1.5,4]}return obj},
     start(x,z){startP=[x,z]}};
-  S.build(A);
+  OD_K=OD&&CFG?(CFG.k||OSM_K):0;S.build(A);
 
   /* ---------- làm đầy khuôn viên ---------- */
   const SEAS=["winter","winter","spring","spring","spring","rain","summer","night","autumn","autumn","autumn","winter"][m], rng=rngOf(m*97+13), FC=S.focus||[0,-16];
@@ -981,7 +981,7 @@ export async function startScene(root,m,api){
   if(m===0&&!osm){[-1,1].forEach(sx=>rocks.push([sx*3.2,-3.6,2.1,"statue"]))}
   if(m===1&&!osm){const f=new THREE.Mesh(new THREE.PlaneGeometry(10,7),M("#f7f9fc"));f.rotation.x=-Math.PI/2;f.position.set(-17,.05,9);scene.add(f);for(let k=0;k<6;k++)scene.add(box(10,.12,.18,"#d9dfe8",-17,.08,6+k*1.2))}
   if(m===2){const st=stairs3(9,2.6);st.position.set(-6,0,-6.4);scene.add(st);const mt=box(2.6,.05,2,"#e5484d",6,.06,2);scene.add(mt);food.push([6,2])}
-  if(m===3){waters.push([-9,-13.6,-1.4,-11]);waters.push([1.4,-13.6,9,-11]);[-5.2,5.2].forEach(x=>A.add(water3(7.6,2.6,"#5fa4d6"),x,-12.3));A.add(box(2.8,.25,3,"#b8b2a6",0,.12,-12.3),0,-12.3);food.push([6,-2])}
+  if(m===3&&!osm){waters.push([-9,-13.6,-1.4,-11]);waters.push([1.4,-13.6,9,-11]);[-5.2,5.2].forEach(x=>A.add(water3(7.6,2.6,"#5fa4d6"),x,-12.3));A.add(box(2.8,.25,3,"#b8b2a6",0,.12,-12.3),0,-12.3);food.push([6,-2])}
   if(m===4){[[-12,-14],[12,-4]].forEach(([x,z])=>{const k=koinobori3();A.add(k,x,z,{solid:[[0,0,.5,.5]]});ticks.push(()=>k.userData.carps.forEach((c,i)=>{c.rotation.y=Math.sin(performance.now()/520+i+x)*.35}))});
     A.add(water3(10,7,"#7fc4e0"),-16,8,{water:[-21,4.5,-11,11.5]});for(let r=0;r<5;r++)for(let c=0;c<8;c++)scene.add(cyl(.04,.06,.4,"#5fb86a",-20+c*1.2,.2,5.5+r*1.3,5))}
   if(m===5){for(let k=0;k<18;k++){const x=12+rng()*6,z=-12+rng()*10;if(!free(x,z,.2))continue;const h=5+rng()*3;scene.add(cyl(.12,.14,h,"#6aa84f",x,h/2,z,7));scene.add(sph(.45,"#5fb86a",x,h,z,8,6));addSolid(x,z,.4)}}
