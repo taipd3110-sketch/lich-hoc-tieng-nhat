@@ -127,3 +127,19 @@ overpass failed
   rail: 0
   b: 1129
   kích thước: 144 KB
+[12] 大通公園
+  geocode 大通公園: 43.05990,141.34751 (lệch 203 m)
+  overpass retry https://overpass-api.de/api/interpreter HTTP Error 502: Bad Gateway
+  phần tử: 11741
+  overpass retry https://overpass-api.de/api/interpreter HTTP Error 502: Bad Gateway
+  overpass retry https://maps.mail.ru/osm/tools/overpass/api/interpreter HTTP Error 504: Gateway Time-out
+  overpass retry https://overpass.private.coffee/api/interpreter HTTP Error 504: Gateway Timeout
+  overpass retry https://overpass.kumi.systems/api/interpreter HTTP Error 504: Gateway Timeout
+  sea: 0
+  water: 13
+  river: 13
+  land: 139
+  road: 2883
+  rail: 129
+  b: 3503
+  kích thước: 507 KB
