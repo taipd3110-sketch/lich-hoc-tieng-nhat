@@ -247,3 +247,18 @@ overpass failed
   rail: 0
   b: 461
   kích thước: 69 KB
+[L3] 丸の内ビルディング
+  overpass retry https://overpass-api.de/api/interpreter HTTP Error 502: Bad Gateway
+  overpass retry https://maps.mail.ru/osm/tools/overpass/api/interpreter HTTP Error 504: Gateway Time-out
+  phần tử: 5644
+  overpass retry https://overpass-api.de/api/interpreter HTTP Error 502: Bad Gateway
+  overpass retry https://maps.mail.ru/osm/tools/overpass/api/interpreter HTTP Error 504: Gateway Time-out
+  không lấy được POI
+  sea: 0
+  water: 18
+  river: 13
+  land: 213
+  road: 3336
+  rail: 277
+  b: 1030
+  kích thước: 296 KB
