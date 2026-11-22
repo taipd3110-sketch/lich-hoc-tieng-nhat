@@ -21,6 +21,14 @@ SC = [
  (11, "河口湖 もみじ回廊", 35.51560, 138.74480),
  (12, "大通公園", 43.06000, 141.35000),
 ]
+# địa điểm thật cho minigame từng bài (thêm dần 5 bài mỗi đợt)
+LS = [
+ ("L1", "東京大学 本郷キャンパス", 35.71277, 139.76200),
+ ("L2", "戸越銀座商店街", 35.61560, 139.71540),
+ ("L3", "丸の内ビルディング", 35.68130, 139.76390),
+ ("L4", "吉祥寺駅", 35.70330, 139.57970),
+ ("L5", "京都駅", 34.98580, 135.75880),
+]
 EP = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
 UA = {"User-Agent": "lich-hoc-tieng-nhat/1.0 (study site; github.com/taipd3110-sketch)"}
 
@@ -79,7 +87,7 @@ LAND = {"forest": "forest", "wood": "forest", "scrub": "forest", "park": "park",
 
 def run(sid, name, lat, lon):
     global R
-    R = 800 if sid in (8,) else 1000
+    R = 800 if sid in (8, "L3") else 1000
     print(f"[{sid}] {name}", flush=True)
     lat, lon = geocode(name, lat, lon)
     P = proj(lat, lon); BB = box(-R, -R, R, R)
@@ -201,11 +209,17 @@ nwr["name"]["bridge"="yes"]["highway"]{A};node["natural"="peak"]["name"]{A};
             out["b"].append([round(h, 1), kind, rings[0]] + ([nm] if nm and area > 400 else []))
     for k in ("sea", "water", "river", "land", "road", "rail", "b"): print(f"  {k}: {len(out[k])}")
     os.makedirs("scenes", exist_ok=True)
-    with open(f"scenes/osm-{sid}.json", "w", encoding="utf-8") as f: json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
-    print("  kích thước:", os.path.getsize(f"scenes/osm-{sid}.json") // 1024, "KB", flush=True)
+    fn = f"scenes/lesson-{sid[1:]}.json" if isinstance(sid, str) else f"scenes/osm-{sid}.json"
+    with open(fn, "w", encoding="utf-8") as f: json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
+    print("  kích thước:", os.path.getsize(fn) // 1024, "KB", flush=True)
     time.sleep(5)
 
 if __name__ == "__main__":
-    only = [int(x) for x in sys.argv[1:]] or [s[0] for s in SC]
-    for s in SC:
-        if s[0] in only: run(*s)
+    args = sys.argv[1:]
+    if args and args[0].startswith("L"):
+        for s in LS:
+            if s[0] in args: run(*s)
+    else:
+        only = [int(x) for x in args] or [s[0] for s in SC]
+        for s in SC:
+            if s[0] in only: run(*s)

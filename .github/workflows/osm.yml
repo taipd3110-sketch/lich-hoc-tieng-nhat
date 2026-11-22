@@ -20,8 +20,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
           mkdir -p scenes
-          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
-            if [ -f scenes/osm-$i.json ]; then continue; fi
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12 $(python -c "import sys;sys.path.insert(0,'scripts/osm');import fetch;print(' '.join(s[0] for s in fetch.LS))"); do
+            f=scenes/osm-$i.json; case $i in L*) f=scenes/lesson-${i#L}.json;; esac
+            if [ -f $f ]; then continue; fi
             sleep 20
             timeout 1100 python -u scripts/osm/fetch.py $i 2>&1 | tee -a scenes/fetch-log.txt || echo "cảnh $i lỗi" | tee -a scenes/fetch-log.txt
             git add -f scenes && (git diff --cached --quiet || git commit -q -m "Bản đồ OSM cảnh $i (© OpenStreetMap contributors, ODbL)") && git pull -q --rebase origin main && git push -q origin HEAD:main || true
