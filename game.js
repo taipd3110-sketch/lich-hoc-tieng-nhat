@@ -1690,16 +1690,23 @@ const TH={
    for(let k=0;k<3;k++){const t=P3.taxi();C.add(t,-13-k*4.2,6.4,Math.PI/2);C.sol(-13-k*4.2,6.4,3.4,1.8);if(!k)C.feat("タクシー",t,.5,1.2)}C.feat("電車",pf,1.2,1.5,1);
    for(let k=0;k<6;k++){C.add(bicycle(["#3d6fd6","#e5484d","#2f9e64","#ffcf4a"][k%4]),24+k*.9,-7.6,Math.PI/2)}C.sol(26.5,-7.6,6,1)},
   decor(C){C.skyline(24);C.lampsPoles();C.houses(6);C.scatter(()=>vending(0,0,["#e5484d","#3d6fd6"][(C.rng()*2)|0]),3,[-36,36,-18,36],1,.9)}},
- shotengai:{jp:"にぎわい商店街",vn:"Phố mua sắm",path:"stone",pw:8,
+ shotengai:{jp:"にぎわい商店街",vn:"Phố mua sắm",path:"stone",pw:8,ground:"#d6cdbd",noTufts:1,
   layout(C){[-30,-18,18,30].forEach((x,i)=>{const a=arch3(i===1||i===2?"さくら商店街":"");a.scale.y=1.25;C.add(a,x,0,Math.PI/2);C.sol(x,-4.6,.6,.6);C.sol(x,4.6,.6,.6)});
    [-24,-12,12,24].forEach(x=>C.scene.add(lanternString(x-6,x+6,7.2,-3.6,7),lanternString(x-6,x+6,7.2,3.6,7)))},
   decor(C){const SH=[["八百屋","Hàng rau","#2f9e64"],["魚屋","Hàng cá","#3d6fd6"],["パン屋","Tiệm bánh","#c8862a"],["靴屋","Tiệm giày","#5a3a2a"],["服屋","Tiệm quần áo","#e85d8c"],["薬局","Hiệu thuốc","#2f9e64"],["時計屋","Tiệm đồng hồ","#3a3f5c"],["文房具","Văn phòng phẩm","#e5a23a"],["和菓子","Bánh ngọt Nhật","#c2406b"],["喫茶","Quán cà phê","#8a5a44"],["本屋","Hiệu sách","#8a4a3a"],["花屋","Tiệm hoa","#e85d8c"]];
-   let k=(C.rng()*12)|0;[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz],qi)=>{if(C.usedQ.has(qi))return;[10.5,17.5,24.5,31.5].forEach(ax=>{const x=sx*ax,z=sz*15;if(!C.free(x,z,.3,6.6,5))return;const [n,v,c]=SH[k++%SH.length];
-     const o=shop3({wall:["#f3e3cc","#fbe8ef","#eef2e6","#efe2dc"][k%4],awn:c,noren:k%2?c:null,nt:n.slice(0,2),sign:n,sub:v,w:6.4,lantern:k%3===0});C.add(o,x,z,sz>0?Math.PI:0);C.sol(x,z,6.4,5)})});
+   let k=(C.rng()*12)|0;const hitS=(x0,x1,z0,z1,big)=>C.solids.some(q=>(!big||(q.x1-q.x0)*(q.z1-q.z0)>30)&&x1>q.x0&&x0<q.x1&&z1>q.z0&&z0<q.z1);
+   const okShop=(x,z,w,d,alongX)=>{if(hitS(x-w/2-.2,x+w/2+.2,z-d/2-.2,z+d/2+.2))return false;/* không che mặt tiền công trình chính phía sau */return alongX?!hitS(x-w/2,x+w/2,Math.min(z,z+Math.sign(z)*14),Math.max(z,z+Math.sign(z)*14),1):!hitS(Math.min(x,x+Math.sign(x)*14),Math.max(x,x+Math.sign(x)*14),z-d/2,z+d/2,1)};
+   [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz],qi)=>{[10.5,17.5,24.5,31.5].forEach(ax=>{const x=sx*ax,z=sz*15;if(!okShop(x,z,6.4,5,1))return;const [n,v,c]=SH[k++%SH.length];
+     const o=shop3({wall:["#f3e3cc","#fbe8ef","#eef2e6","#efe2dc"][k%4],awn:c,noren:k%2?c:null,nt:n.slice(0,2),sign:n,sub:v,w:6.4,lantern:k%3===0});C.add(o,x,z,sz>0?Math.PI:0);C.sol(x,z,6.4,5)});
+     /* dãy cửa hàng liền mạch dọc phố dọc (trục z) */
+     [12,19,26,33].forEach(az=>{const x=sx*15.5,z=sz*az;if(!okShop(x,z,5,6.4,0))return;const [n,v,c]=SH[k++%SH.length];
+       const o=shop3({wall:["#f3e3cc","#fbe8ef","#eef2e6","#efe2dc"][k%4],awn:c,noren:k%2?c:null,nt:n.slice(0,2),sign:n,sub:v,w:6.4,lantern:k%3===0});C.add(o,x,z,sx>0?-Math.PI/2:Math.PI/2);C.sol(x,z,5,6.4)})});
+   /* bồn hoa và cột đèn dọc vỉa hè */
+   for(let v=-34;v<=34;v+=8.5){if(Math.abs(v)<9)continue;[[v,-6.2],[v,6.2],[-6.2,v],[6.2,v]].forEach(([x,z])=>{if(!C.free(x,z,.2,1.4,.8))return;const g=new THREE.Group();g.add(outline(box(1.4,.5,.8,"#a8a29a",0,.25,0)));[-.4,0,.4].forEach((dx,i)=>g.add(sph(.28,["#e85d8c","#f5c542","#ffffff"][i],dx,.62,0,8,6)));g.add(sph(.36,"#4f9f60",0,.55,0,8,6));C.add(g,x,z,Math.abs(x)>Math.abs(z)?0:Math.PI/2);C.sol(x,z,1.4,.8)})}
    for(let x=-34;x<=34;x+=6){if(Math.abs(x)<7)continue;[-4.6,4.6].forEach((z,i)=>{if(C.free(x+2,z,.2,.5,.5)){C.add(nobori(["#c23b2a","#2f9e64","#3d6fd6","#e5a23a"][((x+z)|0)&3],["大売出し","特売","いらっしゃい","セール"][((x/6)|0)&3]),x+2,z,Math.PI/2)}})}
    const cs=["#c23b2a","#3d6fd6","#e5a23a","#2f9e64","#e85d8c"];for(const z of [-7.6,7.6])for(let x=-33;x<=33;x+=4.4){if(Math.abs(x)<8)continue;if(C.free(x,z,.3,3,1.8)){C.add(stall3(cs[((x*7+z)|0)&3]),x,z,z>0?Math.PI:0);C.sol(x,z,2.8,1.6)}}
    C.scatter(()=>bench3(),6,[-34,34,-34,34],.5,1.2);C.scatter(()=>{const g=new THREE.Group();g.add(cyl(.35,.3,.6,"#c9a27a",0,.3,0,10));g.add(outline(sph(.6,"#4f9f60",0,1.1,0,10,8)));return g},10,[-34,34,-34,34],.3,.8);
-   C.skyline(18,.6);C.houses(8);C.scatter(()=>bicycle(["#3d6fd6","#e5484d"][(C.rng()*2)|0]),6,[-34,34,-8,8],.5,0)}},
+   C.skyline(18,.6);C.scatter(()=>bicycle(["#3d6fd6","#e5484d"][(C.rng()*2)|0]),6,[-34,34,-8,8],.5,0)}},
  indoor:{jp:"さくらビル",vn:"Bên trong tòa nhà Sakura",path:"floor",pw:7,indoor:1,sky:["#efe6da","#efe6da","#e9dfd0"],ground:"#e6dccb",feats:["ロビー","地下"],greet:"いらっしゃいませ",
   layout(C){const wall=(w,d,x,z)=>{const m=box(w,5,d,"#f6f0e6",x,2.5,z);outline(m,1.002);C.scene.add(m);C.sol(x,z,w,d)};wall(80,1,0,-39);wall(80,1,0,39);wall(1,80,-39,0);wall(1,80,39,0);
    for(let x=-30;x<=30;x+=10){C.scene.add(box(6,2,.1,"#a9d2ee",x,3,-38.45))}
@@ -1924,7 +1931,7 @@ function buildWorld(scene,T,plan,picks,solids,ticks,rng,wopt={}){
   plan.feats.forEach(f=>{const F=feats[f.name];if(!F){delete plan.words[f.key];return}const [o,y,sc,far]=F;pick(o,f.key,far);targets.push([f.key,o,y,sc])});
   /* làm đầy */
   if(T.decor)T.decor(C);
-  if(T.path!=="road"&&!["indoor","onsen"].includes(T.key))C.tufts(T.key==="beach"?260:800,T.key==="beach"?"#7fae5a":"#5f9f4e");
+  if(T.path!=="road"&&!T.noTufts&&!["indoor","onsen"].includes(T.key))C.tufts(T.key==="beach"?260:800,T.key==="beach"?"#7fae5a":"#5f9f4e");
   if(T.key!=="indoor"){const cl=[];for(let k=0;k<6;k++){const c=kasumi3();c.position.set((rng()-.5)*120,30+rng()*10,-40-rng()*50);c.scale.setScalar(1.2+rng()*.8);c.userData.isCloud=true;if(T.night)c.visible=false;scene.add(c);cl.push(c)}
     const bd=[];if(!T.night)for(let k=0;k<5;k++){const b=bird3();scene.add(b);bd.push(b)}
     ticks.push(dt=>{cl.forEach((c,i)=>{c.position.x+=dt*(.6+i*.1);if(c.position.x>70)c.position.x=-70});const t=performance.now()/1000;bd.forEach((b,i)=>{const a=t*.25+i*1.3;b.position.set(Math.cos(a)*(18+i*2),18+i,Math.sin(a)*(14+i));b.rotation.y=-a;b.children.forEach((w,j)=>w.rotation.z=(j?1:-1)*(.35+Math.sin(t*9+i)*.4))})})}
