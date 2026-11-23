@@ -2811,7 +2811,7 @@ function romaWord(w){
   const k=hira(w);let out="",i=0;
   while(i<k.length){
     const c=k[i],n=k[i+1];
-    if(c==="っ"){const nx=RO[n]||"";out+=nx.startsWith("ch")?"t":(nx[0]||"");i++;continue}
+    if(c==="っ"){const nx=RO[n]||"";out+=nx?(nx.startsWith("ch")?"t":nx[0]):"!";i++;continue}
     if(c==="ー"){const v=out.match(/[aiueo](?=[^aiueo]*$)/);out+=v?v[0]:"-";i++;continue}
     if(c==="ん"){out+=/^[aiueoy]/.test(RO[n]||"")?"n'":"n";i++;continue}
     let r=RO[c];
@@ -2826,7 +2826,7 @@ function romaWord(w){
 const RTAIL=["さん","から","まで","です","でした","じゃ","は","へ","を","の","も","と","で","に","が","か","ね","よ"];
 function romaChunk(core){
   const parts=[];let c=core,guard=0;
-  while(guard++<4&&!c.endsWith("\u0002")){const t=RTAIL.find(x=>c.endsWith(x)&&c.replace(/[\u0001\u0002]/g,"").length-x.length>=2);if(!t)break;parts.unshift(t);c=c.slice(0,-t.length)}
+  while(guard++<4&&!c.endsWith("\u0002")){const t=RTAIL.find(x=>c.endsWith(x)&&c.replace(/[\u0001\u0002]/g,"").length-x.length>=2&&!/[っッ]$/.test(c.slice(0,-x.length)));if(!t)break;parts.unshift(t);c=c.slice(0,-t.length)}
   return [romaWord(c.replace(/[\u0001\u0002]/g,"")),...parts.map(x=>x==="は"?"wa":x==="へ"?"e":x==="さん"?"-san":romaWord(x))].join(" ").replace(/ -san/g,"-san");
 }
 function roma(t){
@@ -2856,7 +2856,7 @@ function sayMsg(m){toast(m,5500)}
 function say(text,btn){
   const ss=window.speechSynthesis;
   if(!ss||!window.SpeechSynthesisUtterance){sayMsg("Trình duyệt này không hỗ trợ giọng đọc. Thử mở bằng Safari hoặc Chrome nhé");return}
-  const t=spOf(text).replace(/[\/／]/g,"、").replace(/^(.*?)\s*[\[［]([\u3040-\u30ff\u4e00-\u9fff〜～~・ 　ー]+)[\]］]\s*$/,(m0,h,b)=>/[〜～~]/.test(b)&&h.trim()?b.replace(/[〜～~]/,h.trim()):h.trim()+b).replace(/\s*[\[［(（]([^\]］)）]*)[\]］)）]/g,(m0,x)=>/^[\u3040-\u30ff\u4e00-\u9fff・ 　ー〜～~]+$/.test(x.trim())?"、"+x.trim():"").replace(/[～~〜]/g,"").trim();if(!t)return;
+  const t=spOf(text).replace(/[っッ](?=$|[、。！？!?\s」])/g,"！").replace(/[\/／]/g,"、").replace(/^(.*?)\s*[\[［]([\u3040-\u30ff\u4e00-\u9fff〜～~・ 　ー]+)[\]］]\s*$/,(m0,h,b)=>/[〜～~]/.test(b)&&h.trim()?b.replace(/[〜～~]/,h.trim()):h.trim()+b).replace(/\s*[\[［(（]([^\]］)）]*)[\]］)）]/g,(m0,x)=>/^[\u3040-\u30ff\u4e00-\u9fff・ 　ー〜～~]+$/.test(x.trim())?"、"+x.trim():"").replace(/[～~〜]/g,"").trim();if(!t)return;
   if(LP)lpStop();
   if(sayBtn)sayBtn.classList.remove("on");
   if(!jaVoice)pickVoice();
@@ -2882,7 +2882,7 @@ function pickVi(){const v=voicesOf(/^vi/i);viVoice=v.find(x=>x.name===VS.vi)||v.
 try{pickVi();speechSynthesis.addEventListener("voiceschanged",pickVi)}catch(e){}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 function speakP(text,lang,rate){return new Promise(res=>{
-  const t=spOf(text).replace(/[\/／]/g,"、").replace(/^(.*?)\s*[\[［]([\u3040-\u30ff\u4e00-\u9fff〜～~・ 　ー]+)[\]］]\s*$/,(m0,h,b)=>/[〜～~]/.test(b)&&h.trim()?b.replace(/[〜～~]/,h.trim()):h.trim()+b).replace(/\s*[\[［(（]([^\]］)）]*)[\]］)）]/g,(m0,x)=>/^[\u3040-\u30ff\u4e00-\u9fff・ 　ー〜～~]+$/.test(x.trim())?"、"+x.trim():"").replace(/[～~〜]/g,"").trim();if(!t)return res(true);
+  const t=spOf(text).replace(/[っッ](?=$|[、。！？!?\s」])/g,"！").replace(/[\/／]/g,"、").replace(/^(.*?)\s*[\[［]([\u3040-\u30ff\u4e00-\u9fff〜～~・ 　ー]+)[\]］]\s*$/,(m0,h,b)=>/[〜～~]/.test(b)&&h.trim()?b.replace(/[〜～~]/,h.trim()):h.trim()+b).replace(/\s*[\[［(（]([^\]］)）]*)[\]］)）]/g,(m0,x)=>/^[\u3040-\u30ff\u4e00-\u9fff・ 　ー〜～~]+$/.test(x.trim())?"、"+x.trim():"").replace(/[～~〜]/g,"").trim();if(!t)return res(true);
   const ja=/^ja/.test(lang);if(!ja&&!viVoice){if(!viVoice)pickVi();if(!viVoice)return res("skip")}
   const u=new SpeechSynthesisUtterance(t);curU=u;u.lang=lang;u.rate=rate;u.volume=1;u.pitch=ja?VS.pitch:1;
   const v=/^ja/.test(lang)?jaVoice:viVoice;try{if(v)u.voice=v}catch(e){}
