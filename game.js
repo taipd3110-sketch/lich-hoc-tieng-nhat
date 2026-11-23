@@ -364,7 +364,7 @@ const makePlayer=av=>{const p=av.model!==false&&TAI_GLB?makeTai():makeChar(av);p
    Dữ liệu © OpenStreetMap contributors (ODbL), tải sẵn vào scenes/osm-N.json
    ===================================================================== */
 let OD_K=0;const OSM_K=.3,OSM_V="1",FUJI=[35.3606,138.7274];
-const LMAPS=new Set([1,2,3,4,5]),LCFG={12:{water:"-z"},13:{water:"-z"}};
+const LMAPS=new Set([]),LCFG={12:{water:"-z"},13:{water:"-z"}};
 /* cấu hình ghép bản đồ với phần địa danh làm tay: off = vị trí (trong cảnh) đặt tâm bản đồ; rot = xoay;
    view = toạ độ cần nằm phía trước (-z); water = hướng từ tâm tới mặt nước gần nhất ("-z" hoặc "+z"); clear = bán kính dọn nhà thật quanh địa danh */
 const REAL={0:{k:.6,off:[0,-46],rot:-90,clear:0,clearRect:[[-13,13,-58,38]]},1:{k:.6,off:[0,-20],rot:0,clear:7,roof:"gassho",clearRect:[[-6,6,-14,16]]},2:{k:.6,off:[-6,-16],view:FUJI,clear:10,poi:/忠霊塔/,clearRect:[[-16,10,-28,16]]},3:{k:.6,off:[0,-22],rot:0,clear:15,poi:/^姫路城$/,clearRect:[[-15,15,-38,-6]]},
@@ -635,7 +635,7 @@ export async function start(root,n,api){
   $("g3Zin").onclick=()=>dist=Math.max(DMIN(),dist/1.3);$("g3Zout").onclick=()=>dist=Math.min(DMAX(),dist*1.3);
   const setPano=on=>{if(on===pano)return;pano=on;const b=$("g3Pano");b.setAttribute("aria-pressed",String(on));b.classList.toggle("on",on);
     if(on){panoSave={dist,pitch};dist=LD?190:80;pitch=.95;if(scene.fog)scene.fog.far*=2.2;try{hintOff()}catch(e){}}else{if(panoSave){dist=panoSave.dist;pitch=panoSave.pitch}if(scene.fog)scene.fog.far/=2.2}
-    scene.children.forEach(o=>{if(o.userData.isCloud)o.visible=!on})};
+    scene.children.forEach(o=>{if(o.userData.isCloud)o.visible=!on;else if(!LD&&!o.isLight&&!o.isCamera&&(Math.abs(o.position.x)>CORE+4||Math.abs(o.position.z)>CORE+4)){if(on){o.userData.pv=o.visible;o.visible=false}else if(o.userData.pv!==undefined){o.visible=o.userData.pv;delete o.userData.pv}}})};
   $("g3Pano").onclick=()=>setPano(!pano);
   /* di chuyển */
   let target=null,goal=null,panelOpen=false;const keys=new Set();

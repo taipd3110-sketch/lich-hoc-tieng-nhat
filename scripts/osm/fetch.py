@@ -22,13 +22,7 @@ SC = [
  (12, "大通公園", 43.06000, 141.35000),
 ]
 # địa điểm thật cho minigame từng bài (thêm dần 5 bài mỗi đợt)
-LS = [
- ("L1", "東京大学 本郷キャンパス", 35.71277, 139.76200),
- ("L2", "戸越銀座商店街", 35.61560, 139.71540),
- ("L3", "丸の内ビルディング", 35.68130, 139.76390),
- ("L4", "吉祥寺駅", 35.70330, 139.57970),
- ("L5", "京都駅", 34.98580, 135.75880),
-]
+LS = []  # minigame bài học không dùng bản đồ thật (chỉ hiện khu bài học)
 EP = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
 UA = {"User-Agent": "lich-hoc-tieng-nhat/1.0 (study site; github.com/taipd3110-sketch)"}
 
