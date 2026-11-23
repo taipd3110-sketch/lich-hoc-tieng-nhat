@@ -3576,7 +3576,7 @@ function bnInd(){const nav=document.querySelector(".botnav"),on=nav&&nav.querySe
   const i=on.querySelector(".bn-i");i.classList.remove("pop");void i.offsetWidth;i.classList.add("pop")}
 addEventListener("resize",()=>{try{bnInd()}catch(e){}});
 const G3_TH={1:["はじめまして通り","Đi dạo khu phố Nhật, làm quen 7 người và tìm 22 từ mới của bài"],2:["にぎわい商店街","Phố mua sắm"],3:["さくらビル","Bên trong tòa nhà"],4:["さくら町","Phố Sakura"],5:["さくら駅前","Quảng trường trước ga"],6:["お花見まつり","Lễ hội ngắm hoa"],7:["ひだまり住宅街","Khu nhà ở"],8:["桜の丘","Đồi hoa anh đào"],9:["夜の繁華街","Phố đêm"],10:["どうぶつ公園","Công viên sở thú"],11:["ゆうびん通り","Phố bưu điện"],12:["青空ビーチ","Bãi biển"],13:["森と川","Rừng và suối"],14:["まちかど通り","Góc phố chỉ đường"],15:["ショッピング通り","Phố mua sắm"],16:["稲荷の杜","Khu đền thần"],17:["雪の温泉郷","Làng suối nước nóng"],18:["ひろびろ牧場","Nông trại"],19:["富士山の登山道","Đường lên núi Phú Sĩ"],20:["京の夕暮れ","Phố cổ Kyoto"],21:["アキバの夜","Akiba về đêm"],22:["アパート通り","Phố chung cư"],23:["運河の町","Phố bên kênh"],24:["ふるさとの村","Làng quê"],25:["夕焼けの村","Làng quê chiều tà"]};
-const GAME_N=[1,...Array.from({length:24},(_,i)=>i+2).filter(n=>LS_DATA[n])], GAME_V="28";
+const GAME_N=[1,...Array.from({length:24},(_,i)=>i+2).filter(n=>LS_DATA[n])], GAME_V="29";
 /* dữ liệu bài học đưa sang minigame (bài 2 trở đi tự dựng môi trường theo chủ đề) */
 function g3Lesson(n){const D=LS_DATA[n];if(!D)return null;const defs=LS_GROUPS[n]||[],used=new Set(),words=[];
   for(const [name,ws] of defs)for(const w of ws){const x=D.v.find(y=>y[0]===w&&!used.has(y));if(x){used.add(x);words.push({jp:x[0],kana:x[1],vi:x[2],g:name})}}

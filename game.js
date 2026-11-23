@@ -636,7 +636,7 @@ export async function start(root,n,api){
   $("g3Zin").onclick=()=>dist=Math.max(DMIN(),dist/1.3);$("g3Zout").onclick=()=>dist=Math.min(DMAX(),dist*1.3);
   const setPano=on=>{if(on===pano)return;pano=on;const b=$("g3Pano");b.setAttribute("aria-pressed",String(on));b.classList.toggle("on",on);
     if(on){panoSave={dist,pitch};dist=LD?190:80;pitch=.95;if(scene.fog)scene.fog.far*=2.2;try{hintOff()}catch(e){}}else{if(panoSave){dist=panoSave.dist;pitch=panoSave.pitch}if(scene.fog)scene.fog.far/=2.2}
-    scene.children.forEach(o=>{if(o.userData.isCloud)o.visible=!on;else if(!LD&&!o.isLight&&!o.isCamera&&!(o.isMesh&&o.geometry&&o.geometry.type==="PlaneGeometry")&&(Math.abs(o.position.x)>CORE+4||Math.abs(o.position.z)>CORE+4)){if(on){o.userData.pv=o.visible;o.visible=false}else if(o.userData.pv!==undefined){o.visible=o.userData.pv;delete o.userData.pv}}})};
+    scene.children.forEach(o=>{if(o.userData.isCloud)o.visible=!on;else if(!LD&&!o.isLight&&!o.isCamera&&!(o.isMesh&&o.geometry&&o.geometry.type==="PlaneGeometry")&&!(o.userData.hp??(o.userData.hp=(()=>{let f=!!o.userData.billboard;o.traverse(c=>{if(c.userData&&c.userData.pick)f=true});return f})()))&&(Math.abs(o.position.x)>CORE+4||Math.abs(o.position.z)>CORE+4)){if(on){o.userData.pv=o.visible;o.visible=false}else if(o.userData.pv!==undefined){o.visible=o.userData.pv;delete o.userData.pv}}})};
   $("g3Pano").onclick=()=>setPano(!pano);
   /* di chuyển */
   let target=null,goal=null,panelOpen=false;const keys=new Set();
@@ -1816,7 +1816,9 @@ const TH={
   layout(C){const s=shrine3(1.9);C.add(s,0,-29);C.sol(0,-29,11.4,8.6);const sg=sign("稲荷神社","Đền Inari",{w:3,h:.9,border:"#d24a36"});sg.position.set(0,1.9,.06);const sgp=new THREE.Group();sgp.add(sg);[-1.3,1.3].forEach(x=>sgp.add(cyl(.06,.06,2.3,"#6b4433",x,1.15,0,6)));sgp.position.set(5,0,-22.6);C.scene.add(sgp);C.sol(5,-22.6,3,.3);C.feat("神社",s,.6,1.6);
    [-18,-10,24].forEach((z,i)=>{const t=torii3("#d8432f",i===2?1.6:1.3);C.add(t,0,z);const px=1.5*(i===2?1.6:1.3);C.sol(-px,z,.5,.5);C.sol(px,z,.5,.5)});
    const tm=temple3(1.3);C.add(tm,-24,-26);C.sol(-24,-26,9.6,6.6);const pg=pagoda3(1.1);C.add(pg,-33,-31);C.sol(-33,-31,4,4);const ts=sign("お寺","Chùa",{w:2,h:.8,border:"#5a3a2a"});ts.position.set(0,1.6,3.6);const tsg=new THREE.Group();tsg.add(ts);tsg.add(cyl(.05,.05,1.6,"#6b4433",0,.8,3.55,6));tsg.position.set(-24,0,-26);C.scene.add(tsg);C.feat("お寺",tm,.6,1.5);
-   [-1.6,1.6].forEach(x=>{C.add(kitsune3(),x*2,-22.6,0);C.sol(x*2,-22.6,.7,.7)})},
+   [-1.6,1.6].forEach(x=>{C.add(kitsune3(),x*2,-22.6,0);C.sol(x*2,-22.6,.7,.7)});
+   /* 千本鳥居: hàng cổng torii đỏ san sát phủ kín lối đá phía đông */
+   {const H=(C.T.pw||6)/2,sc=(H+.45)/1.5,row=new THREE.Group();let k=0;for(let x=12;x<=35;x+=1.8){const t=torii3(k++%2?"#e0452f":"#d23b28",1);t.scale.set(sc,1.25,1.1);t.position.set(x,0,0);t.rotation.y=Math.PI/2;row.add(t);C.sol(x,-(H+.45),.45,.45);C.sol(x,H+.45,.45,.45)}C.scene.add(row)}},
   decor(C){for(let z=-20;z<=30;z+=5){if(Math.abs(z)<7)continue;[-4.2,4.2].forEach(x=>{if(C.free(x,z,.2,.9,.9)){C.add(ishidoro3(),x,z);C.sol(x,z,.9,.9)}})}
    const pond=water3(7,5,"#6fb8d8");pond.position.set(26,.07,-26);C.scene.add(pond);C.sol(26,-26,7,5);C.scatter(()=>tree3(C.rng()<.5?"momiji":"green",1+C.rng()*.4),28,[-37,37,-37,37],.8,.9,true);C.ring(["green","momiji","pine"],48);
    C.scatter(()=>bambooFence(5),5,[-34,34,-34,34],.3,0);C.scatter(()=>zenGarden(6,4),1,[-34,34,8,34],.6,6.2,false,[6,4])}},
@@ -1840,7 +1842,9 @@ const TH={
    const p2=fenceRect(20,12,"#c9a27a");C.add(p2,-20,23);C.sol(-20,17,20,.4);C.sol(-20,29,20,.4);C.sol(-30,23,.4,12);C.sol(-10,23,.4,12);const an=[];[[1,-26,22],[7,-21,25],[9,-15,21],[11,-18,26],[7,-24,19]].forEach(([i,x,z])=>{const a=zodiac3(i);a.scale.setScalar(1.2);a.position.set(x,0,z);a.rotation.y=C.rng()*6;C.scene.add(a);an.push(a)});
    const as=sign("動物","Động vật",{w:2,h:.8,border:"#8a5a44"});as.position.set(-20,1.6,16.7);as.rotation.y=Math.PI;C.scene.add(as);C.feat("動物",an[0],.5,1.3);C.ticks.push(dt=>an.forEach((a,k)=>animZ(a,dt,k%2?"peck":"graze",false)));
    const b=barn3();C.add(b,30,-31);C.sol(30,-31,7.4,6.4);const wm=windmill(C.ticks);C.add(wm,-33,-34);C.sol(-33,-34,2.4,2.4)},
-  decor(C){C.scatter(()=>hay3(),10,[-36,36,-36,36],.5,1.4);C.scatter(()=>tree3("green",1+C.rng()*.4),16,[-37,37,-37,37],.8,.9,true);C.ring(["green"],40);C.hills("#9fd38f",12);C.scatter(()=>paddy(8,6,"#8fcf6f"),3,[6,36,6,36],.6,8,false,[8,6]);C.scatter(()=>scarecrow(),2,[-34,34,-34,34],.4,.5)}},
+  decor(C){C.scatter(()=>hay3(),10,[-36,36,-36,36],.5,1.4);C.scatter(()=>tree3("green",1+C.rng()*.4),16,[-37,37,-37,37],.8,.9,true);C.ring(["green"],40);C.hills("#9fd38f",12);C.scatter(()=>paddy(8,6,"#8fcf6f"),3,[6,36,6,36],.6,8,false,[8,6]);
+   /* luống rau: đất nâu, hàng cây xanh, vài quả bí/cà chua */C.scatter(()=>{const g=new THREE.Group();g.add(plane(7,5,"#8a6a44",0,0,.03));for(let r=-2;r<=2;r++){g.add(box(6.4,.18,.42,"#6f5434",0,.1,r*.95));for(let c=-3;c<=3;c++)g.add(sph(.24+((r+c)&1)*.06,(r+c)%3?"#4f9f50":"#6dbb5a",c*.95,.3,r*.95,6,5))}[[2.6,1.9,"#f08a2b"],[-2.4,-1.9,"#e5484d"]].forEach(([x,z,c])=>g.add(sph(.22,c,x,.25,z,8,6)));return g},6,[-36,36,-36,36],.6,0,false,[7.4,5.4]);
+   C.scatter(()=>scarecrow(),3,[-34,34,-34,34],.4,.5)}},
  mountain:{jp:"富士山の登山道",vn:"Đường lên núi Phú Sĩ",path:"dirt",ground:"#8fbf7a",feats:["山","相撲"],q:[0,1,2],sky:["#3f78c8","#a3cdf0","#eaf4ff"],
   layout(C){const f=fuji3(0,-120,80,72);C.scene.add(f);C.feat("山",f,2,8,1);const d=dohyo();C.add(d,22,25);C.sol(22,25,6.4,6.4);const ds=sign("相撲","Đấu vật Sumo",{w:2.2,h:.8,border:"#3a3f5c"});ds.position.set(0,1.6,-3.6);ds.rotation.y=Math.PI;const g=new THREE.Group();g.add(ds);g.add(cyl(.05,.05,1.6,"#6b4433",0,.8,-3.55,6));g.position.set(22,0,25);C.scene.add(g);C.feat("相撲",d,.5,1.4);
    const rk=rock3(3,"#8f897e");rk.position.set(30,.6,-31);C.scene.add(rk);C.sol(30,-31,7,4);const tt=torii3("#d8432f",.6);tt.position.set(30,1.6,-31);C.scene.add(tt)},
