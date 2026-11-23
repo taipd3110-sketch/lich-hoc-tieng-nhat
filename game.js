@@ -818,7 +818,7 @@ function tvtower3(){const g=new THREE.Group(),C="#e2552d",up=new THREE.Vector3(0
   g.add(outline(cyl(.5,1.1,7,C,0,25.8,0,4)));g.add(cyl(.12,.2,4,"#d9dde3",0,31,0,6));return g}
 /* ranh giới khu bài học: hàng rào/tường thấp quanh mép, cọc chắn ở đầu đường; nền ngoài sẫm hơn để tách khỏi khu chơi */
 function lessonBorder(scene,T){if(T&&T.indoor)return;const kind=!T||T.path==="road"||T.path==="stone"||T.key==="station"?"urban":T.path==="snow"?"snow":T.key==="beach"?"fence":"hedge";
-  scene.children.slice().forEach(o=>{if(o.isMesh&&o.userData.ground&&o.geometry.type==="PlaneGeometry"&&o.geometry.parameters.width>=140){const c=o.material.color.clone();const inner=new THREE.Mesh(new THREE.PlaneGeometry(80,80),M("#"+c.getHexString()));inner.rotation.x=-Math.PI/2;inner.position.y=.006;inner.receiveShadow=true;inner.userData.ground=true;scene.add(inner);o.material=o.material.clone();o.material.color.offsetHSL(0,-.15,-.12)}});
+  scene.children.slice().forEach(o=>{if(o.isMesh&&o.userData.ground&&o.geometry.type==="PlaneGeometry"&&o.geometry.parameters.width>=140&&o.geometry.parameters.height>=140){const c=o.material.color.clone();const inner=new THREE.Mesh(new THREE.PlaneGeometry(80,80),M("#"+c.getHexString()));inner.rotation.x=-Math.PI/2;inner.position.y=.006;inner.receiveShadow=true;inner.userData.ground=true;scene.add(inner);o.material=o.material.clone();o.material.color.offsetHSL(0,-.15,-.12)}});
   scene.updateMatrixWorld(true);const WB=[];scene.traverse(o=>{if(o.userData&&o.userData.water){const b=new THREE.Box3().setFromObject(o);if(!b.isEmpty())WB.push(b)}});
   const wet=(x,z)=>WB.some(b=>x>b.min.x-.6&&x<b.max.x+.6&&z>b.min.z-.6&&z<b.max.z+.6),sideWet=(alongX,f)=>[-30,-15,0,15,30].filter(v=>alongX?wet(v,f):wet(f,v)).length>=3;
   const E=39.6,G=5.2,g=new THREE.Group();const seg=(a0,b0,fix,alongX)=>{const n=Math.max(1,Math.round((b0-a0)/4));for(let i=0;i<n;i++){const a=a0+(b0-a0)*i/n,b=a0+(b0-a0)*(i+1)/n,mm=(a+b)/2;if(alongX?wet(mm,fix):wet(fix,mm))continue;seg1(a,b,fix,alongX)}};
@@ -1684,7 +1684,10 @@ function room3(kind,label,sub){const g=new THREE.Group(),W=13,D=9,H=2.4,wc="#efe
   return {g,w:W,d:D,walls:[[0,-D/2,W,.4],[-W/2,0,.4,D],[W/2,0,.4,D],[-(W/4+.8),D/2,W/2-1.6,.4],[W/4+.8,D/2,W/2-1.6,.4]]}}
 
 const TH={
- town:{jp:"さくら町",vn:"Phố Sakura",path:"road",traffic:1,layout(C){enrichCity(C.scene,C.solids,C.ticks,C.rng)},decor(){}},
+ town:{jp:"さくら町",vn:"Phố Sakura",path:"road",traffic:1,layout(C){enrichCity(C.scene,C.solids,C.ticks,C.rng)},
+  decor(C){/* lấp các lô trống: nhà ở có tường rào, cây, bãi đỗ xe nhỏ, máy bán nước */C.houses(9,1);C.scatter(()=>tree3(["green","sakura","green"][(C.rng()*3)|0],.9+C.rng()*.4),14,[-37,37,-37,37],.6,.9,true);
+   C.scatter(()=>{const g=new THREE.Group();g.add(plane(6,4.6,"#6b6f7a",0,0,.19));for(let i=-1;i<=1;i++)g.add(plane(.12,4,"#f4f1e8",i*2,0,.2));const car=P3.car?P3.car(["#e5484d","#3d6fd6","#f5f5f5"][(C.rng()*3)|0]):null;if(car){car.scale.setScalar(.8);car.position.set(-1,.2,0);g.add(car)}return g},3,[-36,36,-36,36],.4,0,false,[6,4.6]);
+   C.scatter(()=>vending(0,0,["#e5484d","#3d6fd6","#2f9e64"][(C.rng()*3)|0]),3,[-36,36,-36,36],.5,1);C.scatter(()=>bicycle(["#3d6fd6","#e5484d"][(C.rng()*2)|0]),4,[-36,36,-36,36],.4,0)}},
  canal:{jp:"運河の町",vn:"Phố bên kênh",path:"road",traffic:1,feats:["橋","道","交差点","信号","角","駐車場","建物"],
   layout(C){const W=C.water(6,160,32,0,"#5fa9d6");C.sol(32,-21,6.4,34);C.sol(32,21,6.4,34);const b=bridge3(9,8,"#9aa3ae",.25);C.add(b,32,0);C.feat("橋",b,.8,1.4);
    const b2=bridge3(8,2.4,"#c23b2a",.9);b2.rotation.y=0;C.add(b2,32,-26);C.feat("道",C.anchor(-22,1.2,0),0,1.2);C.feat("交差点",C.anchor(-2.5,1.4,-5.6),0,1.2);
