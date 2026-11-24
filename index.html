@@ -1558,6 +1558,7 @@ body.sceneview #bokashi{opacity:1}
 .ln-vsub b{font-family:var(--f-jp);font-size:clamp(.9rem,2.8vw,1.15rem);font-weight:700;letter-spacing:.02em}.ln-vsub small{font-size:.78rem;color:#e7dff2}
 .ln-vsp{font-size:.66rem;font-weight:800;color:#ffd37a;letter-spacing:.08em}
 @media(max-width:560px){.ln-vsub{padding:3px 9px 4px;bottom:4px}.ln-vsub b{font-size:.86rem}.ln-vsub small{font-size:.68rem}.ln-vsp{display:none}}
+.ln-warn{background:#fff4e5;border:1.5px solid #f3b35b;color:#6b4300;border-radius:14px;padding:12px 14px;margin:0 0 14px;display:grid;gap:10px;font-size:.9rem;line-height:1.5}.ln-warn .btn{justify-self:start}
 .ln-vseekrow{display:flex;align-items:center;gap:8px;padding:8px 10px 0;background:#fff}
 .ln-vseek{flex:1;min-width:0;accent-color:#e0565b;height:28px;cursor:pointer}
 .ln-vback{min-height:36px;min-width:44px;border:1.5px solid #d9cfe6;background:#fff;border-radius:999px;font-weight:700;font-size:.8rem;color:#4b3f63;cursor:pointer}
@@ -3489,7 +3490,7 @@ async function lnImport(files){
       if(k){const key="a:"+k+":"+tk;if(byDir)dirKeys.add(key);else if(dirKeys.has(key)||loose.has(key))continue;else loose.add(key);put.push([key,f]);na++}}
     else if(/\.(webp|png|jpe?g|gif)$/i.test(f.name)){put.push(["i:"+p.split("/").slice(-2).join("/").toLowerCase(),f]);put.push(["i:"+f.name.toLowerCase(),f]);ni++}}
   say_(`Đang lưu ${na} tệp âm thanh${ni?`, ${ni} ảnh`:""}…`);
-  try{put.push(["data",data]);await lnPutMany(put)}catch(e){say_("Trình duyệt không cho lưu dữ liệu (có thể đang ở chế độ ẩn danh hoặc hết dung lượng).");return}
+  try{put.push(["data",data]);if(na)put.push(["impv",2]);await lnPutMany(put)}catch(e){say_("Trình duyệt không cho lưu dữ liệu (có thể đang ở chế độ ẩn danh hoặc hết dung lượng).");return}
   LN.data=data;Object.values(LN.url).forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});LN.url={};
   toast(`Đã nạp luyện nghe: ${Object.keys(data).length} bài, ${na} tệp âm thanh 🎧`);lnRender(lsN);
 }
@@ -3645,6 +3646,8 @@ async function lnRender(n){
         <details class="ln-scr"${it.is_example?" open":""}><summary>Script &amp; dịch</summary>${(it.script||[]).map(l=>`<div class="ln-l"><button class="lnp sm" type="button" data-tk="${esc(it.track||s.track)}" data-t="${esc(l.t||"")}" aria-label="Nghe câu này">${lnPlayIc()}</button><span class="ln-sp">${esc(l.speaker||"")}</span><div><p lang="ja">${esc(l.ja||"")}</p>${l.ja_kana&&l.ja_kana!==l.ja?`<small lang="ja">${esc(l.ja_kana)}</small>`:""}<span>${esc(l.vi||"")}</span></div></div>`).join("")}${it.explanation?`<p class="ln-exp">${esc(it.explanation)}</p>`:""}</details></div>`}
     h+=`</div></section>`}
   h+=imp(0)+`<p class="ln-src">Âm thanh &amp; lời thoại: Minna no Nihongo – 聴解タスク25 (3A Corporation); bản dịch theo dữ liệu bạn nạp. Chỉ lưu trên máy này.</p>`;
+  let iv=0;try{iv=await lnGet("impv")}catch(e){}
+  if(iv!==2)h=`<div class="ln-warn" role="alert"><b>⚠️ Cần nạp lại âm thanh một lần.</b> Bản trước có lỗi gắn nhầm tiếng giữa các bài có tên tệp trùng nhau (vd bài 2 phát tiếng bài 27), nên tiếng và phụ đề có thể không khớp. Bấm nút dưới đây và chọn lại thư mục <b>Minna no nihongo</b>.<div><button type="button" class="btn blue" onclick="document.getElementById('lnDir').click()">📁 Nạp lại thư mục</button></div></div>`+h;
   el.dataset.n=n;el.innerHTML=h;lnBind();el.querySelectorAll(".ln-stage").forEach(st=>lnStageSet(st,LN_PAL,0));el.querySelectorAll(".ln-vid").forEach(v=>v.addEventListener("error",()=>v.closest(".ln-vstage").classList.add("miss")));
   el.querySelectorAll(".ln-img img").forEach(async im=>{const u=await lnBlobUrl("i:"+im.dataset.ik)||await lnBlobUrl("i:"+im.dataset.ik.split("/").pop());im.src=u||im.dataset.src;im.onerror=()=>{im.closest(".ln-img").classList.add("miss")}});
 }
