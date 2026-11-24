@@ -58,5 +58,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+      - name: Chờ GitHub ghi nhận gói trang
+        run: sleep 25
       - id: deployment
         uses: actions/deploy-pages@v4
