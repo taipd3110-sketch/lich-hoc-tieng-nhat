@@ -3563,7 +3563,7 @@ function lnPerson(id,x,flip){return `<g id="${id}" class="lnc" transform="transl
    <ellipse cx="-17" cy="78" rx="5" ry="3" fill="#ff8fab" opacity=".45"/><ellipse cx="17" cy="78" rx="5" ry="3" fill="#ff8fab" opacity=".45"/>
    <ellipse class="lnc-mouth" cx="0" cy="83" rx="5" ry="1.6" fill="#a0303f"/></g></g></g>`}
 function lnStageHTML(n,s){
-  {const C=(LN.clips||{})[n]||{},cl=s.items.filter(i=>C[i.id]),it=cl.find(i=>i.is_example)||cl[0];if(it){const b=lnClipBase(n,it.id),q="?v="+C[it.id];return `<div class="ln-stage ln-vstage" data-sec="${esc(s.id)}" data-item="${esc(it.id)}" data-t="${esc(it.t||"")}">
+  {const C=(LN.clips||{})[n]||{},cl=s.items.filter(i=>C[i.id]),it=cl.find(i=>i.is_example)||cl[0];if(it){const b=lnClipBase(n,it.id),q="?v="+C[it.id];return `<div class="ln-stage ln-vstage" data-n="${+n}" data-sec="${esc(s.id)}" data-item="${esc(it.id)}" data-t="${esc(it.t||"")}">
    <div class="ln-vbox"><video class="ln-vid" muted playsinline preload="metadata" poster="${esc(b+".jpg"+q)}" src="${esc(b+".mp4"+q)}" aria-label="Clip hoạt hình minh hoạ câu đang nghe"></video>
    <div class="ln-vsub" hidden aria-live="polite"><span class="ln-vsp"></span><b lang="ja"></b><small></small></div><span class="ln-vtag">${it.is_example?"例 Ví dụ":"Câu "+esc(String(it.label).replace(/[)）.]$/,""))}</span></div>
    <div class="ln-vseekrow"><button class="ln-vback" type="button" title="Lùi 3 giây" aria-label="Lùi 3 giây">↺3s</button><input class="ln-vseek" type="range" min="0" max="1000" value="0" step="1" aria-label="Tua clip"><span class="ln-vtime">${(()=>{const[x,y]=String(it.t).split(",").map(Number);return "0:00 / "+lnFmt(y-x)})()}</span></div>
@@ -3586,8 +3586,8 @@ function lnFmt(x){x=Math.max(0,x);return Math.floor(x/60)+":"+String(Math.floor(
 function lnSeekShow(st,f,len){f=Math.max(0,Math.min(1,f));const r=st.querySelector(".ln-vseek");if(r&&!r._drag)r.value=Math.round(f*1000);const tm=st.querySelector(".ln-vtime");if(tm)tm.textContent=lnFmt(f*len)+" / "+lnFmt(len);st._f=f}
 function lnSeekTo(st,f,play){const [a,b]=String(st.dataset.t).split(",").map(Number);if(!(b>a))return;f=Math.max(0,Math.min(.999,f));const v=st.querySelector(".ln-vid");if(v.duration>0){v.pause();v.currentTime=Math.min(v.duration-.06,f*v.duration)}lnSeekShow(st,f,b-a);
   const playing=LN.au&&!LN.au.paused&&LN.stage===st;if(playing){LN.au.currentTime=a+f*(b-a);LN.stopAt=b+.25;return}
-  if(play){const pb=st.querySelector(".ln-vplay");if(LN.btn===pb)lnStop();lnPlay(pb,String(lsN),pb.dataset.tk,(a+f*(b-a)).toFixed(2)+","+b)}}
-function lnVidTick(st,au,s){const C=(LN.clips||{})[lsN]||{},t0=au.currentTime,cur=s.items.find(i=>{if(!C[i.id])return false;const[x,y]=String(i.t).split(",").map(Number);return t0>=x-.3&&t0<=y+.3});if(cur&&cur.id!==st.dataset.item)lnVidSet(st,lsN,cur);const v=st.querySelector(".ln-vid"),sub=st.querySelector(".ln-vsub");const [a,b]=String(st.dataset.t).split(",").map(Number);
+  if(play){const pb=st.querySelector(".ln-vplay");if(LN.btn===pb)lnStop();lnPlay(pb,String(+st.dataset.n||lsN),pb.dataset.tk,(a+f*(b-a)).toFixed(2)+","+b)}}
+function lnVidTick(st,au,s){const n=+st.dataset.n||lsN,C=(LN.clips||{})[n]||{},t0=au.currentTime,cur=s.items.find(i=>{if(!C[i.id])return false;const[x,y]=String(i.t).split(",").map(Number);return t0>=x-.3&&t0<=y+.3});if(cur&&cur.id!==st.dataset.item)lnVidSet(st,n,cur);const v=st.querySelector(".ln-vid"),sub=st.querySelector(".ln-vsub");const [a,b]=String(st.dataset.t).split(",").map(Number);
   const t=au.currentTime,D=v.duration,inSeg=!au.paused&&t>=a-.05&&t<=b+.3&&D>0;
   if(inSeg){const vt=Math.min(D-.06,Math.max(0,(t-a)/(b-a)*D)),dr=vt-v.currentTime;
     if(vt>=D-.07){if(!v.paused)v.pause();if(Math.abs(dr)>.05)v.currentTime=vt}  /* hết clip: giữ khung cuối, không phát lại từ đầu */
@@ -3595,10 +3595,10 @@ function lnVidTick(st,au,s){const C=(LN.clips||{})[lsN]||{},t0=au.currentTime,cu
   else if(!v.paused)v.pause();
   if(t>=a-.05&&t<=b+.3)lnSeekShow(st,(t-a)/(b-a),b-a);
   const it=s.items.find(i=>i.id===st.dataset.item);let line=null;if(inSeg&&it)(it.script||[]).forEach(l=>{const [x,y]=String(l.t||"").split(",").map(Number);if(t>=x-.05&&t<=y+.15)line=l});
-  const P=LN.prog[lsN]||{},show=it&&(it.is_example||P[it.id]!==undefined);
+  const P=LN.prog[n]||{},show=it&&(it.is_example||P[it.id]!==undefined);
   sub.hidden=!(LN.sub>0&&line);if(!sub.hidden){sub.querySelector(".ln-vsp").textContent=String(line.speaker||"").toUpperCase()==="B"?"B":"A";sub.querySelector("b").textContent=show?line.ja:"♪ ・・・";const sm=sub.querySelector("small");sm.textContent=show?(line.vi||""):"";sm.hidden=LN.sub<2||!show}}
 function lnStageTick(){const au=LN.au,st=LN.stage;if(!st||!au||!st.isConnected){LN.raf=0;return}
-  if(st.classList.contains("ln-vstage")){const L=LN.data&&LN.data[String(lsN)],s=L&&L.sections.find(x=>x.id===st.dataset.sec);if(s)lnVidTick(st,au,s);if(au.paused||!s){LN.raf=0;return}LN.raf=requestAnimationFrame(lnStageTick);return}
+  if(st.classList.contains("ln-vstage")){const L=LN.data&&LN.data[String(+st.dataset.n||lsN)],s=L&&L.sections.find(x=>x.id===st.dataset.sec);if(s)lnVidTick(st,au,s);if(au.paused||!s){LN.raf=0;return}LN.raf=requestAnimationFrame(lnStageTick);return}
   const L=LN.data&&LN.data[String(lsN)];const s=L&&L.sections.find(x=>x.id===st.dataset.sec);if(!s){LN.raf=0;return}
   const t=au.currentTime,P=LN.prog[lsN]||{};let ix=-1,line=null,itm=null;
   s.items.forEach((it,i)=>{const [a,b]=String(it.t||"").split(",").map(Number);if(t>=a-.3&&t<=b+.6){ix=i;itm=it;(it.script||[]).forEach(l=>{const [x,y]=String(l.t||"").split(",").map(Number);if(t>=x-.05&&t<=y+.15)line=l})}});
@@ -3641,7 +3641,7 @@ async function lnRender(n){
         <details class="ln-scr"${it.is_example?" open":""}><summary>Script &amp; dịch</summary>${(it.script||[]).map(l=>`<div class="ln-l"><button class="lnp sm" type="button" data-tk="${esc(it.track||s.track)}" data-t="${esc(l.t||"")}" aria-label="Nghe câu này">${lnPlayIc()}</button><span class="ln-sp">${esc(l.speaker||"")}</span><div><p lang="ja">${esc(l.ja||"")}</p>${l.ja_kana&&l.ja_kana!==l.ja?`<small lang="ja">${esc(l.ja_kana)}</small>`:""}<span>${esc(l.vi||"")}</span></div></div>`).join("")}${it.explanation?`<p class="ln-exp">${esc(it.explanation)}</p>`:""}</details></div>`}
     h+=`</div></section>`}
   h+=imp(0)+`<p class="ln-src">Âm thanh &amp; lời thoại: Minna no Nihongo – 聴解タスク25 (3A Corporation); bản dịch theo dữ liệu bạn nạp. Chỉ lưu trên máy này.</p>`;
-  el.innerHTML=h;lnBind();el.querySelectorAll(".ln-stage").forEach(st=>lnStageSet(st,LN_PAL,0));el.querySelectorAll(".ln-vid").forEach(v=>v.addEventListener("error",()=>v.closest(".ln-vstage").classList.add("miss")));
+  el.dataset.n=n;el.innerHTML=h;lnBind();el.querySelectorAll(".ln-stage").forEach(st=>lnStageSet(st,LN_PAL,0));el.querySelectorAll(".ln-vid").forEach(v=>v.addEventListener("error",()=>v.closest(".ln-vstage").classList.add("miss")));
   el.querySelectorAll(".ln-img img").forEach(async im=>{const u=await lnBlobUrl("i:"+im.dataset.ik)||await lnBlobUrl("i:"+im.dataset.ik.split("/").pop());im.src=u||im.dataset.src;im.onerror=()=>{im.closest(".ln-img").classList.add("miss")}});
 }
 function lnBind(){const el=$("lk_n");
@@ -3650,13 +3650,13 @@ function lnBind(){const el=$("lk_n");
 }
 document.addEventListener("change",e=>{const sel=e.target.closest&&e.target.closest("#lk_n .ln-vccsel");if(!sel)return;LN.sub=+sel.value||0;try{localStorage.setItem("jp-ln-sub",LN.sub)}catch(x){}
   document.querySelectorAll("#lk_n .ln-vccsel").forEach(o=>{o.value=String(LN.sub)});const st=sel.closest(".ln-vstage");
-  if(st&&LN.au&&!LN.au.paused&&LN.stage===st){const L=LN.data[String(lsN)];lnVidTick(st,LN.au,L.sections.find(x=>x.id===st.dataset.sec))}else document.querySelectorAll("#lk_n .ln-vsub").forEach(x=>x.hidden=true)});
+  if(st&&LN.au&&!LN.au.paused&&LN.stage===st){const L=LN.data[String(+st.dataset.n||lsN)];lnVidTick(st,LN.au,L.sections.find(x=>x.id===st.dataset.sec))}else document.querySelectorAll("#lk_n .ln-vsub").forEach(x=>x.hidden=true)});
 document.addEventListener("input",e=>{const r=e.target.closest&&e.target.closest("#lk_n .ln-vseek");if(!r)return;r._drag=true;const st=r.closest(".ln-vstage");lnSeekTo(st,r.value/1000,false)});
 document.addEventListener("change",e=>{const r=e.target.closest&&e.target.closest("#lk_n .ln-vseek");if(!r)return;r._drag=false;lnSeekTo(r.closest(".ln-vstage"),r.value/1000,true)});
 document.addEventListener("click",e=>{const bk=e.target.closest("#lk_n .ln-vback");if(bk){const st=bk.closest(".ln-vstage"),[a,b]=String(st.dataset.t).split(",").map(Number),cur=(LN.au&&LN.stage===st&&!LN.au.paused)?(LN.au.currentTime-a)/(b-a):(st._f||0);lnSeekTo(st,cur-3/(b-a),true);return}
   const vv=e.target.closest("#lk_n .ln-vbox");if(vv&&!e.target.closest("button")){const st=vv.closest(".ln-vstage");if(LN.au&&!LN.au.paused&&LN.stage===st){lnStop()}else{const f=st._f||0;lnSeekTo(st,f>=.98?0:f,true)}return}
   
-  const p=e.target.closest("#lk_n .lnp");if(p){lnPlay(p,String(lsN),p.dataset.tk,p.dataset.t);return}
+  const p=e.target.closest("#lk_n .lnp");if(p){lnPlay(p,String(+($("lk_n")||{dataset:{}}).dataset.n||lsN),p.dataset.tk,p.dataset.t);return}
   const o=e.target.closest("#lk_n .ln-o");if(o&&!o.closest(".ex")){o.parentElement.querySelectorAll(".ln-o").forEach(x=>x.classList.toggle("sel",x===o));return}
   const c=e.target.closest("#lk_n .ln-chk");if(c){const box=c.closest(".ln-it"),id=box.dataset.id;const L=LN.data&&LN.data[String(lsN)];const it=L&&L.sections.flatMap(s=>s.items).find(i=>i.id===id);if(!it)return;
     let all=true;it.blanks.forEach((b,bi)=>{const a=(it.answers||[])[bi];let v;if(b.type==="input"){const inp=box.querySelector(`.ln-in[data-bi="${bi}"]`);v=inp.value;const okk=lnNorm(v)===lnNorm(a);inp.classList.toggle("ok",okk);inp.classList.toggle("bad",!okk);all=all&&okk}
