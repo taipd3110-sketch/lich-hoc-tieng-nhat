@@ -3537,7 +3537,10 @@ function lnScene(n,s){const I=(LN_ILL[n]||{})[s.id];if(!I)return "";const K=I.sc
 }
 
 /* Cảnh hoạt hình chạy theo âm thanh (mẫu: bài 1 – Nghe đúng tên) */
-const LN_ANIM={1:{c1:{bg:"office",video:{src:"media/ln/bai1-c1.mp4",webm:"media/ln/bai1-c1.webm",poster:"media/ln/bai1-c1.jpg",item:"c1-0",by:"Z-Image Turbo + ComfyUI"}}}};
+const LN_ANIM={1:{c1:{bg:"office"}}};
+const lnClipBase=(n,id)=>`media/ln/b${String(n).padStart(2,"0")}/${id}`;
+async function lnClipsLoad(){if(LN.clips)return LN.clips;try{const r=await fetch("media/ln/clips.json?v="+Math.floor(Date.now()/36e5));LN.clips=r.ok?await r.json():{}}catch(e){LN.clips={}}return LN.clips}
+function lnVidSet(st,n,it){const C=(LN.clips||{})[n]||{},v=st.querySelector(".ln-vid"),b=lnClipBase(n,it.id),q="?v="+(C[it.id]||1);v.poster=b+".jpg"+q;v.src=b+".mp4"+q;st.classList.remove("miss");st.dataset.item=it.id;st.dataset.t=it.t||"";st.querySelector(".ln-vtag").textContent=it.is_example?"例 Ví dụ":"Câu "+String(it.label).replace(/[)）.]$/,"");const pb=st.querySelector(".ln-vplay");pb.dataset.t=it.t||"";pb.dataset.tk=it.track||pb.dataset.tk}
 LN.sub=(()=>{try{return +localStorage.getItem("jp-ln-sub")||0}catch(e){return 0}})();
 const LN_SUBL=["Phụ đề: Tắt","Phụ đề: 日本語","Phụ đề: 日本語 + Việt"];
 const LN_PAL=[["#ffe0c7","#2b2321","#3d6fd6","m"],["#f6d2b3","#5a3a2a","#e85d8c","f"],["#ffe3cc","#1f1b24","#2f9e64","m"],["#f3cfae","#3b2a26","#f5a043","f"],["#ffdcc0","#6b4433","#7a5ad6","m"],["#f8d5b8","#2a2220","#e5484d","f"]];
@@ -3553,13 +3556,14 @@ function lnPerson(id,x,flip){return `<g id="${id}" class="lnc" transform="transl
    <g class="lnc-eyes"><ellipse cx="-10" cy="68" rx="3.2" ry="4" fill="#2b2540"/><ellipse cx="10" cy="68" rx="3.2" ry="4" fill="#2b2540"/></g>
    <ellipse cx="-17" cy="78" rx="5" ry="3" fill="#ff8fab" opacity=".45"/><ellipse cx="17" cy="78" rx="5" ry="3" fill="#ff8fab" opacity=".45"/>
    <ellipse class="lnc-mouth" cx="0" cy="83" rx="5" ry="1.6" fill="#a0303f"/></g></g></g>`}
-function lnStageHTML(n,s){const A=(LN_ANIM[n]||{})[s.id];if(!A)return "";
-  if(A.video){const V=A.video,it=s.items.find(i=>i.id===V.item);if(it)return `<div class="ln-stage ln-vstage" data-sec="${esc(s.id)}" data-item="${esc(it.id)}" data-t="${esc(it.t||"")}">
-   <div class="ln-vbox"><video class="ln-vid" muted playsinline preload="metadata" poster="${esc(V.poster||"")}" aria-label="Clip hoạt hình minh hoạ câu ví dụ">${V.webm?`<source src="${esc(V.webm)}" type="video/webm">`:""}<source src="${esc(V.src)}" type="video/mp4"></video>
-   <div class="ln-vsub" hidden aria-live="polite"><span class="ln-vsp"></span><b lang="ja"></b><small></small></div><span class="ln-vtag">例 Ví dụ</span></div>
+function lnStageHTML(n,s){
+  {const C=(LN.clips||{})[n]||{},cl=s.items.filter(i=>C[i.id]),it=cl.find(i=>i.is_example)||cl[0];if(it){const b=lnClipBase(n,it.id),q="?v="+C[it.id];return `<div class="ln-stage ln-vstage" data-sec="${esc(s.id)}" data-item="${esc(it.id)}" data-t="${esc(it.t||"")}">
+   <div class="ln-vbox"><video class="ln-vid" muted playsinline preload="metadata" poster="${esc(b+".jpg"+q)}" src="${esc(b+".mp4"+q)}" aria-label="Clip hoạt hình minh hoạ câu đang nghe"></video>
+   <div class="ln-vsub" hidden aria-live="polite"><span class="ln-vsp"></span><b lang="ja"></b><small></small></div><span class="ln-vtag">${it.is_example?"例 Ví dụ":"Câu "+esc(String(it.label).replace(/[)）.]$/,""))}</span></div>
    <div class="ln-vbar"><button class="lnp ln-vplay" type="button" data-tk="${esc(it.track||s.track)}" data-t="${esc(it.t||"")}">${lnPlayIc()} Xem clip</button>
    <button class="ln-vcc" type="button" aria-pressed="${LN.sub>0}" title="Bật/tắt phụ đề trong clip">CC <span>${LN_SUBL[LN.sub]}</span></button></div>
-   <small class="ln-vnote">Clip tạo bằng AI${V.by?" – "+esc(V.by):""}. Âm thanh phát từ tệp bạn đã nạp. Phụ đề mặc định tắt để luyện nghe.</small></div>`}
+   <small class="ln-vnote">${cl.length} câu có clip vẽ bằng AI (Z-Image Turbo + ComfyUI). Khi bạn nghe câu nào, clip tự đổi theo câu đó. Phụ đề mặc định tắt để luyện nghe.</small></div>`}}
+  const A=(LN_ANIM[n]||{})[s.id];if(!A)return "";
   return `<div class="ln-stage" data-sec="${esc(s.id)}"><svg viewBox="0 0 400 220" class="ln-stg" role="img" aria-label="Cảnh hoạt hình minh hoạ đoạn hội thoại">
    <rect width="400" height="220" fill="#fdf3e7"/><rect y="168" width="400" height="52" fill="#e9d6bf"/><line x1="0" y1="168" x2="400" y2="168" stroke="#d8c0a3" stroke-width="2"/>
    <g><rect x="150" y="26" width="100" height="70" rx="4" fill="#cfe8fb" stroke="#fff" stroke-width="5"/><line x1="200" y1="26" x2="200" y2="96" stroke="#fff" stroke-width="4"/><circle cx="228" cy="48" r="9" fill="#fff6c9"/></g>
@@ -3571,7 +3575,7 @@ function lnStageHTML(n,s){const A=(LN_ANIM[n]||{})[s.id];if(!A)return "";
    <div class="ln-stc">Chữ trong bong bóng hiện sau khi bạn làm câu đó</div></div>`}
 function lnStageSet(st,pal,ix){[["lnA",pal[(ix*2)%pal.length]],["lnB",pal[(ix*2+1)%pal.length]]].forEach(([id,[sk,hr,sh,g]])=>{const c=st.querySelector("#"+id);if(!c)return;
   c.querySelectorAll(".lnc-skin").forEach(e=>e.setAttribute("fill",sk));c.querySelectorAll(".lnc-hair,.lnc-hairf").forEach(e=>e.setAttribute("fill",hr));c.querySelectorAll(".lnc-shirt,.lnc-arm,.lnc-arm2").forEach(e=>e.setAttribute("fill",sh));c.querySelector(".lnc-hairf").style.display=g==="f"?"":"none"})}
-function lnVidTick(st,au,s){const v=st.querySelector(".ln-vid"),sub=st.querySelector(".ln-vsub");const [a,b]=String(st.dataset.t).split(",").map(Number);
+function lnVidTick(st,au,s){const C=(LN.clips||{})[lsN]||{},t0=au.currentTime,cur=s.items.find(i=>{if(!C[i.id])return false;const[x,y]=String(i.t).split(",").map(Number);return t0>=x-.3&&t0<=y+.3});if(cur&&cur.id!==st.dataset.item)lnVidSet(st,lsN,cur);const v=st.querySelector(".ln-vid"),sub=st.querySelector(".ln-vsub");const [a,b]=String(st.dataset.t).split(",").map(Number);
   const t=au.currentTime,D=v.duration,inSeg=!au.paused&&t>=a-.05&&t<=b+.3&&D>0;
   if(inSeg){const vt=Math.min(D-.04,Math.max(0,(t-a)/(b-a)*D));v.playbackRate=Math.min(4,Math.max(.25,D/(b-a)*(au.playbackRate||1)));if(Math.abs(v.currentTime-vt)>.25)v.currentTime=vt;if(v.paused)v.play().catch(()=>{})}else if(!v.paused)v.pause();
   const it=s.items.find(i=>i.id===st.dataset.item);let line=null;if(inSeg&&it)(it.script||[]).forEach(l=>{const [x,y]=String(l.t||"").split(",").map(Number);if(t>=x-.05&&t<=y+.15)line=l});
@@ -3594,7 +3598,7 @@ function lnStageTick(){const au=LN.au,st=LN.stage;if(!st||!au||!st.isConnected){
 function lnPrompt(it){let t=it.prompt_text||"";it.blanks.forEach(b=>(b.options||[]).forEach(o=>{if(o.text&&o.text!==o.key)t=t.split(o.key+o.text).join(" ")}));
   return t.replace(/[（(]\s*[a-h]{2,8}\s*[）)]/g,"（＿）").replace(/(^|[^A-Za-z])[a-h]{2,8}(?![A-Za-z])/g,"$1").replace(/\s+/g," ").trim()}
 async function lnRender(n){
-  const el=$("lk_n");if(!el)return;lnStop();const data=await lnData();
+  const el=$("lk_n");if(!el)return;lnStop();const data=await lnData();await lnClipsLoad();
   const imp=(big)=>`<div class="ln-imp${big?" big":""}">${big?`<div class="ln-ic" aria-hidden="true">🎧</div><h3>Luyện nghe theo bài</h3>
     <p>Âm thanh và lời thoại luyện nghe (Minna no Nihongo – <span lang="ja">聴解タスク25</span>) là nội dung có bản quyền, nên không đăng lên trang. Bạn chọn thư mục <b>Minna no nihongo</b> trên máy (gồm <code>audio/</code> và <code>data/</code>) để nạp. Dữ liệu chỉ lưu trong trình duyệt trên máy này.</p>`:`<span class="ln-impt">Nạp lại / bổ sung bài nghe:</span>`}
     <div class="ln-imb"><label class="btn blue ln-pick">📁 Chọn thư mục<input type="file" id="lnDir" webkitdirectory directory multiple hidden></label><label class="btn ln-pick ghost">📄 Chọn tệp (json + mp3)<input type="file" id="lnFiles" accept=".json,.mp3,.m4a,audio/*,application/json,image/*" multiple hidden></label></div>
@@ -3621,7 +3625,7 @@ async function lnRender(n){
         <details class="ln-scr"${it.is_example?" open":""}><summary>Script &amp; dịch</summary>${(it.script||[]).map(l=>`<div class="ln-l"><button class="lnp sm" type="button" data-tk="${esc(it.track||s.track)}" data-t="${esc(l.t||"")}" aria-label="Nghe câu này">${lnPlayIc()}</button><span class="ln-sp">${esc(l.speaker||"")}</span><div><p lang="ja">${esc(l.ja||"")}</p>${l.ja_kana&&l.ja_kana!==l.ja?`<small lang="ja">${esc(l.ja_kana)}</small>`:""}<span>${esc(l.vi||"")}</span></div></div>`).join("")}${it.explanation?`<p class="ln-exp">${esc(it.explanation)}</p>`:""}</details></div>`}
     h+=`</div></section>`}
   h+=imp(0)+`<p class="ln-src">Âm thanh &amp; lời thoại: Minna no Nihongo – 聴解タスク25 (3A Corporation); bản dịch theo dữ liệu bạn nạp. Chỉ lưu trên máy này.</p>`;
-  el.innerHTML=h;lnBind();el.querySelectorAll(".ln-stage").forEach(st=>lnStageSet(st,LN_PAL,0));el.querySelectorAll(".ln-vid").forEach(v=>{const ss=v.querySelectorAll("source"),last=ss[ss.length-1];(last||v).addEventListener("error",()=>v.closest(".ln-vstage").classList.add("miss"),{once:true})});
+  el.innerHTML=h;lnBind();el.querySelectorAll(".ln-stage").forEach(st=>lnStageSet(st,LN_PAL,0));el.querySelectorAll(".ln-vid").forEach(v=>v.addEventListener("error",()=>v.closest(".ln-vstage").classList.add("miss")));
   el.querySelectorAll(".ln-img img").forEach(async im=>{const u=await lnBlobUrl("i:"+im.dataset.ik)||await lnBlobUrl("i:"+im.dataset.ik.split("/").pop());im.src=u||im.dataset.src;im.onerror=()=>{im.closest(".ln-img").classList.add("miss")}});
 }
 function lnBind(){const el=$("lk_n");

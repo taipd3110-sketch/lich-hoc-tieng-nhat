@@ -3,3 +3,4 @@
 _site/
 !scripts/ln_clips/jobs.json
 !scripts/ln_clips/wf/*.json
+!media/ln/clips.json
