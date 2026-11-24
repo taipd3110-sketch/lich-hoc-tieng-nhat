@@ -3479,10 +3479,14 @@ async function lnImport(files){
   if(!Object.keys(data).length){say_("Chưa thấy tệp dữ liệu .json (vd: vnjpclub_luyen_nghe_bai1-19.json). Hãy chọn cả thư mục hoặc chọn kèm tệp json.");return}
   /* ghép tệp mp3 với bài/track: theo thư mục baiNN/tK_…, nếu không có thư mục thì theo tên tệp gốc trong đường dẫn audio */
   const tail={};for(const k in data)for(const [tk,u] of Object.entries(data[k].tracks||{}))tail[String(u).split("/").pop().toLowerCase()]=tail[String(u).split("/").pop().toLowerCase()]||[k,tk];
-  const put=[];let na=0,ni=0;
+  const put=[];let na=0,ni=0;const dirKeys=new Set(),loose=new Set();
+  /* xếp tệp có thư mục baiNN lên trước để tệp lẻ không ghi đè */
+  files.sort((x,y)=>(/bai0*\d+\//i.test(y.webkitRelativePath||"")?1:0)-(/bai0*\d+\//i.test(x.webkitRelativePath||"")?1:0));
   for(const f of files){const p=(f.webkitRelativePath||f.name).replace(/\\/g,"/");
-    if(/\.(mp3|m4a|wav|ogg)$/i.test(f.name)){let k=null,tk=null;const m=p.match(/bai0*(\d+)\/(t\d+)_/i);if(m&&data[m[1]]){k=m[1];tk=m[2]}else{const nm=f.name.replace(/^t\d+_/i,"").toLowerCase();if(tail[nm])[k,tk]=tail[nm]}
-      if(k){put.push(["a:"+k+":"+tk,f]);na++}}
+    if(/\.(mp3|m4a|wav|ogg)$/i.test(f.name)){let k=null,tk=null,byDir=false;const m=p.match(/bai0*(\d+)\/(t\d+)_/i);
+      /* tệp trong thư mục baiNN chỉ được gắn đúng bài NN; tên tệp lặp lại giữa các bài (vd bai02 và bai27 đều có 05A-5.mp3) nên không được ghép theo tên */
+      if(m){byDir=true;if(data[m[1]]){k=m[1];tk=m[2]}}else{const nm=f.name.replace(/^t\d+_/i,"").toLowerCase();if(tail[nm])[k,tk]=tail[nm]}
+      if(k){const key="a:"+k+":"+tk;if(byDir)dirKeys.add(key);else if(dirKeys.has(key)||loose.has(key))continue;else loose.add(key);put.push([key,f]);na++}}
     else if(/\.(webp|png|jpe?g|gif)$/i.test(f.name)){put.push(["i:"+p.split("/").slice(-2).join("/").toLowerCase(),f]);put.push(["i:"+f.name.toLowerCase(),f]);ni++}}
   say_(`Đang lưu ${na} tệp âm thanh${ni?`, ${ni} ảnh`:""}…`);
   try{put.push(["data",data]);await lnPutMany(put)}catch(e){say_("Trình duyệt không cho lưu dữ liệu (có thể đang ở chế độ ẩn danh hoặc hết dung lượng).");return}
