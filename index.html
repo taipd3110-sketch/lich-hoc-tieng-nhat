@@ -1558,9 +1558,15 @@ body.sceneview #bokashi{opacity:1}
 .ln-vsub b{font-family:var(--f-jp);font-size:clamp(.9rem,2.8vw,1.15rem);font-weight:700;letter-spacing:.02em}.ln-vsub small{font-size:.78rem;color:#e7dff2}
 .ln-vsp{font-size:.66rem;font-weight:800;color:#ffd37a;letter-spacing:.08em}
 @media(max-width:560px){.ln-vsub{padding:3px 9px 4px;bottom:4px}.ln-vsub b{font-size:.86rem}.ln-vsub small{font-size:.68rem}.ln-vsp{display:none}}
+.ln-vseekrow{display:flex;align-items:center;gap:8px;padding:8px 10px 0;background:#fff}
+.ln-vseek{flex:1;min-width:0;accent-color:#e0565b;height:28px;cursor:pointer}
+.ln-vback{min-height:36px;min-width:44px;border:1.5px solid #d9cfe6;background:#fff;border-radius:999px;font-weight:700;font-size:.8rem;color:#4b3f63;cursor:pointer}
+.ln-vtime{font-variant-numeric:tabular-nums;font-size:.78rem;color:var(--muted);min-width:68px;text-align:right}
+.ln-vbox{cursor:pointer}
 .ln-vbar{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;padding:8px 10px;background:#fff}
 .ln-vcc{min-height:40px;border:1.5px solid #d9cfe6;background:#fff;border-radius:999px;padding:6px 12px;font-weight:700;font-size:.82rem;color:#4b3f63;cursor:pointer}
-.ln-vcc[aria-pressed="true"]{background:#2b2540;color:#fff;border-color:#2b2540}.ln-vcc span{font-weight:600}
+.ln-vcc{display:inline-flex;align-items:center;gap:6px}.ln-vcc>span{font-weight:800;font-size:.72rem;letter-spacing:.06em;color:#7a6a92}
+.ln-vccsel{border:0;background:transparent;font:inherit;font-weight:700;color:#2b2540;min-height:30px;cursor:pointer;max-width:58vw}
 .ln-vnote{display:block;padding:0 10px 8px;background:#fff;color:var(--muted);font-size:.72rem}
 .ln-vstage.miss .ln-vbox::after{content:"Chưa tải được clip";position:absolute;inset:0;display:grid;place-items:center;color:#d8cfe8;font-size:.9rem}
 
@@ -3540,7 +3546,7 @@ function lnScene(n,s){const I=(LN_ILL[n]||{})[s.id];if(!I)return "";const K=I.sc
 const LN_ANIM={1:{c1:{bg:"office"}}};
 const lnClipBase=(n,id)=>`media/ln/b${String(n).padStart(2,"0")}/${id}`;
 async function lnClipsLoad(){if(LN.clips)return LN.clips;try{const r=await fetch("media/ln/clips.json?v="+Math.floor(Date.now()/36e5));LN.clips=r.ok?await r.json():{}}catch(e){LN.clips={}}return LN.clips}
-function lnVidSet(st,n,it){const C=(LN.clips||{})[n]||{},v=st.querySelector(".ln-vid"),b=lnClipBase(n,it.id),q="?v="+(C[it.id]||1);v.poster=b+".jpg"+q;v.src=b+".mp4"+q;st.classList.remove("miss");st.dataset.item=it.id;st.dataset.t=it.t||"";st.querySelector(".ln-vtag").textContent=it.is_example?"例 Ví dụ":"Câu "+String(it.label).replace(/[)）.]$/,"");const pb=st.querySelector(".ln-vplay");pb.dataset.t=it.t||"";pb.dataset.tk=it.track||pb.dataset.tk}
+function lnVidSet(st,n,it){const C=(LN.clips||{})[n]||{},v=st.querySelector(".ln-vid"),b=lnClipBase(n,it.id),q="?v="+(C[it.id]||1);v.poster=b+".jpg"+q;v.src=b+".mp4"+q;st.classList.remove("miss");st.dataset.item=it.id;st.dataset.t=it.t||"";st.querySelector(".ln-vtag").textContent=it.is_example?"例 Ví dụ":"Câu "+String(it.label).replace(/[)）.]$/,"");const pb=st.querySelector(".ln-vplay");pb.dataset.t=it.t||"";pb.dataset.tk=it.track||pb.dataset.tk;const[x,y]=String(it.t).split(",").map(Number);lnSeekShow(st,0,y-x)}
 LN.sub=(()=>{try{return +localStorage.getItem("jp-ln-sub")||0}catch(e){return 0}})();
 const LN_SUBL=["Phụ đề: Tắt","Phụ đề: 日本語","Phụ đề: 日本語 + Việt"];
 const LN_PAL=[["#ffe0c7","#2b2321","#3d6fd6","m"],["#f6d2b3","#5a3a2a","#e85d8c","f"],["#ffe3cc","#1f1b24","#2f9e64","m"],["#f3cfae","#3b2a26","#f5a043","f"],["#ffdcc0","#6b4433","#7a5ad6","m"],["#f8d5b8","#2a2220","#e5484d","f"]];
@@ -3560,9 +3566,10 @@ function lnStageHTML(n,s){
   {const C=(LN.clips||{})[n]||{},cl=s.items.filter(i=>C[i.id]),it=cl.find(i=>i.is_example)||cl[0];if(it){const b=lnClipBase(n,it.id),q="?v="+C[it.id];return `<div class="ln-stage ln-vstage" data-sec="${esc(s.id)}" data-item="${esc(it.id)}" data-t="${esc(it.t||"")}">
    <div class="ln-vbox"><video class="ln-vid" muted playsinline preload="metadata" poster="${esc(b+".jpg"+q)}" src="${esc(b+".mp4"+q)}" aria-label="Clip hoạt hình minh hoạ câu đang nghe"></video>
    <div class="ln-vsub" hidden aria-live="polite"><span class="ln-vsp"></span><b lang="ja"></b><small></small></div><span class="ln-vtag">${it.is_example?"例 Ví dụ":"Câu "+esc(String(it.label).replace(/[)）.]$/,""))}</span></div>
+   <div class="ln-vseekrow"><button class="ln-vback" type="button" title="Lùi 3 giây" aria-label="Lùi 3 giây">↺3s</button><input class="ln-vseek" type="range" min="0" max="1000" value="0" step="1" aria-label="Tua clip"><span class="ln-vtime">${(()=>{const[x,y]=String(it.t).split(",").map(Number);return "0:00 / "+lnFmt(y-x)})()}</span></div>
    <div class="ln-vbar"><button class="lnp ln-vplay" type="button" data-tk="${esc(it.track||s.track)}" data-t="${esc(it.t||"")}">${lnPlayIc()} Xem clip</button>
-   <button class="ln-vcc" type="button" aria-pressed="${LN.sub>0}" title="Bật/tắt phụ đề trong clip">CC <span>${LN_SUBL[LN.sub]}</span></button></div>
-   <small class="ln-vnote">${cl.length} câu có clip vẽ bằng AI (Z-Image Turbo + ComfyUI). Khi bạn nghe câu nào, clip tự đổi theo câu đó. Phụ đề mặc định tắt để luyện nghe.</small></div>`}}
+   <label class="ln-vcc"><span aria-hidden="true">CC</span><select class="ln-vccsel" aria-label="Phụ đề trong clip">${["Tắt phụ đề","日本語","日本語 + Tiếng Việt"].map((x,i)=>`<option value="${i}"${LN.sub===i?" selected":""}>${x}</option>`).join("")}</select></label></div>
+   <small class="ln-vnote">Có thể chọn bật hoặc tắt phụ đề ở ô CC.</small></div>`}}
   const A=(LN_ANIM[n]||{})[s.id];if(!A)return "";
   return `<div class="ln-stage" data-sec="${esc(s.id)}"><svg viewBox="0 0 400 220" class="ln-stg" role="img" aria-label="Cảnh hoạt hình minh hoạ đoạn hội thoại">
    <rect width="400" height="220" fill="#fdf3e7"/><rect y="168" width="400" height="52" fill="#e9d6bf"/><line x1="0" y1="168" x2="400" y2="168" stroke="#d8c0a3" stroke-width="2"/>
@@ -3575,9 +3582,18 @@ function lnStageHTML(n,s){
    <div class="ln-stc">Chữ trong bong bóng hiện sau khi bạn làm câu đó</div></div>`}
 function lnStageSet(st,pal,ix){[["lnA",pal[(ix*2)%pal.length]],["lnB",pal[(ix*2+1)%pal.length]]].forEach(([id,[sk,hr,sh,g]])=>{const c=st.querySelector("#"+id);if(!c)return;
   c.querySelectorAll(".lnc-skin").forEach(e=>e.setAttribute("fill",sk));c.querySelectorAll(".lnc-hair,.lnc-hairf").forEach(e=>e.setAttribute("fill",hr));c.querySelectorAll(".lnc-shirt,.lnc-arm,.lnc-arm2").forEach(e=>e.setAttribute("fill",sh));c.querySelector(".lnc-hairf").style.display=g==="f"?"":"none"})}
+function lnFmt(x){x=Math.max(0,x);return Math.floor(x/60)+":"+String(Math.floor(x%60)).padStart(2,"0")}
+function lnSeekShow(st,f,len){f=Math.max(0,Math.min(1,f));const r=st.querySelector(".ln-vseek");if(r&&!r._drag)r.value=Math.round(f*1000);const tm=st.querySelector(".ln-vtime");if(tm)tm.textContent=lnFmt(f*len)+" / "+lnFmt(len);st._f=f}
+function lnSeekTo(st,f,play){const [a,b]=String(st.dataset.t).split(",").map(Number);if(!(b>a))return;f=Math.max(0,Math.min(.999,f));const v=st.querySelector(".ln-vid");if(v.duration>0){v.pause();v.currentTime=Math.min(v.duration-.06,f*v.duration)}lnSeekShow(st,f,b-a);
+  const playing=LN.au&&!LN.au.paused&&LN.stage===st;if(playing){LN.au.currentTime=a+f*(b-a);LN.stopAt=b+.25;return}
+  if(play){const pb=st.querySelector(".ln-vplay");if(LN.btn===pb)lnStop();lnPlay(pb,String(lsN),pb.dataset.tk,(a+f*(b-a)).toFixed(2)+","+b)}}
 function lnVidTick(st,au,s){const C=(LN.clips||{})[lsN]||{},t0=au.currentTime,cur=s.items.find(i=>{if(!C[i.id])return false;const[x,y]=String(i.t).split(",").map(Number);return t0>=x-.3&&t0<=y+.3});if(cur&&cur.id!==st.dataset.item)lnVidSet(st,lsN,cur);const v=st.querySelector(".ln-vid"),sub=st.querySelector(".ln-vsub");const [a,b]=String(st.dataset.t).split(",").map(Number);
   const t=au.currentTime,D=v.duration,inSeg=!au.paused&&t>=a-.05&&t<=b+.3&&D>0;
-  if(inSeg){const vt=Math.min(D-.04,Math.max(0,(t-a)/(b-a)*D));v.playbackRate=Math.min(4,Math.max(.25,D/(b-a)*(au.playbackRate||1)));if(Math.abs(v.currentTime-vt)>.25)v.currentTime=vt;if(v.paused)v.play().catch(()=>{})}else if(!v.paused)v.pause();
+  if(inSeg){const vt=Math.min(D-.06,Math.max(0,(t-a)/(b-a)*D)),dr=vt-v.currentTime;
+    if(vt>=D-.07){if(!v.paused)v.pause();if(Math.abs(dr)>.05)v.currentTime=vt}  /* hết clip: giữ khung cuối, không phát lại từ đầu */
+    else{v.playbackRate=Math.min(4,Math.max(.25,D/(b-a)*(au.playbackRate||1)*(1+Math.max(-.12,Math.min(.12,dr*.6)))));if(Math.abs(dr)>.6)v.currentTime=vt;if(v.paused)v.play().catch(()=>{})}}
+  else if(!v.paused)v.pause();
+  if(t>=a-.05&&t<=b+.3)lnSeekShow(st,(t-a)/(b-a),b-a);
   const it=s.items.find(i=>i.id===st.dataset.item);let line=null;if(inSeg&&it)(it.script||[]).forEach(l=>{const [x,y]=String(l.t||"").split(",").map(Number);if(t>=x-.05&&t<=y+.15)line=l});
   const P=LN.prog[lsN]||{},show=it&&(it.is_example||P[it.id]!==undefined);
   sub.hidden=!(LN.sub>0&&line);if(!sub.hidden){sub.querySelector(".ln-vsp").textContent=String(line.speaker||"").toUpperCase()==="B"?"B":"A";sub.querySelector("b").textContent=show?line.ja:"♪ ・・・";const sm=sub.querySelector("small");sm.textContent=show?(line.vi||""):"";sm.hidden=LN.sub<2||!show}}
@@ -3632,9 +3648,14 @@ function lnBind(){const el=$("lk_n");
   [["lnDir"],["lnFiles"]].forEach(([id])=>{const i=$(id);if(i)i.onchange=()=>lnImport(i.files)});
   if($("lnReset"))$("lnReset").onclick=()=>{delete LN.prog[lsN];lnSaveProg();lnRender(lsN)};
 }
-document.addEventListener("click",e=>{const cc=e.target.closest("#lk_n .ln-vcc");if(cc){LN.sub=(LN.sub+1)%3;try{localStorage.setItem("jp-ln-sub",LN.sub)}catch(x){}
-    document.querySelectorAll("#lk_n .ln-vcc").forEach(b=>{b.setAttribute("aria-pressed",LN.sub>0);b.querySelector("span").textContent=LN_SUBL[LN.sub]});
-    const st=cc.closest(".ln-vstage");if(st&&LN.au&&!LN.au.paused&&LN.stage===st){const L=LN.data[String(lsN)];lnVidTick(st,LN.au,L.sections.find(x=>x.id===st.dataset.sec))}else document.querySelectorAll("#lk_n .ln-vsub").forEach(x=>x.hidden=true);return}
+document.addEventListener("change",e=>{const sel=e.target.closest&&e.target.closest("#lk_n .ln-vccsel");if(!sel)return;LN.sub=+sel.value||0;try{localStorage.setItem("jp-ln-sub",LN.sub)}catch(x){}
+  document.querySelectorAll("#lk_n .ln-vccsel").forEach(o=>{o.value=String(LN.sub)});const st=sel.closest(".ln-vstage");
+  if(st&&LN.au&&!LN.au.paused&&LN.stage===st){const L=LN.data[String(lsN)];lnVidTick(st,LN.au,L.sections.find(x=>x.id===st.dataset.sec))}else document.querySelectorAll("#lk_n .ln-vsub").forEach(x=>x.hidden=true)});
+document.addEventListener("input",e=>{const r=e.target.closest&&e.target.closest("#lk_n .ln-vseek");if(!r)return;r._drag=true;const st=r.closest(".ln-vstage");lnSeekTo(st,r.value/1000,false)});
+document.addEventListener("change",e=>{const r=e.target.closest&&e.target.closest("#lk_n .ln-vseek");if(!r)return;r._drag=false;lnSeekTo(r.closest(".ln-vstage"),r.value/1000,true)});
+document.addEventListener("click",e=>{const bk=e.target.closest("#lk_n .ln-vback");if(bk){const st=bk.closest(".ln-vstage"),[a,b]=String(st.dataset.t).split(",").map(Number),cur=(LN.au&&LN.stage===st&&!LN.au.paused)?(LN.au.currentTime-a)/(b-a):(st._f||0);lnSeekTo(st,cur-3/(b-a),true);return}
+  const vv=e.target.closest("#lk_n .ln-vbox");if(vv&&!e.target.closest("button")){const st=vv.closest(".ln-vstage");if(LN.au&&!LN.au.paused&&LN.stage===st){lnStop()}else{const f=st._f||0;lnSeekTo(st,f>=.98?0:f,true)}return}
+  
   const p=e.target.closest("#lk_n .lnp");if(p){lnPlay(p,String(lsN),p.dataset.tk,p.dataset.t);return}
   const o=e.target.closest("#lk_n .ln-o");if(o&&!o.closest(".ex")){o.parentElement.querySelectorAll(".ln-o").forEach(x=>x.classList.toggle("sel",x===o));return}
   const c=e.target.closest("#lk_n .ln-chk");if(c){const box=c.closest(".ln-it"),id=box.dataset.id;const L=LN.data&&LN.data[String(lsN)];const it=L&&L.sections.flatMap(s=>s.items).find(i=>i.id===id);if(!it)return;
